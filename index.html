@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#171513">
+<meta name="description" content="ARISTA Coffee & Roastery — menu digital dan kasir">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="styles.css">
+<title>ARISTA Coffee & Roastery</title>
+</head>
+<body>
+<header class="topbar">
+  <div class="brandmark">A</div>
+  <div class="brandtext"><strong>ARISTA</strong><span>COFFEE & ROASTERY</span></div>
+  <button id="installBtn" class="button button-outline hidden">Install App</button>
+</header>
+<main>
+  <section class="hero">
+    <p class="eyebrow">CRAFTED WITH CHARACTER</p>
+    <h1>Good coffee.<br><em>Good moments.</em></h1>
+    <p class="hero-copy">Temukan racikan favoritmu, dibuat dengan perhatian pada setiap detail.</p>
+    <div class="hero-pills"><span>Specialty Coffee</span><span>Freshly Crafted</span></div>
+  </section>
+
+  <nav class="tabs" aria-label="Navigasi utama">
+    <button class="tab active" data-view="menuView">Menu</button>
+    <button class="tab" data-view="cashierView">Kasir <span id="cartBadge" class="badge">0</span></button>
+    <button class="tab" data-view="reportView">Laporan</button>
+    <button class="tab" data-view="manageView">Kelola</button>
+  </nav>
+
+  <section id="menuView" class="view active">
+    <div class="section-head"><div><p class="eyebrow">OUR SELECTION</p><h2>Menu pilihan</h2></div><span class="muted" id="menuCount"></span></div>
+    <div id="categoryFilters" class="filters"></div>
+    <div id="menuGrid" class="menu-grid"></div>
+  </section>
+
+  <section id="cashierView" class="view">
+    <div class="section-head"><div><p class="eyebrow">POINT OF SALE</p><h2>Kasir</h2></div><button id="clearCartBtn" class="button button-quiet">Kosongkan</button></div>
+    <div class="pos-layout">
+      <div class="panel"><h3>Pesanan saat ini</h3><div id="cartItems" class="cart-items"></div><div class="empty-state" id="cartEmpty">Belum ada item. Tambahkan dari menu, ya.</div></div>
+      <div class="panel summary-panel">
+        <h3>Ringkasan</h3>
+        <label class="field-label" for="customerName">Nama pelanggan (opsional)</label><input id="customerName" class="field" placeholder="Nama pelanggan">
+        <div class="summary-line"><span>Subtotal</span><strong id="subtotal">Rp0</strong></div>
+        <div class="discount-row"><label for="discount">Diskon (Rp)</label><input id="discount" class="field small-field" type="number" min="0" value="0"></div>
+        <div class="summary-line total-line"><span>Total</span><strong id="total">Rp0</strong></div>
+        <label class="field-label" for="paymentMethod">Metode pembayaran</label>
+        <select id="paymentMethod" class="field"><option>Tunai</option><option>QRIS (dicatat manual)</option><option>Debit/Kredit</option><option>Transfer</option></select>
+        <label class="field-label" for="paidAmount">Uang diterima (khusus tunai)</label><input id="paidAmount" class="field" type="number" min="0" placeholder="Masukkan jumlah pembayaran">
+        <div class="summary-line"><span>Kembalian</span><strong id="changeAmount">Rp0</strong></div>
+        <button id="checkoutBtn" class="button button-gold full">Selesaikan transaksi</button>
+        <p class="tiny muted">Pembayaran QRIS di sini hanya dicatat oleh kasir, bukan memproses pembayaran otomatis.</p>
+      </div>
+    </div>
+    <div id="receiptArea" class="panel receipt hidden"></div>
+  </section>
+
+  <section id="reportView" class="view">
+    <div class="section-head"><div><p class="eyebrow">BUSINESS SNAPSHOT</p><h2>Laporan penjualan</h2></div><button id="exportBtn" class="button button-outline">Ekspor CSV</button></div>
+    <div class="stats-grid">
+      <div class="stat-card"><span>Omzet hari ini</span><strong id="todayRevenue">Rp0</strong></div>
+      <div class="stat-card"><span>Transaksi hari ini</span><strong id="todayCount">0</strong></div>
+      <div class="stat-card"><span>Total transaksi</span><strong id="allCount">0</strong></div>
+    </div>
+    <div class="panel"><div class="section-head"><h3>Riwayat transaksi</h3><button id="clearSalesBtn" class="button button-quiet">Hapus riwayat</button></div><div id="salesHistory"></div></div>
+  </section>
+
+  <section id="manageView" class="view">
+    <div class="section-head"><div><p class="eyebrow">MENU MANAGEMENT</p><h2>Kelola menu</h2></div></div>
+    <div class="panel">
+      <h3 id="formTitle">Tambah menu baru</h3>
+      <form id="productForm" class="product-form">
+        <input id="productId" type="hidden">
+        <label class="field-label" for="productName">Nama minuman</label><input id="productName" class="field" required placeholder="Contoh: Aren Latte">
+        <label class="field-label" for="productCategory">Kategori</label><select id="productCategory" class="field"><option>Espresso Based</option><option>Signature</option><option>Manual Brew</option><option>Non-Coffee</option><option>Matcha</option><option>Tea</option></select>
+        <label class="field-label" for="productPrice">Harga (Rp)</label><input id="productPrice" class="field" required type="number" min="0" step="500" placeholder="22000">
+        <label class="field-label" for="productDesc">Deskripsi singkat</label><textarea id="productDesc" class="field" rows="2" placeholder="Rasa, bahan, atau catatan menu"></textarea>
+        <div class="form-actions"><button class="button button-gold" type="submit">Simpan menu</button><button id="cancelEditBtn" class="button button-outline hidden" type="button">Batal edit</button></div>
+      </form>
+    </div>
+    <div class="panel"><h3>Daftar menu</h3><div id="manageList"></div></div>
+    <div class="panel"><h3>Data aplikasi</h3><p class="muted">Data tersimpan lokal pada browser/perangkat ini. Ekspor cadangan secara berkala.</p><div class="form-actions"><button id="backupBtn" class="button button-outline">Unduh backup JSON</button><label class="button button-outline file-label">Pulihkan backup<input id="restoreInput" type="file" accept="application/json" hidden></label></div></div>
+  </section>
+</main>
+<footer><span class="footer-logo">ARISTA</span><span>COFFEE & ROASTERY</span><small>Made for good coffee moments.</small></footer>
+<div id="toast" class="toast" role="status"></div>
+<script src="app.js"></script>
+</body>
+</html>
