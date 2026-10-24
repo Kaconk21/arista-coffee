@@ -29,11 +29,15 @@ main{width:min(1120px,100% - 32px);margin:0 auto}.hero{padding:44px 0 32px;max-w
 .stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}.stat-card{padding:18px;background:linear-gradient(145deg,#30271f,#211e1a);border:1px solid var(--line);border-radius:15px}.stat-card span{font-size:11px;color:var(--muted);display:block;margin-bottom:12px}.stat-card strong{font:500 clamp(18px,3vw,26px) Georgia,serif;color:var(--gold2);overflow-wrap:anywhere}
 .history-item,.manage-item,.pending-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 0;border-bottom:1px solid #3a3025}.history-item:last-child,.manage-item:last-child,.pending-item:last-child{border-bottom:0}.history-item strong,.manage-item strong,.pending-item strong{font-size:13px}.history-item small,.manage-item small,.pending-item small{display:block;color:var(--muted);font-size:10px;margin-top:5px}
 /* Larger, clearer transaction history text */
-.history-item{gap:14px;padding:16px 0;align-items:flex-start}
-.history-item strong{font-size:17px;line-height:1.45}
-.history-item small{font-size:14px;line-height:1.6;margin-top:7px;overflow-wrap:anywhere}
-.history-right{font-size:15px;line-height:1.5;white-space:normal;min-width:100px}
-.history-right strong{font-size:17px;display:block}
+.history-item{gap:10px;padding:10px 0;align-items:center}
+.history-item strong{font-size:13px;line-height:1.35}
+.history-item small{font-size:11px;line-height:1.4;margin-top:4px;overflow-wrap:anywhere}
+.history-right{font-size:12px;line-height:1.35;white-space:nowrap;min-width:92px;flex-shrink:0}
+.history-right strong{font-size:13px;display:block}
+#salesHistory .history-item>div:first-child,#expenseHistory .history-item>div:first-child{min-width:0;flex:1}
+#salesHistory .history-item,#expenseHistory .history-item{border-bottom:1px solid var(--line)}
+#salesHistory .button,#expenseHistory .button{padding:4px 7px;font-size:10px;margin-top:3px}
+@media(max-width:390px){#salesHistory .history-item,#expenseHistory .history-item{gap:6px;padding:9px 0}#salesHistory .history-right,#expenseHistory .history-right{min-width:80px;font-size:11px}#salesHistory .history-right strong,#expenseHistory .history-right strong{font-size:12px}}
 /* Larger, clearer text in the Manage menu list */
 .manage-item{gap:14px;padding:16px 0;align-items:flex-start}
 .manage-item strong{font-size:17px;line-height:1.45;display:block}
