@@ -153,7 +153,8 @@ function loadState(){
   const saved=JSON.parse(localStorage.getItem(STORE_KEY));
   if(saved && Array.isArray(saved.products) && Array.isArray(saved.sales)){ saved.products=saved.products.map(p=>({...p,cost:Number.isFinite(p.cost)?p.cost:null,image:p.image||""})); saved.pendingOrders = Array.isArray(saved.pendingOrders) ? saved.pendingOrders : [];
 return saved;
- }catch(e){}
+  {
+  }catch(e){}
  return {products:defaults,sales:[],pendingOrders:[]};
 function saveState(){localStorage.setItem(STORE_KEY,JSON.stringify(state));}
 function toast(msg){const el=document.getElementById("toast");el.textContent=msg;el.classList.add("show");setTimeout(()=>el.classList.remove("show"),2400);}
