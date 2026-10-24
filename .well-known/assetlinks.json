@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "io.github.kaconk21.twa",
+      "sha256_cert_fingerprints": [
+        "ED:27:F4:50:42:12:FD:E5:B4:E0:0F:BA:69:52:62:C9:7B:3B:99:05:19:70:C4:E0:93:8F:F9:6F:9E:D1:A6:60"
+      ]
+    }
+  }
+]
