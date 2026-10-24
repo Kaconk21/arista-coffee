@@ -186,7 +186,40 @@ function renderReports(){const today=state.sales.filter(s=>s.date===todayKey()),
 document.getElementById("expenseDate").value=todayKey();document.getElementById("expenseForm").addEventListener("submit",e=>{e.preventDefault();const amount=Number(document.getElementById("expenseAmount").value),qty=Number(document.getElementById("expenseQty").value);if(!Number.isFinite(amount)||amount<=0||!Number.isFinite(qty)||qty<1){toast("Periksa jumlah dan harga belanja");return}state.expenses=state.expenses||[];state.expenses.push({id:uid(),name:document.getElementById("expenseName").value.trim(),category:document.getElementById("expenseCategory").value,qty,amount,date:document.getElementById("expenseDate").value,note:document.getElementById("expenseNote").value.trim(),time:Date.now()});saveState();e.target.reset();document.getElementById("expenseQty").value="1";document.getElementById("expenseDate").value=todayKey();renderReports();toast("Pengeluaran berhasil disimpan")});document.getElementById("exportExpensesBtn").addEventListener("click",()=>document.getElementById("exportBtn").click());
 document.getElementById("clearSalesBtn").addEventListener("click",()=>{if(!state.sales.length){toast("Belum ada riwayat");return}if(confirm("Hapus seluruh riwayat penjualan dari perangkat ini? Sebaiknya ekspor backup terlebih dahulu.")){state.sales=[];saveState();renderReports();toast("Riwayat dihapus")}});
 function downloadFile(name,data,type){const blob=new Blob([data],{type});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)}
-document.getElementById("exportBtn").addEventListener("click",()=>{const rows=[["Jenis catatan","ID","Tanggal/waktu","Pelanggan / nama belanja","Kategori","Item / rincian","Jumlah","Subtotal","Diskon","Pendapatan / pengeluaran (Rp)","Pembayaran","Catatan"],...state.sales.map(s=>["PENDAPATAN",s.id,new Date(s.time).toLocaleString("id-ID"),s.customer||"Pelanggan","Penjualan",s.items.map(x=>`${x.name} x${x.qty}`).join("; "),s.items.reduce((n,x)=>n+x.qty,0),s.subtotal,s.discount,s.total,s.method,""]),...(state.expenses||[]).map(x=>["BELANJA",x.id,x.date,x.name,x.category,`${x.name} x${x.qty}`,x.qty,"","",x.amount,"",x.note||""])];downloadFile("arista-laporan-keuangan-"+todayKey()+".csv","\ufeff"+rows.map(r=>r.map(v=>`"${String(v??"").replace(/"/g,'""')}"`).join(",")).join("\n"),"text/csv;charset=utf-8")});
+document.getElementById("exportBtn").addEventListener("click",()=>{
+ const headers=["Jenis catatan","ID","Tanggal/waktu","Pelanggan / nama belanja","Kategori","Item / rincian","Jumlah","Subtotal (Rp)","Diskon (Rp)","Pendapatan / pengeluaran (Rp)","Pembayaran","Catatan"];
+ const sales=(state.sales||[]).slice().sort((a,b)=>new Date(a.time)-new Date(b.time));
+ const expenses=(state.expenses||[]).slice().sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+ const incomeTotal=sales.reduce((sum,s)=>sum+Number(s.total||0),0);
+ const expenseTotal=expenses.reduce((sum,x)=>sum+Number(x.amount||0),0);
+ const fmt=n=>Number(n||0).toLocaleString("id-ID");
+ const blank=()=>Array(headers.length).fill("");
+ const rows=[
+  ["LAPORAN KEUANGAN ARISTA COFFEE"],
+  ["Tanggal ekspor",new Date().toLocaleString("id-ID")],
+  blank(),
+  ["RINGKASAN TOTAL"],
+  ["Total pendapatan","","","","","","","","",incomeTotal],
+  ["Total belanja / pengeluaran","","","","","","","","",expenseTotal],
+  ["SISA PENDAPATAN SETELAH BELANJA","","","","","","","","",incomeTotal-expenseTotal],
+  ["Jumlah transaksi penjualan",sales.length],
+  ["Jumlah catatan belanja",expenses.length],
+  blank(),
+  ["A. RINCIAN PENDAPATAN"],
+  headers,
+  ...sales.map(s=>["PENDAPATAN",s.id,new Date(s.time).toLocaleString("id-ID"),s.customer||"Pelanggan","Penjualan",(s.items||[]).map(x=>`${x.name} x${x.qty}`).join("; "),(s.items||[]).reduce((n,x)=>n+Number(x.qty||0),0),Number(s.subtotal||0),Number(s.discount||0),Number(s.total||0),s.method||"",""]),
+  ["TOTAL PENDAPATAN","","","","","","","","",incomeTotal],
+  blank(),
+  ["B. RINCIAN BELANJA / PENGELUARAN"],
+  headers,
+  ...expenses.map(x=>["BELANJA",x.id,x.date,x.name,x.category,`${x.name} x${x.qty}`,Number(x.qty||0),"","",Number(x.amount||0),"",x.note||""]),
+  ["TOTAL BELANJA / PENGELUARAN","","","","","","","","",expenseTotal],
+  blank(),
+  ["CATATAN","Sisa pendapatan setelah belanja = total pendapatan penjualan dikurangi belanja yang dicatat. Belum tentu laba bersih."]
+ ];
+ const csv=rows.map(r=>r.map(v=>`"${String(v??"").replace(/"/g,'""')}"`).join(",")).join("\r\n");
+ downloadFile("arista-laporan-keuangan-"+todayKey()+".csv","\ufeff"+csv,"text/csv;charset=utf-8");
+});
 function renderManage(){const el=document.getElementById("manageList");el.innerHTML=state.products.length?state.products.slice().sort((a,b)=>String(a.name||"").localeCompare(String(b.name||""),"id",{sensitivity:"base"})).map(p=>`<div class="manage-item"><div>${p.image?`<img class="manage-thumb" src="${p.image}" alt="">`:""}<strong>${esc(p.name)} · Jual ${rupiah(p.price)}</strong><small>${esc(p.category)} · ${p.temperature==="hot"?"Panas saja":p.temperature==="cold"?"Dingin saja":"Panas & Dingin"} · Modal ${Number.isFinite(p.cost)?rupiah(p.cost):"belum diisi"} · Selisih ${Number.isFinite(p.cost)?rupiah(p.price-p.cost):"—"}${p.desc?" — "+esc(p.desc):""}</small></div><div class="manage-actions"><button class="button button-outline" data-edit="${esc(p.id)}">Edit</button><button class="button button-danger" data-del="${esc(p.id)}">Hapus</button></div></div>`).join(""):`<div class="empty-state">Menu masih kosong.</div>`;el.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>editProduct(b.dataset.edit));el.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>deleteProduct(b.dataset.del))}
 function resetProductForm(){document.getElementById("productForm").reset();document.getElementById("productId").value="";document.getElementById("productCategory").value="Espresso Based";document.getElementById("productTemp").value="both";document.getElementById("customCategory").value="";document.getElementById("customCategory").classList.add("hidden");document.getElementById("customCategory").required=false;document.getElementById("formTitle").textContent="Tambah menu baru";document.getElementById("cancelEditBtn").classList.add("hidden");editingImage="";showImagePreview("");updateProfitPreview()}
 function editProduct(id){const p=state.products.find(x=>x.id===id);if(!p)return;document.getElementById("productId").value=p.id;document.getElementById("productName").value=p.name;if([...document.getElementById("productCategory").options].some(o=>o.value===p.category)){document.getElementById("productCategory").value=p.category;document.getElementById("customCategory").value="";document.getElementById("customCategory").classList.add("hidden");document.getElementById("customCategory").required=false}else{document.getElementById("productCategory").value="__custom__";document.getElementById("customCategory").value=p.category;document.getElementById("customCategory").classList.remove("hidden");document.getElementById("customCategory").required=true}document.getElementById("productCost").value=Number.isFinite(p.cost)?p.cost:"";document.getElementById("productPrice").value=p.price;document.getElementById("productTemp").value=p.temperature||"both";document.getElementById("productDesc").value=p.desc||"";editingImage=p.image||"";document.getElementById("productImage").value="";showImagePreview(editingImage);updateProfitPreview();document.getElementById("formTitle").textContent="Edit menu";document.getElementById("cancelEditBtn").classList.remove("hidden");document.getElementById("productForm").scrollIntoView({behavior:"smooth"})}
