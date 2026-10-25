@@ -98,9 +98,11 @@ button,input,select,textarea{font-size:14px}
 .field{font-size:15px}
 #productCategory,#productCategory option,#customCategory{font-size:15px}
 .cashier-add-row .field{font-size:14px}
+#launchSplash{position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 40%,#34271b 0%,#171513 58%);color:var(--cream);transition:opacity .55s ease,visibility .55s ease}#launchSplash.is-hidden{opacity:0;visibility:hidden;pointer-events:none}.splash-logo{width:88px;height:88px;border:1.5px solid var(--gold2);border-radius:50%;display:grid;place-items:center;color:var(--gold2);font:italic 58px Georgia,serif;box-shadow:0 0 0 7px #c5a16a12,0 0 34px #c5a16a20;animation:splashLogoIn .85s cubic-bezier(.2,.8,.2,1) both}.splash-title{margin-top:22px;font:700 25px "Libre Baskerville",Georgia,serif;letter-spacing:5px;color:var(--gold2);animation:splashTextIn .7s .15s both}.splash-subtitle{margin-top:9px;font-size:10px;letter-spacing:3px;color:var(--muted);animation:splashTextIn .7s .25s both}.splash-loader{display:flex;gap:6px;margin-top:34px}.splash-loader i{width:6px;height:6px;border-radius:50%;background:var(--gold2);animation:splashDot .9s ease-in-out infinite}.splash-loader i:nth-child(2){animation-delay:.15s}.splash-loader i:nth-child(3){animation-delay:.3s}@keyframes splashLogoIn{from{opacity:0;transform:scale(.72) rotate(-12deg)}to{opacity:1;transform:scale(1) rotate(0)}}@keyframes splashTextIn{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:translateY(0)}}@keyframes splashDot{0%,60%,100%{opacity:.3;transform:translateY(0)}30%{opacity:1;transform:translateY(-5px)}}@media(prefers-reduced-motion:reduce){#launchSplash,.splash-logo,.splash-title,.splash-subtitle,.splash-loader i{animation:none;transition:none}}
 </style>
 </head>
 <body>
+<div id="launchSplash" aria-label="ARISTA Coffee sedang dibuka"><div class="splash-logo">A</div><div class="splash-title">ARISTA</div><div class="splash-subtitle">COFFEE &amp; ROASTERY</div><div class="splash-loader"><i></i><i></i><i></i></div></div>
 <header class="topbar"><div class="brandmark">A</div><div class="brandtext"><strong>ARISTA</strong><span>COFFEE & ROASTERY</span></div></header>
 <main>
 <section class="hero"><p class="eyebrow">CRAFTED WITH CHARACTER</p><h1>Good coffee.<br><em>Good moments.</em></h1><p class="hero-copy">Temukan racikan favoritmu, dibuat dengan perhatian pada setiap detail.</p></section>
@@ -254,6 +256,7 @@ document.getElementById("backupBtn").addEventListener("click",()=>downloadFile("
 document.getElementById("restoreInput").addEventListener("change",async e=>{const file=e.target.files[0];if(!file)return;try{const obj=JSON.parse(await file.text());if(!Array.isArray(obj.products)||!Array.isArray(obj.sales))throw new Error("Format tidak sesuai");if(!Array.isArray(obj.pendingOrders))obj.pendingOrders=[];if(confirm("Pulihkan data dari backup? Data saat ini akan diganti.")){state=obj;saveState();cart=[];renderAll();toast("Backup berhasil dipulihkan")}}catch(err){toast("File backup tidak valid")}e.target.value=""});
 function renderAll(){renderFilters();renderMenu();renderCart();renderReports();renderPending();renderManage();updateProfitPreview()}
 renderAll();
+const launchSplash=document.getElementById("launchSplash");if(launchSplash){window.setTimeout(()=>launchSplash.classList.add("is-hidden"),1900);window.setTimeout(()=>launchSplash.remove(),2500)}
 </script>
 </body>
 </html>
