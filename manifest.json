@@ -7,8 +7,8 @@
   "start_url": "/arista-coffee/",
   "scope": "/arista-coffee/",
   "display": "standalone",
-  "background_color": "#FFFFFF",
-  "theme_color": "#2B2118",
+  "background_color": "#171513",
+  "theme_color": "#171513",
   "icons": [
     {
       "src": "/arista-coffee/icon/icon-192.png",
