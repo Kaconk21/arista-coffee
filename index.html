@@ -242,6 +242,11 @@ document.getElementById("exportBtn").addEventListener("click",()=>{
  downloadFile("arista-laporan-keuangan-"+todayKey()+".csv","\ufeff"+csv,"text/csv;charset=utf-8");
 });
 document.getElementById("exportXlsxBtn").addEventListener("click",()=>{
+ const headers=["Jenis catatan","ID","Tanggal/waktu","Pelanggan / nama belanja","Kategori","Item / rincian","Jumlah","Subtotal (Rp)","Diskon (Rp)","Pendapatan / pengeluaran (Rp)","Pembayaran","Catatan"];
+ const sales=(state.sales||[]).slice().sort((a,b)=>new Date(a.time)-new Date(b.time));
+ const expenses=(state.expenses||[]).slice().sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+ const incomeTotal=sales.reduce((sum,s)=>sum+Number(s.total||0),0);
+ const expenseTotal=expenses.reduce((sum,x)=>sum+Number(x.amount||0),0);
  if(typeof XLSX==="undefined"){toast("Fitur Excel belum termuat. Periksa koneksi internet lalu coba lagi.");return}
  const wb=XLSX.utils.book_new();
  const summary=[
