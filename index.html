@@ -103,6 +103,7 @@ button,input,select,textarea{font-size:14px}
 </head>
 <body>
 <div id="launchSplash" aria-label="ARISTA Coffee sedang dibuka"><div class="splash-logo">A</div><div class="splash-title">ARISTA</div><div class="splash-subtitle">COFFEE &amp; ROASTERY</div><div class="splash-loader"><i></i><i></i><i></i></div></div>
+<script>window.setTimeout(()=>{const splash=document.getElementById("launchSplash");if(splash){splash.classList.add("is-hidden");window.setTimeout(()=>splash.remove(),900)}},2400);</script>
 <header class="topbar"><div class="brandmark">A</div><div class="brandtext"><strong>ARISTA</strong><span>COFFEE & ROASTERY</span></div></header>
 <main>
 <section class="hero"><p class="eyebrow">CRAFTED WITH CHARACTER</p><h1>Good coffee.<br><em>Good moments.</em></h1><p class="hero-copy">Temukan racikan favoritmu, dibuat dengan perhatian pada setiap detail.</p></section>
@@ -256,7 +257,6 @@ document.getElementById("backupBtn").addEventListener("click",()=>downloadFile("
 document.getElementById("restoreInput").addEventListener("change",async e=>{const file=e.target.files[0];if(!file)return;try{const obj=JSON.parse(await file.text());if(!Array.isArray(obj.products)||!Array.isArray(obj.sales))throw new Error("Format tidak sesuai");if(!Array.isArray(obj.pendingOrders))obj.pendingOrders=[];if(confirm("Pulihkan data dari backup? Data saat ini akan diganti.")){state=obj;saveState();cart=[];renderAll();toast("Backup berhasil dipulihkan")}}catch(err){toast("File backup tidak valid")}e.target.value=""});
 function renderAll(){renderFilters();renderMenu();renderCart();renderReports();renderPending();renderManage();updateProfitPreview()}
 renderAll();
-const launchSplash=document.getElementById("launchSplash");if(launchSplash){window.setTimeout(()=>launchSplash.classList.add("is-hidden"),2400);window.setTimeout(()=>launchSplash.remove(),3300)}
 </script>
 </body>
 </html>
