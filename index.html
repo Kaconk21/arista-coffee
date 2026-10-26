@@ -103,9 +103,8 @@ button,input,select,textarea{font-size:14px}
 </style>
 </head>
 <body>
-<div id="launchSplash" aria-label="ARISTA Coffee sedang dibuka"><img class="splash-brand-logo" src="/arista-coffee/icon/arista-roastery-logo.svg?v=2" alt="ARISTA Coffee &amp; Roastery"><div class="splash-loader"><i></i><i></i><i></i></div></div>
-<script>window.setTimeout(()=>{const splash=document.getElementById("launchSplash");if(splash){splash.classList.add("is-hidden");window.setTimeout(()=>splash.remove(),900)}},2400);</script>
-<header class="topbar"><img class="header-brand-logo" src="/arista-coffee/icon/arista-roastery-logo.svg?v=2" alt="ARISTA Coffee &amp; Roastery"></header>
+
+
 <main>
 
 <nav class="tabs bottom-nav" aria-label="Navigasi utama"><button class="tab active" data-view="menuView"><span class="nav-icon" aria-hidden="true">☕</span><span class="nav-label">Menu</span></button><button class="tab" data-view="cashierView"><span class="nav-icon" aria-hidden="true">▤</span><span class="nav-label">Kasir</span><span id="cartBadge" class="badge">0</span></button><button class="tab" data-view="pendingView"><span class="nav-icon" aria-hidden="true">◷</span><span class="nav-label">Tertunda</span><span id="pendingNavBadge" class="badge hidden">0</span></button><button class="tab" data-view="reportView"><span class="nav-icon" aria-hidden="true">▥</span><span class="nav-label">Laporan</span></button><button class="tab" data-view="expensesView"><span class="nav-icon" aria-hidden="true">↘</span><span class="nav-label">Expenses</span></button><button class="tab" data-view="manageView"><span class="nav-icon" aria-hidden="true">⚙</span><span class="nav-label">Kelola</span></button></nav>
@@ -186,7 +185,7 @@ button,input,select,textarea{font-size:14px}
 <div class="panel"><h3>Daftar menu</h3><div id="manageList"></div></div>
 <div class="panel"><h3>Data aplikasi</h3><p class="muted">Data tersimpan lokal pada browser/perangkat ini. Data lama yang memakai kunci ARISTA sebelumnya akan dibaca. Ekspor cadangan secara berkala.</p><div class="form-actions"><button id="backupBtn" class="button button-outline">Unduh backup JSON</button><label class="button button-outline file-label">Pulihkan backup<input id="restoreInput" type="file" accept="application/json" hidden></label></div></div>
 </section>
-</main><footer><span class="footer-logo">ARISTA</span><span>COFFEE & ROASTERY</span><small>Made for good coffee moments.</small></footer><div id="toast" class="toast" role="status"></div>
+</main><footer><small>Made for good coffee moments.</small></footer><div id="toast" class="toast" role="status"></div>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script>
 "use strict";
