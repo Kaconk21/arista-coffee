@@ -100,53 +100,6 @@ button,input,select,textarea{font-size:14px}
 .cashier-add-row .field{font-size:14px}
 .splash-brand-logo{width:min(300px,78vw);height:auto;display:block;filter:drop-shadow(0 8px 28px #c5a16a18)}#launchSplash{position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;background:radial-gradient(ellipse at 50% 42%,#3a2b1d 0%,#211a14 35%,#171513 72%);color:var(--cream);opacity:1;visibility:visible;transition:opacity .8s cubic-bezier(.22,.61,.36,1),visibility .8s;isolation:isolate}#launchSplash:before{content:"";position:absolute;inset:-35%;z-index:-1;background:conic-gradient(from 0deg,transparent 0 28%,#c5a16a0a 39%,transparent 52% 78%,#e0c18e0a 88%,transparent);animation:splashAmbient 9s linear infinite}#launchSplash.is-hidden{opacity:0;visibility:hidden;pointer-events:none}.splash-logo{width:88px;height:88px;border:1.5px solid var(--gold2);border-radius:50%;display:grid;place-items:center;color:var(--gold2);font:italic 58px Georgia,serif;box-shadow:0 0 0 7px #c5a16a0c,0 0 26px #c5a16a15;opacity:0;animation:splashLogoIn 1.15s cubic-bezier(.16,1,.3,1) .08s forwards,splashGlow 2.8s ease-in-out 1.2s infinite}.splash-title{margin-top:22px;font:700 25px "Libre Baskerville",Georgia,serif;letter-spacing:5px;color:var(--gold2);opacity:0;animation:splashTextIn 1s cubic-bezier(.16,1,.3,1) .3s forwards}.splash-subtitle{margin-top:9px;font-size:10px;letter-spacing:3px;color:var(--muted);opacity:0;animation:splashTextIn 1s cubic-bezier(.16,1,.3,1) .48s forwards}.splash-loader{display:flex;gap:6px;margin-top:34px;opacity:0;animation:splashFadeIn .7s ease .75s forwards}.splash-loader i{width:5px;height:5px;border-radius:50%;background:var(--gold2);animation:splashDot 1.25s cubic-bezier(.37,0,.63,1) infinite}.splash-loader i:nth-child(2){animation-delay:.18s}.splash-loader i:nth-child(3){animation-delay:.36s}@keyframes splashLogoIn{0%{opacity:0;transform:translateY(12px) scale(.84) rotate(-8deg)}65%{opacity:1;transform:translateY(-2px) scale(1.025) rotate(1deg)}100%{opacity:1;transform:translateY(0) scale(1) rotate(0)}}@keyframes splashTextIn{from{opacity:0;transform:translateY(13px);filter:blur(3px)}to{opacity:1;transform:translateY(0);filter:blur(0)}}@keyframes splashFadeIn{from{opacity:0}to{opacity:1}}@keyframes splashGlow{0%,100%{box-shadow:0 0 0 7px #c5a16a0c,0 0 26px #c5a16a15}50%{box-shadow:0 0 0 10px #c5a16a10,0 0 38px #c5a16a30}}@keyframes splashAmbient{to{transform:rotate(360deg)}}@keyframes splashDot{0%,100%{opacity:.35;transform:translateY(0) scale(.85)}50%{opacity:1;transform:translateY(-4px) scale(1.1)}}@media(prefers-reduced-motion:reduce){#launchSplash:before,.splash-logo,.splash-title,.splash-subtitle,.splash-loader,.splash-loader i{animation:none;opacity:1;filter:none}#launchSplash,#launchSplash.is-hidden{transition:opacity .2s,visibility .2s}}
 .report-nav{display:flex;gap:8px;overflow-x:auto;padding:4px 0 14px;margin-bottom:16px;scrollbar-width:thin}.report-nav-item{flex:0 0 auto;text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:9px 13px;color:var(--muted);font-size:12px;font-weight:700}.report-nav-item.active,.report-nav-item:hover{background:var(--gold);border-color:var(--gold);color:#1b1712}.report-anchor{scroll-margin-top:145px;margin-bottom:16px}.report-anchor>.eyebrow{margin:8px 0 12px}.top-product-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}.top-product-row:last-child{border-bottom:0}.top-product-name{font-weight:700;font-size:13px}.top-product-meta{color:var(--muted);font-size:11px;margin-top:4px}.top-product-value{font-weight:800;color:var(--gold2);font-size:13px;text-align:right}@media(max-width:420px){.report-nav-item{padding:8px 11px;font-size:11px}}
-/* ARISTA navigation refresh: fully transparent bar and larger touch targets */
-.topbar{min-height:96px;padding:6px 18px}
-.header-brand-logo{width:196px;height:84px;object-fit:contain;background:transparent}
-.bottom-nav{
-  padding:10px max(8px,env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left))!important;
-  gap:2px;
-  border:0!important;
-  background:transparent!important;
-  -webkit-backdrop-filter:none!important;
-  backdrop-filter:none!important;
-  box-shadow:none!important;
-}
-.bottom-nav .tab{
-  min-height:64px;
-  padding:9px 3px;
-  border-radius:0;
-  background:transparent!important;
-  box-shadow:none!important;
-  color:var(--cream);
-  gap:5px;
-  font-size:13px;
-  -webkit-tap-highlight-color:transparent;
-}
-.bottom-nav .tab.active{
-  background:transparent!important;
-  box-shadow:none!important;
-  color:var(--gold2);
-}
-.bottom-nav .tab.active::after{
-  content:"";
-  display:block;
-  width:24px;
-  height:2px;
-  border-radius:99px;
-  background:var(--gold2);
-  margin-top:1px;
-}
-.bottom-nav .nav-icon{font-size:25px;line-height:1;color:inherit}
-.bottom-nav .nav-label{font-size:13px;font-weight:700;letter-spacing:.15px;color:inherit}
-body{padding-bottom:calc(100px + env(safe-area-inset-bottom))}
-@media(max-width:390px){
-  .header-brand-logo{width:184px;height:80px}
-  .bottom-nav .tab{min-height:62px;padding:8px 1px;font-size:12px}
-  .bottom-nav .nav-icon{font-size:24px}
-  .bottom-nav .nav-label{font-size:12px}
-}
-
 </style>
 </head>
 <body>
