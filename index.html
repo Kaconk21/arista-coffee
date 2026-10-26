@@ -274,7 +274,7 @@ document.getElementById("exportMonthlyPdfBtn").addEventListener("click",()=>{
  const content=document.createElement("div"),style=document.createElement("style");
  style.textContent=Array.from(parsed.querySelectorAll("style")).map(el=>el.textContent).join("\n");
  content.appendChild(style);const body=document.createElement("div");body.innerHTML=parsed.body.innerHTML;content.appendChild(body);
- content.style.cssText="position:fixed;left:0;top:0;width:1120px;max-height:80vh;overflow:auto;background:#fff;padding:20px;z-index:2147483647;color:#222";document.body.appendChild(content);
+ content.style.cssText="position:absolute;left:0;top:0;width:1120px;height:auto;max-height:none;overflow:visible;background:#fff;padding:20px;z-index:2147483647;color:#222";document.body.appendChild(content);
  const makePdf=()=>{if(typeof html2pdf==="undefined"){content.remove();toast("Fitur PDF belum termuat. Periksa koneksi internet.");return}html2pdf().set({margin:8,filename:"ARISTA-Laporan-Bulanan-"+month+".pdf",image:{type:"jpeg",quality:.98},html2canvas:{scale:2,useCORS:true,backgroundColor:"#fff",scrollX:0,scrollY:0,windowWidth:1120},jsPDF:{unit:"mm",format:"a4",orientation:"landscape"},pagebreak:{mode:["css","legacy"]}}).from(body).save().then(()=>{content.remove();toast("PDF bulanan berhasil diunduh")}).catch(()=>{content.remove();toast("PDF bulanan gagal dibuat. Coba lagi.")})};
  if(typeof html2pdf!=="undefined")makePdf();else{const script=document.createElement("script");script.src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";script.onload=makePdf;script.onerror=()=>{content.remove();toast("Gagal memuat fitur PDF. Periksa koneksi internet.")};document.head.appendChild(script)}
 });
