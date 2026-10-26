@@ -321,7 +321,7 @@ document.getElementById("exportBtn").addEventListener("click",()=>{
  if(!client){return}
  const {data:{session}}=await client.auth.getSession();if(session?.user){document.getElementById("aristaAuthEmail").value=session.user.email||OWNER_EMAIL;await finishLogin(session.user)}else{setStatus("Siap. Masuk dengan akun Supabase atau buat akun pemilik pertama.")}
 })();
-</script>
+<\/script>
 
 </body></html>';
  const parsed=new DOMParser().parseFromString(html,"text/html");
