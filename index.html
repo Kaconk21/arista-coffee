@@ -233,13 +233,13 @@ document.getElementById("exportBtn").addEventListener("click",()=>{
  const reportStyle=document.createElement("style");reportStyle.textContent=Array.from(parsed.querySelectorAll("style")).map(el=>el.textContent).join("\\n");
  content.appendChild(reportStyle);
  const reportBody=document.createElement("div");reportBody.innerHTML=parsed.body.innerHTML;content.appendChild(reportBody);
- content.style.cssText="position:fixed;left:0;top:0;width:1120px;box-sizing:border-box;height:auto;max-height:none;overflow:visible;background:#fff;padding:14px;z-index:2147483647;color:#222";
- reportBody.style.cssText="width:100%;box-sizing:border-box";
- const fitStyle=document.createElement("style");fitStyle.textContent="*{box-sizing:border-box}table{width:100%;table-layout:fixed}th,td{overflow-wrap:anywhere;word-break:normal;padding:4px 3px;font-size:8px}";content.appendChild(fitStyle);
+ content.style.cssText="position:fixed;left:0;top:0;width:1040px;box-sizing:border-box;height:auto;max-height:none;overflow:visible;background:#fff;padding:12px;z-index:2147483647;color:#222";
+  reportBody.style.cssText="display:block;width:100%;max-width:100%;box-sizing:border-box;margin:0";
+  const fitStyle=document.createElement("style");fitStyle.textContent="*{box-sizing:border-box}header,.meta,h2,table,.summary{max-width:100%}.meta{gap:12px;flex-wrap:wrap}table{width:100%;max-width:100%;table-layout:fixed;border-collapse:collapse}th,td{min-width:0;overflow-wrap:anywhere;word-break:break-word;padding:3px 2px;font-size:7px;line-height:1.25}.num{white-space:normal;overflow-wrap:anywhere}.summary{width:100%;padding:8px}.summary table{width:68%;max-width:100%;margin-left:auto}";content.appendChild(fitStyle);
  document.body.appendChild(content);
  const downloadPdf=()=>{
   if(typeof html2pdf==="undefined"){content.remove();toast("Fitur PDF belum termuat. Periksa koneksi internet lalu coba lagi.");return}
-  html2pdf().set({margin:8,filename:"ARISTA-Laporan-Harian-"+day+".pdf",image:{type:"jpeg",quality:0.98},html2canvas:{scale:2,useCORS:true,backgroundColor:"#ffffff",scrollX:0,scrollY:0,windowWidth:1120},jsPDF:{unit:"mm",format:"a4",orientation:"landscape"},pagebreak:{mode:["css","legacy"]}}).from(reportBody).save().then(()=>{content.remove();toast("PDF berhasil diunduh")}).catch(()=>{content.remove();toast("PDF gagal dibuat. Coba lagi.")});
+  html2pdf().set({margin:[6,6,6,6],filename:"ARISTA-Laporan-Harian-"+day+".pdf",image:{type:"jpeg",quality:0.98},html2canvas:{scale:1.5,useCORS:true,backgroundColor:"#ffffff",scrollX:0,scrollY:0,windowWidth:1040,windowHeight:reportBody.scrollHeight},jsPDF:{unit:"mm",format:"a4",orientation:"landscape"},pagebreak:{mode:["css","legacy"]}}).from(reportBody).save().then(()=>{content.remove();toast("PDF berhasil diunduh")}).catch(()=>{content.remove();toast("PDF gagal dibuat. Coba lagi.")});
  };
  if(typeof html2pdf!=="undefined"){downloadPdf()}else{
   const script=document.createElement("script");script.src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
