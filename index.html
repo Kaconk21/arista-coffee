@@ -297,7 +297,24 @@ document.getElementById("exportBtn").addEventListener("click",()=>{
    }catch(e){setStatus("Login berhasil, tetapi data online belum tersinkron. Data lokal tidak dihapus. Detail: "+(e.message||"gagal mengakses database"))}
  }
  form.addEventListener("submit",async e=>{e.preventDefault();const email=document.getElementById("aristaAuthEmail").value.trim().toLowerCase(),password=document.getElementById("aristaAuthPassword").value;setStatus("Memeriksa login…");const {data,error}=await client.auth.signInWithPassword({email,password});if(error){setStatus("Login gagal: "+error.message);return}await finishLogin(data.user)});
- document.getElementById("aristaSignUpBtn").addEventListener("click",async()=>{const email=document.getElementById("aristaAuthEmail").value.trim().toLowerCase(),password=document.getElementById("aristaAuthPassword").value;if(email!==OWNER_EMAIL){setStatus("Pendaftaran pemilik hanya menggunakan email pemilik yang sudah ditentukan.");return}if(password.length<8){setStatus("Masukkan password minimal 8 karakter untuk membuat akun.");return}setStatus("Membuat akun…");const {data,error}=await client.auth.signUp({email,password,options:{data:{full_name:"Pemilik ARISTA Coffee"}}});if(error){setStatus("Pendaftaran gagal: "+error.message);return}if(data.session&&data.user){await finishLogin(data.user)}else{setStatus("Pendaftaran diterima. Buka email pemilik untuk verifikasi, lalu kembali dan login. Jika email tidak masuk, periksa folder Spam.")}});
+ const signUpBtn=document.getElementById("aristaSignUpBtn");
+ signUpBtn.addEventListener("click",async()=>{
+   signUpBtn.disabled=true;
+   try{
+     const email=document.getElementById("aristaAuthEmail").value.trim().toLowerCase();
+     const password=document.getElementById("aristaAuthPassword").value;
+     if(!email){setStatus("Isi email pemilik terlebih dahulu.");return}
+     if(email!==OWNER_EMAIL){setStatus("Email pemilik tidak cocok. Periksa alamat email yang terisi.");return}
+     if(password.length<8){setStatus("Isi password baru minimal 8 karakter, lalu tekan tombol ini lagi.");return}
+     setStatus("Tombol aktif. Menghubungkan ke layanan pembuatan akun…");
+     if(!navigator.onLine){setStatus("HP sedang offline. Sambungkan internet lalu coba lagi.");return}
+     const {data,error}=await client.auth.signUp({email,password,options:{data:{full_name:"Pemilik ARISTA Coffee"}}});
+     if(error){setStatus("Pendaftaran gagal: "+(error.message||"kesalahan layanan login"));return}
+     if(data.session&&data.user){await finishLogin(data.user)}
+     else{setStatus("Permintaan akun terkirim. Periksa email masuk dan Spam untuk verifikasi, lalu login.")}
+   }catch(err){setStatus("Tombol berjalan, tetapi layanan login gagal: "+(err?.message||"periksa koneksi internet"))}
+   finally{signUpBtn.disabled=false}
+  });
  const {data:{session}}=await client.auth.getSession();if(session?.user){document.getElementById("aristaAuthEmail").value=session.user.email||OWNER_EMAIL;await finishLogin(session.user)}else{setStatus("Siap. Masuk dengan akun Supabase atau buat akun pemilik pertama.")}
 })();
 </script>
