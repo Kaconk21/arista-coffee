@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 560" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 560" role="img" aria-labelledby="title desc" style="background:transparent">
 <title id="title">ARISTA Coffee &amp; Roastery</title><desc id="desc">Gold line-art coffee roasting machine above the ARISTA wordmark.</desc>
 <defs><linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f5d69a"/><stop offset=".5" stop-color="#c69a52"/><stop offset="1" stop-color="#8e622e"/></linearGradient></defs>
 <g fill="none" stroke="url(#gold)" stroke-linecap="round" stroke-linejoin="round">
