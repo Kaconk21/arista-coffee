@@ -223,7 +223,86 @@ document.getElementById("exportBtn").addEventListener("click",()=>{
  const qty=s=>(s.items||[]).reduce((n,x)=>n+Number(x.qty||0),0),income=sales.reduce((n,x)=>n+Number(x.total||0),0),spend=expenses.reduce((n,x)=>n+Number(x.amount||0),0),discount=sales.reduce((n,x)=>n+Number(x.discount||0),0);
  const saleRows=sales.map((s,i)=>"<tr><td>"+(i+1)+"</td><td>"+pdfEsc(pdfDate(s.date||day))+"</td><td>"+pdfEsc((s.items||[]).map(x=>(x.name||"Produk")+" × "+Number(x.qty||0)).join(", ")||"—")+"</td><td class='num'>"+qty(s)+"</td><td class='num'>"+((s.items||[]).length===1?pdfRp(s.items[0].price):"—")+"</td><td class='num'>"+pdfRp(s.discount)+"</td><td class='num'>"+pdfRp(s.total)+"</td><td>"+pdfEsc(s.method||"—")+"</td></tr>").join("");
  const expenseRows=expenses.map((x,i)=>"<tr><td>"+(i+1)+"</td><td>"+pdfEsc(pdfDate(x.date))+"</td><td>"+pdfEsc(x.name||"—")+"</td><td class='num'>"+Number(x.qty||0)+"</td><td class='num'>"+pdfRp(x.amount)+"</td><td>"+pdfEsc(x.note||"—")+"</td></tr>").join("");
- const html='<!doctype html><html lang="id"><head><meta charset="utf-8"><title>Laporan Harian ARISTA Coffee</title><style>@page{size:A4 landscape;margin:12mm}body{font:10px Arial;color:#222}header{text-align:center;color:#572d27}h1{font-size:19px;margin:0 0 5px}h2{font-size:13px;margin:18px 0 8px;color:#572d27}tbody tr:nth-child(17){break-before:page;page-break-before:always}thead{display:table-header-group}tr{break-inside:avoid;page-break-inside:avoid}.meta{display:flex;justify-content:space-between;margin:14px 0}table{width:100%;border-collapse:collapse}th{background:#8f171b;color:white}th,td{border:1px solid #ccc;padding:6px 5px;text-align:left}tbody tr:nth-child(even){background:#faf5f4}.num{text-align:right;white-space:nowrap}.total{font-weight:bold;background:#f7e9e9}.summary{margin-top:18px;border:1px solid #ccc;padding:12px;page-break-inside:avoid}.summary table{max-width:520px;margin-left:auto}.note{font-size:9px;color:#555;margin-top:10px}.empty{text-align:center;padding:12px}@media print{tr{break-inside:avoid}}</style></head><body><header><h1>ARISTA COFFEE</h1><strong>LAPORAN HARIAN</strong></header><div class="meta"><span>Tanggal: <b>'+pdfEsc(pdfDate(day))+'</b></span><span>Nomor: <b>LH-'+day.replace(/-/g,"")+'-001</b></span><span>Operasional: 16.00–04.00</span></div><h2>A. LAPORAN PENJUALAN</h2><table><thead><tr><th>No</th><th>Tanggal</th><th>Produk</th><th>Qty</th><th>Harga Satuan</th><th>Diskon</th><th>Total</th><th>Metode Bayar</th></tr></thead><tbody>'+(saleRows||'<tr><td colspan="8" class="empty">Tidak ada transaksi pada periode ini.</td></tr>')+'<tr class="total"><td colspan="3">TOTAL PENJUALAN</td><td class="num">'+sales.reduce((n,x)=>n+qty(x),0)+'</td><td></td><td class="num">'+pdfRp(discount)+'</td><td class="num">'+pdfRp(income)+'</td><td>'+sales.length+' transaksi</td></tr></tbody></table><h2>B. LAPORAN BELANJA / PENGELUARAN</h2><table><thead><tr><th>No</th><th>Tanggal</th><th>Keterangan</th><th>Qty</th><th>Total Biaya</th><th>Catatan</th></tr></thead><tbody>'+(expenseRows||'<tr><td colspan="6" class="empty">Tidak ada pengeluaran pada periode ini.</td></tr>')+'<tr class="total"><td colspan="3">TOTAL PENGELUARAN</td><td class="num">'+expenses.reduce((n,x)=>n+Number(x.qty||0),0)+'</td><td class="num">'+pdfRp(spend)+'</td><td>'+expenses.length+' catatan</td></tr></tbody></table><div class="summary"><h2 style="margin-top:0">C. RINGKASAN TOTAL HARIAN</h2><table><tr><td>Total penjualan</td><td class="num">'+pdfRp(income)+'</td></tr><tr><td>Total belanja/pengeluaran</td><td class="num">'+pdfRp(spend)+'</td></tr><tr class="total"><td>Selisih penjualan − pengeluaran</td><td class="num">'+pdfRp(income-spend)+'</td></tr></table><p class="note">Selisih ini bukan perhitungan laba bersih. Laporan mengelompokkan penjualan dari pukul 16.00 tanggal terpilih sampai pukul 04.00 hari berikutnya.</p></div></body></html>';
+ const html='<!doctype html><html lang="id"><head><meta charset="utf-8"><title>Laporan Harian ARISTA Coffee</title><style>@page{size:A4 landscape;margin:12mm}body{font:10px Arial;color:#222}header{text-align:center;color:#572d27}h1{font-size:19px;margin:0 0 5px}h2{font-size:13px;margin:18px 0 8px;color:#572d27}tbody tr:nth-child(17){break-before:page;page-break-before:always}thead{display:table-header-group}tr{break-inside:avoid;page-break-inside:avoid}.meta{display:flex;justify-content:space-between;margin:14px 0}table{width:100%;border-collapse:collapse}th{background:#8f171b;color:white}th,td{border:1px solid #ccc;padding:6px 5px;text-align:left}tbody tr:nth-child(even){background:#faf5f4}.num{text-align:right;white-space:nowrap}.total{font-weight:bold;background:#f7e9e9}.summary{margin-top:18px;border:1px solid #ccc;padding:12px;page-break-inside:avoid}.summary table{max-width:520px;margin-left:auto}.note{font-size:9px;color:#555;margin-top:10px}.empty{text-align:center;padding:12px}@media print{tr{break-inside:avoid}}</style></head><body><header><h1>ARISTA COFFEE</h1><strong>LAPORAN HARIAN</strong></header><div class="meta"><span>Tanggal: <b>'+pdfEsc(pdfDate(day))+'</b></span><span>Nomor: <b>LH-'+day.replace(/-/g,"")+'-001</b></span><span>Operasional: 16.00–04.00</span></div><h2>A. LAPORAN PENJUALAN</h2><table><thead><tr><th>No</th><th>Tanggal</th><th>Produk</th><th>Qty</th><th>Harga Satuan</th><th>Diskon</th><th>Total</th><th>Metode Bayar</th></tr></thead><tbody>'+(saleRows||'<tr><td colspan="8" class="empty">Tidak ada transaksi pada periode ini.</td></tr>')+'<tr class="total"><td colspan="3">TOTAL PENJUALAN</td><td class="num">'+sales.reduce((n,x)=>n+qty(x),0)+'</td><td></td><td class="num">'+pdfRp(discount)+'</td><td class="num">'+pdfRp(income)+'</td><td>'+sales.length+' transaksi</td></tr></tbody></table><h2>B. LAPORAN BELANJA / PENGELUARAN</h2><table><thead><tr><th>No</th><th>Tanggal</th><th>Keterangan</th><th>Qty</th><th>Total Biaya</th><th>Catatan</th></tr></thead><tbody>'+(expenseRows||'<tr><td colspan="6" class="empty">Tidak ada pengeluaran pada periode ini.</td></tr>')+'<tr class="total"><td colspan="3">TOTAL PENGELUARAN</td><td class="num">'+expenses.reduce((n,x)=>n+Number(x.qty||0),0)+'</td><td class="num">'+pdfRp(spend)+'</td><td>'+expenses.length+' catatan</td></tr></tbody></table><div class="summary"><h2 style="margin-top:0">C. RINGKASAN TOTAL HARIAN</h2><table><tr><td>Total penjualan</td><td class="num">'+pdfRp(income)+'</td></tr><tr><td>Total belanja/pengeluaran</td><td class="num">'+pdfRp(spend)+'</td></tr><tr class="total"><td>Selisih penjualan − pengeluaran</td><td class="num">'+pdfRp(income-spend)+'</td></tr></table><p class="note">Selisih ini bukan perhitungan laba bersih. Laporan mengelompokkan penjualan dari pukul 16.00 tanggal terpilih sampai pukul 04.00 hari berikutnya.</p></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+#aristaAuthGate{position:fixed;inset:0;z-index:99999;background:rgba(8,12,11,.92);display:flex;align-items:center;justify-content:center;padding:18px;color:#f8f6ef;font-family:inherit}
+#aristaAuthGate .auth-card{width:min(100%,420px);background:#171b19;border:1px solid #9b7b45;border-radius:18px;padding:22px;box-shadow:0 18px 70px #0008}
+#aristaAuthGate h2{margin:0 0 6px;font-size:22px}#aristaAuthGate p{color:#c9c8c1;font-size:13px;line-height:1.5}
+#aristaAuthGate label{display:block;font-size:12px;margin:12px 0 5px;color:#e5d7b9}
+#aristaAuthGate input{box-sizing:border-box;width:100%;padding:12px;border-radius:10px;border:1px solid #555d56;background:#0f1210;color:white;font-size:16px}
+#aristaAuthGate button{width:100%;padding:12px;margin-top:10px;border:0;border-radius:10px;background:#b9975b;color:#17130b;font-weight:700;font-size:14px}
+#aristaAuthGate button.secondary{background:#303632;color:#f7f4eb}#aristaAuthStatus{font-size:12px;white-space:pre-wrap;overflow-wrap:anywhere;margin-top:10px;color:#f2d79b}
+#aristaCloudBadge{position:fixed;right:10px;top:10px;z-index:9998;background:#1d2a22;color:#d7f5dc;border:1px solid #47644e;border-radius:20px;padding:6px 10px;font:11px system-ui}
+</style>
+<div id="aristaAuthGate">
+ <div class="auth-card">
+  <div style="font-size:12px;letter-spacing:2px;color:#d9bc80;margin-bottom:8px">ARISTA COFFEE</div>
+  <h2>Login kasir online</h2>
+  <p>Masuk untuk mengakses ARISTA. Akun pemilik pertama menggunakan email yang telah ditentukan. Jika belum memiliki akun, buat akun lalu verifikasi email jika diminta.</p>
+  <form id="aristaAuthForm">
+   <label for="aristaAuthEmail">Email</label><input id="aristaAuthEmail" type="email" autocomplete="username" required value="arietoetelez21@gmail.com">
+   <label for="aristaAuthPassword">Password</label><input id="aristaAuthPassword" type="password" autocomplete="current-password" minlength="8" required>
+   <button type="submit" id="aristaSignInBtn">Masuk</button>
+  </form>
+  <button class="secondary" id="aristaSignUpBtn" type="button">Buat akun pemilik pertama</button>
+  <div id="aristaAuthStatus" role="status">Menghubungkan ke layanan login…</div>
+ </div>
+</div>
+<script>
+(async function(){
+ const SUPABASE_URL="https://qnuyyserbcieytqkjjhn.supabase.co";
+ const SUPABASE_KEY="sb_publishable_128aF9t0kyRjdPoGa5tMcg_QQIldJyo";
+ const BUSINESS_ID="51e1a88d-491c-4f3d-b7ab-259b0b1a1979";
+ const OWNER_EMAIL="arietoetelez21@gmail.com";
+ const gate=document.getElementById("aristaAuthGate"),status=document.getElementById("aristaAuthStatus"),form=document.getElementById("aristaAuthForm");
+ const setStatus=(s)=>status.textContent=s;
+ if(!window.supabase){setStatus("Library login belum termuat. Periksa koneksi internet lalu muat ulang halaman.");return}
+ const client=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+ async function finishLogin(user){
+   const {data:profile,error:profileError}=await client.from("staff_profiles").select("role,active,display_name").eq("user_id",user.id).maybeSingle();
+   if(profileError||!profile||!profile.active){await client.auth.signOut();setStatus("Akun belum diaktifkan sebagai staf ARISTA. Pastikan email sudah diverifikasi dan hubungi pemilik.");return}
+   const badge=document.createElement("div");badge.id="aristaCloudBadge";badge.textContent="Online · "+(profile.role==="owner"?"Pemilik":"Kasir");document.body.appendChild(badge);
+   setStatus("Login berhasil. Memeriksa data online…");
+   try{
+     const {data:cloud,error}=await client.from("app_state").select("state_json,updated_at").eq("business_id",BUSINESS_ID).maybeSingle();
+     if(error) throw error;
+     const localRaw=localStorage.getItem("arista_coffee_v1");
+     if(cloud&&cloud.state_json&&typeof cloud.state_json==="object"){
+       if(!localRaw){
+         localStorage.setItem("arista_coffee_v1",JSON.stringify(cloud.state_json));
+       }else{
+         const local=JSON.parse(localRaw);
+         const localEmpty=(!Array.isArray(local.sales)||local.sales.length===0)&&(!Array.isArray(local.products)||local.products.length===0);
+         const cloudEmpty=(!Array.isArray(cloud.state_json.sales)||cloud.state_json.sales.length===0)&&(!Array.isArray(cloud.state_json.products)||cloud.state_json.products.length===0);
+         if(localEmpty&&!cloudEmpty)localStorage.setItem("arista_coffee_v1",JSON.stringify(cloud.state_json));
+         else if(!localEmpty&&cloudEmpty){
+           const {error:upErr}=await client.from("app_state").upsert({business_id:BUSINESS_ID,state_json:local,updated_by:user.id,updated_at:new Date().toISOString()},{onConflict:"business_id"});if(upErr)throw upErr;
+         }else if(!localEmpty&&!cloudEmpty){
+           setStatus("Login berhasil, tetapi data lokal dan online sama-sama berisi data. Sinkronisasi otomatis ditahan agar tidak menimpa transaksi. Hubungi pemilik sebelum memakai perangkat lain.");
+           gate.querySelector(".auth-card").insertAdjacentHTML("beforeend",'<button type="button" id="aristaContinueLocal" class="secondary">Lanjutkan hanya di perangkat ini</button>');
+           document.getElementById("aristaContinueLocal").onclick=()=>gate.remove();
+           return;
+         }
+       }
+     }else{
+       const raw=localStorage.getItem("arista_coffee_v1");
+       const initial=raw?JSON.parse(raw):{products:[],sales:[],pendingOrders:[],expenses:[]};
+       const {error:upErr}=await client.from("app_state").upsert({business_id:BUSINESS_ID,state_json:initial,updated_by:user.id,updated_at:new Date().toISOString()},{onConflict:"business_id"});if(upErr)throw upErr;
+     }
+     gate.remove();
+     if(typeof renderAll==="function")renderAll();
+     setTimeout(()=>{if(typeof toast==="function")toast("Login online berhasil");},100);
+     window.aristaSupabase=client;window.aristaUser=user;window.aristaRole=profile.role;window.aristaBusinessId=BUSINESS_ID;
+   }catch(e){setStatus("Login berhasil, tetapi data online belum tersinkron. Data lokal tidak dihapus. Detail: "+(e.message||"gagal mengakses database"))}
+ }
+ form.addEventListener("submit",async e=>{e.preventDefault();const email=document.getElementById("aristaAuthEmail").value.trim().toLowerCase(),password=document.getElementById("aristaAuthPassword").value;setStatus("Memeriksa login…");const {data,error}=await client.auth.signInWithPassword({email,password});if(error){setStatus("Login gagal: "+error.message);return}await finishLogin(data.user)});
+ document.getElementById("aristaSignUpBtn").addEventListener("click",async()=>{const email=document.getElementById("aristaAuthEmail").value.trim().toLowerCase(),password=document.getElementById("aristaAuthPassword").value;if(email!==OWNER_EMAIL){setStatus("Pendaftaran pemilik hanya menggunakan email pemilik yang sudah ditentukan.");return}if(password.length<8){setStatus("Masukkan password minimal 8 karakter untuk membuat akun.");return}setStatus("Membuat akun…");const {data,error}=await client.auth.signUp({email,password,options:{data:{full_name:"Pemilik ARISTA Coffee"}}});if(error){setStatus("Pendaftaran gagal: "+error.message);return}if(data.session&&data.user){await finishLogin(data.user)}else{setStatus("Pendaftaran diterima. Buka email pemilik untuk verifikasi, lalu kembali dan login. Jika email tidak masuk, periksa folder Spam.")}});
+ const {data:{session}}=await client.auth.getSession();if(session?.user){document.getElementById("aristaAuthEmail").value=session.user.email||OWNER_EMAIL;await finishLogin(session.user)}else{setStatus("Siap. Masuk dengan akun Supabase atau buat akun pemilik pertama.")}
+})();
+</script>
+
+</body></html>';
  const parsed=new DOMParser().parseFromString(html,"text/html");
  const content=document.createElement("div");
  const reportStyle=document.createElement("style");reportStyle.textContent=Array.from(parsed.querySelectorAll("style")).map(el=>el.textContent).join("\\n");
