@@ -229,7 +229,7 @@ document.getElementById("exportBtn").addEventListener("click",()=>{
  const reportStyle=document.createElement("style");reportStyle.textContent=Array.from(parsed.querySelectorAll("style")).map(el=>el.textContent).join("\\n");
  content.appendChild(reportStyle);
  const reportBody=document.createElement("div");reportBody.innerHTML=parsed.body.innerHTML;content.appendChild(reportBody);
- content.style.cssText="position:fixed;left:0;top:0;width:1120px;max-height:80vh;overflow:auto;background:#fff;padding:20px;z-index:2147483647;color:#222";
+ content.style.cssText="position:fixed;left:0;top:0;width:1120px;height:auto;max-height:none;overflow:visible;background:#fff;padding:20px;z-index:2147483647;color:#222";
  document.body.appendChild(content);
  const downloadPdf=()=>{
   if(typeof html2pdf==="undefined"){content.remove();toast("Fitur PDF belum termuat. Periksa koneksi internet lalu coba lagi.");return}
