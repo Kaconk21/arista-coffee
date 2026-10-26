@@ -256,10 +256,12 @@ document.getElementById("exportBtn").addEventListener("click",()=>{
  const BUSINESS_ID="51e1a88d-491c-4f3d-b7ab-259b0b1a1979";
  const OWNER_EMAIL="arietoetelez21@gmail.com";
  const gate=document.getElementById("aristaAuthGate"),status=document.getElementById("aristaAuthStatus"),form=document.getElementById("aristaAuthForm");
- const setStatus=(s)=>status.textContent=s;
- if(!window.supabase){setStatus("Library login belum termuat. Periksa koneksi internet lalu muat ulang halaman.");return}
- const client=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+ const setStatus=(s)=>{status.textContent=s;status.style.display="block";status.style.padding="10px";status.style.background="#292319";status.style.borderRadius="8px";};
+ let client=null;
+ if(window.supabase){client=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}})}
+ else{setStatus("Layanan login belum termuat. Tombol tidak bisa membuat akun karena koneksi ke pustaka login terblokir. Coba buka di Chrome dengan internet aktif.");}
  async function finishLogin(user){
+   if(!client){setStatus("Layanan login belum termuat. Periksa internet atau buka website melalui Chrome.");return}
    const {data:profile,error:profileError}=await client.from("staff_profiles").select("role,active,display_name").eq("user_id",user.id).maybeSingle();
    if(profileError||!profile||!profile.active){await client.auth.signOut();setStatus("Akun belum diaktifkan sebagai staf ARISTA. Pastikan email sudah diverifikasi dan hubungi pemilik.");return}
    const badge=document.createElement("div");badge.id="aristaCloudBadge";badge.textContent="Online · "+(profile.role==="owner"?"Pemilik":"Kasir");document.body.appendChild(badge);
@@ -296,11 +298,12 @@ document.getElementById("exportBtn").addEventListener("click",()=>{
      window.aristaSupabase=client;window.aristaUser=user;window.aristaRole=profile.role;window.aristaBusinessId=BUSINESS_ID;
    }catch(e){setStatus("Login berhasil, tetapi data online belum tersinkron. Data lokal tidak dihapus. Detail: "+(e.message||"gagal mengakses database"))}
  }
- form.addEventListener("submit",async e=>{e.preventDefault();const email=document.getElementById("aristaAuthEmail").value.trim().toLowerCase(),password=document.getElementById("aristaAuthPassword").value;setStatus("Memeriksa login…");const {data,error}=await client.auth.signInWithPassword({email,password});if(error){setStatus("Login gagal: "+error.message);return}await finishLogin(data.user)});
+ form.addEventListener("submit",async e=>{e.preventDefault();if(!client){setStatus("Layanan login belum termuat. Buka website melalui Chrome dengan internet aktif.");return}const email=document.getElementById("aristaAuthEmail").value.trim().toLowerCase(),password=document.getElementById("aristaAuthPassword").value;setStatus("Memeriksa login…");const {data,error}=await client.auth.signInWithPassword({email,password});if(error){setStatus("Login gagal: "+error.message);return}await finishLogin(data.user)});
  const signUpBtn=document.getElementById("aristaSignUpBtn");
  signUpBtn.addEventListener("click",async()=>{
    signUpBtn.disabled=true;
    try{
+     if(!client){setStatus("Layanan login belum termuat. Coba buka website melalui Chrome dengan internet aktif.");return}
      const email=document.getElementById("aristaAuthEmail").value.trim().toLowerCase();
      const password=document.getElementById("aristaAuthPassword").value;
      if(!email){setStatus("Isi email pemilik terlebih dahulu.");return}
@@ -315,6 +318,7 @@ document.getElementById("exportBtn").addEventListener("click",()=>{
    }catch(err){setStatus("Tombol berjalan, tetapi layanan login gagal: "+(err?.message||"periksa koneksi internet"))}
    finally{signUpBtn.disabled=false}
   });
+ if(!client){return}
  const {data:{session}}=await client.auth.getSession();if(session?.user){document.getElementById("aristaAuthEmail").value=session.user.email||OWNER_EMAIL;await finishLogin(session.user)}else{setStatus("Siap. Masuk dengan akun Supabase atau buat akun pemilik pertama.")}
 })();
 </script>
