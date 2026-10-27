@@ -152,7 +152,21 @@ function renderPremiumHome(){
   recent.innerHTML=rows.length?rows.map(s=>`<div class="premium-activity-row"><span class="premium-activity-icon">☕</span><div class="premium-activity-copy"><strong>${esc(s.customer||"Pelanggan umum")}</strong><small>${esc(s.id)} · ${new Date(s.time).toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"})}</small></div><strong class="premium-activity-total">${rupiah(s.total)}</strong></div>`).join(""):'<div class="premium-activity-empty">Belum ada transaksi hari ini. Transaksi selesai akan muncul di sini.</div>';
  }
 }
-function renderAll(){renderFilters();renderMenu();renderCart();renderReports();renderManage();renderPremiumHome();}
+
+function renderCashierHome(){
+ const today=state.sales.filter(s=>s.date===todayKey());
+ const revenue=today.reduce((sum,s)=>sum+(Number(s.total)||0),0);
+ const count=document.getElementById("cashierHomeCount"),rev=document.getElementById("cashierHomeRevenue"),date=document.getElementById("cashierHomeDate");
+ if(count)count.textContent=String(today.length);
+ if(rev)rev.textContent=rupiah(revenue);
+ if(date)date.textContent=new Date().toLocaleDateString("id-ID",{day:"2-digit",month:"short"});
+ const recent=document.getElementById("cashierHomeRecent");
+ if(recent){const rows=state.sales.slice(0,3);recent.innerHTML=rows.length?rows.map(s=>`<div class="cashier-home-row"><span>☕</span><div><strong>${esc(s.customer||"Pelanggan umum")}</strong><small>${esc(s.id||"Transaksi")} · ${new Date(s.time||Date.now()).toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"})}</small></div><strong>${rupiah(s.total)}</strong></div>`).join(""):'<p>Belum ada transaksi yang tercatat.</p>';}
+ const pending=document.getElementById("cashierHomePending");
+ if(pending){const rows=Array.isArray(state.pendingOrders)?state.pendingOrders:[];pending.innerHTML=rows.length?rows.slice(0,3).map((o,i)=>`<div class="cashier-home-row"><span>◷</span><div><strong>${esc(o.customer||o.name||("Pesanan "+(i+1)))}</strong><small>${esc(o.id||"Menunggu pembayaran")}</small></div><span class="pending-pill">Tertunda</span></div>`).join(""):'<p>Tidak ada pesanan tertunda.</p>';}
+}
+
+function renderAll(){renderFilters();renderMenu();renderCart();renderReports();renderManage();renderPremiumHome();renderCashierHome();}
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;document.getElementById("installBtn").classList.remove("hidden");});
 document.getElementById("installBtn").addEventListener("click",async()=>{if(!deferredPrompt){toast("Gunakan menu browser: Tambahkan ke layar utama");return;}deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;document.getElementById("installBtn").classList.add("hidden");});
 if("serviceWorker" in navigator && (location.protocol==="https:"||location.hostname==="localhost"))navigator.serviceWorker.register("./sw.js").catch(()=>{});
