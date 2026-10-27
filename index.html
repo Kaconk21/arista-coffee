@@ -480,7 +480,7 @@ document.getElementById("aristaLogoutButton").addEventListener("click",async()=>
   show();
  }catch(err){alert("Logout gagal: "+(err.message||"Coba lagi."))}
  finally{b.disabled=false;b.textContent="Keluar dari akun"}
-}
+});
 function show(){gate.style.display="flex";if(main)main.style.visibility="hidden"}
 gate.style.display="none";
 function hide(){gate.style.display="none";if(main)main.style.visibility="visible"}
