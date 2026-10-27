@@ -112,14 +112,46 @@ button,input,select,textarea{font-size:14px}
 @media(max-width:520px){.report-export-tools{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:18px 0 14px}.report-export-group{padding:9px 7px;gap:7px}.report-export-heading{font-size:14px}.report-export-group .field-label{font-size:10px}.report-export-group .field{font-size:11px;min-height:37px}.report-export-group .button{font-size:10px;min-height:40px}.report-export-extra .button{width:100%}}
 
 </style>
-</head>
+<link rel="stylesheet" href="./styles.css?v=premium1">\n</head>
 <body>
 
 
 <main>
 
-<nav class="tabs bottom-nav" aria-label="Navigasi utama"><button class="tab active" data-view="menuView"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h13v5a6.5 6.5 0 0 1-13 0V8Z"/><path d="M17 9h1.5a2.5 2.5 0 0 1 0 5H17M3 21h16M8 3c0 1 1 1 1 2M12 2c0 1 1 1 1 2"/></svg></span><span class="nav-label">Menu</span></button><button class="tab" data-view="cashierView"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M7 14h3M14 14h3M7 17h3"/></svg></span><span class="nav-label">Kasir</span></button><button class="tab" data-view="reportView"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V11M10 20V5M16 20v-7M22 20H2"/></svg></span><span class="nav-label">Laporan</span></button><button class="tab" data-view="expensesView"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="15" rx="2"/><path d="M3 9h18M16 15h2M7 5V3h10v2"/></svg></span><span class="nav-label">Expenses</span></button><button class="tab" data-view="manageView"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1 1.4 1.1-1.5 2.6-1.7-.7a8 8 0 0 1-1.5.9l-.3 1.8h-3l-.3-1.8a8 8 0 0 1-1.5-.9l-1.7.7-1.5-2.6 1.4-1.1a7 7 0 0 1 0-1.8l-1.4-1.1 1.5-2.6 1.7.7a8 8 0 0 1 1.5-.9l.3-1.8h3l.3 1.8a8 8 0 0 1 1.5.9l1.7-.7 1.5 2.6-1.4 1.1a7 7 0 0 1 0 1.8Z" transform="translate(-1 -1) scale(1.08)"/></svg></span><span class="nav-label">Kelola</span></button></nav>
+<nav class="tabs bottom-nav premium-bottom-nav" aria-label="Navigasi utama">
+<button class="tab active" data-view="homeView"><span class="nav-icon" aria-hidden="true">⌂</span><span class="nav-label">Beranda</span></button>
+<button class="tab" data-view="cashierView"><span class="nav-icon" aria-hidden="true">▣</span><span class="nav-label">Penjualan</span></button>
+<button class="tab" data-view="reportView"><span class="nav-icon" aria-hidden="true">▥</span><span class="nav-label">Laporan</span></button>
+<button class="tab" data-view="profileView"><span class="nav-icon" aria-hidden="true">♙</span><span class="nav-label">Profil</span></button>
+</nav>
 
+<section id="homeView" class="view active premium-home-view">
+  <div class="premium-brand-row"><div class="premium-brand-mark">☕</div><div class="premium-brand-word"><strong>ARISTA</strong><span>COFFEE & ROASTERY</span></div><span class="premium-cloud-pill">● Cloud</span></div>
+  <div class="premium-hero"><p class="eyebrow">GOOD COFFEE, BETTER MOMENTS</p><h1>Selamat datang di<br><em>ARISTA Coffee.</em></h1><p>Kelola kedai dengan lebih mudah, dalam satu pengalaman yang elegan.</p><div class="premium-hero-beans" aria-hidden="true">✦　☕　✦</div></div>
+  <div class="premium-section-title"><div><p class="eyebrow">RINGKASAN</p><h2>Akses cepat</h2></div><span class="premium-date-label">ARISTA POS</span></div>
+  <div class="premium-shortcut-grid">
+    <button class="premium-shortcut" data-view="menuView"><span>☕</span><strong>Menu Produk</strong><small>Lihat pilihan minuman</small></button>
+    <button class="premium-shortcut" data-view="cashierView"><span>▣</span><strong>Kasir</strong><small>Mulai transaksi</small></button>
+    <button class="premium-shortcut" data-view="reportView"><span>▥</span><strong>Laporan</strong><small>Ringkasan usaha</small></button>
+    <button class="premium-shortcut owner-shortcut" data-view="manageView"><span>⚙</span><strong>Kelola</strong><small>Produk dan pengaturan</small></button>
+    <button class="premium-shortcut owner-shortcut" data-view="expensesView"><span>↗</span><strong>Keuangan</strong><small>Catat pengeluaran</small></button>
+    <button class="premium-shortcut" data-view="profileView"><span>♙</span><strong>Profil</strong><small>Akun dan keamanan</small></button>
+  </div>
+  <div class="premium-note"><span>✦</span><div><strong>Data usaha tersimpan di cloud</strong><p>Logout hanya mengakhiri sesi akun. Data usaha bersama tetap tersimpan.</p></div></div>
+</section>
+<section id="profileView" class="view premium-profile-view">
+  <div class="premium-page-heading"><p class="eyebrow">ACCOUNT CENTER</p><h2>Profil & Akun</h2><p>Kelola informasi akun sesuai peranmu.</p></div>
+  <div class="premium-account-card"><div class="premium-avatar" id="premiumAvatar">♙</div><div class="premium-account-main"><strong id="premiumProfileName">Akun ARISTA</strong><span id="premiumProfileEmail">Masuk untuk melihat akun</span><span class="premium-role-pill" id="premiumProfileRole">Anggota</span></div></div>
+  <div class="premium-profile-links">
+    <button class="premium-profile-link" data-view="accountInfoView"><span>♙</span><div><strong>Informasi Akun</strong><small>Lihat informasi akun</small></div><b>›</b></button>
+    <button class="premium-profile-link owner-profile-only" data-view="manageView"><span>♧</span><div><strong>Kelola Pengguna</strong><small>Pengaturan akses pengguna</small></div><b>›</b></button>
+    <button class="premium-profile-link" data-view="securityInfoView"><span>♢</span><div><strong>Keamanan</strong><small>Kelola sesi dan keamanan akun</small></div><b>›</b></button>
+  </div>
+  <button class="premium-logout-button" id="profilePageLogout" type="button">Keluar dari akun</button>
+  <p class="premium-logout-note">Kamu akan diminta konfirmasi sebelum keluar. Data usaha tetap tersimpan.</p>
+</section>
+<section id="accountInfoView" class="view premium-profile-view"><div class="premium-page-heading"><p class="eyebrow">ACCOUNT DETAILS</p><h2>Informasi Akun</h2></div><div class="premium-account-card"><div class="premium-avatar">♙</div><div class="premium-account-main"><strong id="premiumInfoName">Akun ARISTA</strong><span id="premiumInfoEmail"></span><span class="premium-role-pill" id="premiumInfoRole">Anggota</span></div></div><button class="button button-outline full" data-view="profileView">Kembali ke Profil</button></section>
+<section id="securityInfoView" class="view premium-profile-view"><div class="premium-page-heading"><p class="eyebrow">ACCOUNT SECURITY</p><h2>Keamanan</h2><p>Jaga kerahasiaan kata sandi dan jangan bagikan kode verifikasi.</p></div><div class="premium-note"><span>♢</span><div><strong>Sesi akun</strong><p>Gunakan tombol Keluar dari akun untuk mengakhiri sesi di perangkat ini.</p></div></div><button class="button button-outline full" data-view="profileView">Kembali ke Profil</button></section>
 <section id="menuView" class="view active"><div class="section-head"><div><p class="eyebrow">OUR SELECTION</p><h2>Menu pilihan</h2></div><span class="muted" id="menuCount"></span></div><div class="panel shop-status-panel"><div><div class="field-label">Status kedai</div><strong id="shopStatusText">BUKA</strong><p id="shopStatusNote" class="tiny muted">Pesanan dapat diterima.</p></div><button id="shopToggleBtn" class="button button-danger" type="button">Tutup kedai</button></div><div id="categoryFilters" class="filters"></div><div id="menuGrid" class="menu-grid"></div></section>
 
 <section id="cashierView" class="view">
@@ -460,7 +492,14 @@ function updateAristaProfile(user,role){
  document.getElementById("aristaProfileEmail").textContent=email;
  const r=String(role||"Anggota").toLowerCase();
  document.getElementById("aristaProfileRole").textContent=(r==="owner"||r==="pemilik")?"Pemilik":(r==="cashier"||r==="kasir")?"Kasir":(role||"Anggota");
- document.getElementById("aristaProfileButton").style.display="flex";
+ document.getElementById("aristaProfileButton").style.display="none";
+ const name=email?email.split("@")[0]:"Akun ARISTA";
+ ["premiumProfileName","premiumInfoName"].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=name;});
+ ["premiumProfileEmail","premiumInfoEmail"].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=email;});
+ const roleLabel=(r==="owner"||r==="pemilik")?"Pemilik":(r==="cashier"||r==="kasir")?"Kasir":(role||"Anggota");
+ ["premiumProfileRole","premiumInfoRole"].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=roleLabel;});
+ document.querySelectorAll(".owner-shortcut,.owner-profile-only").forEach(el=>{el.style.display=(roleLabel==="Pemilik")?"flex":"none";});
+ document.querySelectorAll("#aristaProfileButton").forEach(el=>el.style.display="none");
 }
 document.getElementById("aristaProfileButton").addEventListener("click",()=>{
  const m=document.getElementById("aristaProfileMenu");m.style.display=m.style.display==="block"?"none":"block";
@@ -469,6 +508,7 @@ document.addEventListener("click",e=>{
  const b=document.getElementById("aristaProfileButton"),m=document.getElementById("aristaProfileMenu");
  if(m&&!m.contains(e.target)&&!b.contains(e.target))m.style.display="none";
 });
+document.getElementById("profilePageLogout").addEventListener("click",()=>document.getElementById("aristaLogoutButton").click());
 document.getElementById("aristaLogoutButton").addEventListener("click",async()=>{
  if(!confirm("Keluar dari akun ARISTA? Data usaha tetap tersimpan."))return;
  const b=document.getElementById("aristaLogoutButton");b.disabled=true;b.textContent="Keluar…";
