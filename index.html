@@ -551,7 +551,7 @@ function updateAristaProfile(user,role){
  document.getElementById("aristaProfileName").textContent=displayName;
  document.getElementById("aristaProfileEmail").textContent=email;
  const r=String(role||"Anggota").trim().toLowerCase();
- const roleLabel=(r==="owner"||r==="pemilik"||r==="pemilik arista")?"Pemilik":(r==="cashier"||r==="kasir")?"Kasir":(role||"Anggota");
+ const roleLabel=(r==="owner"||r==="pemilik"||r==="pemilik arista")?"Pemilik":(r==="cashier"||r==="kasir")?"Kasir":(r==="anggota"?"Anggota":(role||"Anggota"));
  document.getElementById("aristaProfileRole").textContent=roleLabel;
  document.getElementById("aristaProfileButton").style.display="none";
  const name=displayName;
