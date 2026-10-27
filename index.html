@@ -444,9 +444,29 @@ const BUSINESS="51e1a88d-491c-4f3d-b7ab-259b0b1a1979";
 let db,uid,ready=false,timer;
 const gate=document.getElementById("aristaCloudLogin");
 const main=document.querySelector("body > main");
-function msg(s){document.getElementById("aristaCloudError").textContent=s||""}
+function msg(s){const el=document.getElementById("aristaCloudError");if(el)el.textContent=s||""}
 function show(){gate.style.display="flex";if(main)main.style.visibility="hidden"}
 function hide(){gate.style.display="none";if(main)main.style.visibility="visible"}
+const isRecovery=location.hash.includes("type=recovery")||location.hash.includes("access_token=");
+function setupRecovery(){
+ gate.innerHTML='<form class="card" id="aristaResetForm"><h1>ARISTA</h1><p>COFFEE & ROASTERY</p><p>Buat kata sandi baru untuk akun ARISTA.</p><label>Kata sandi baru</label><input id="aristaNewPassword" type="password" autocomplete="new-password" minlength="8" required><label>Ulangi kata sandi baru</label><input id="aristaConfirmPassword" type="password" autocomplete="new-password" minlength="8" required><button id="aristaResetSubmit">Simpan Kata Sandi</button><p class="err" id="aristaCloudError"></p></form>';
+ const form=document.getElementById("aristaResetForm");
+ form.addEventListener("submit",async e=>{
+  e.preventDefault();
+  const p=document.getElementById("aristaNewPassword").value;
+  const q=document.getElementById("aristaConfirmPassword").value;
+  const b=document.getElementById("aristaResetSubmit");
+  if(p.length<8){msg("Kata sandi minimal 8 karakter.");return}
+  if(p!==q){msg("Kedua kata sandi belum sama.");return}
+  b.disabled=true;b.textContent="Menyimpan…";msg("");
+  try{
+   const {data,error}=await db.auth.updateUser({password:p});
+   if(error)throw error;
+   msg("Kata sandi berhasil diperbarui. Silakan kembali ke ARISTA dan login dengan kata sandi baru.");
+   form.reset();b.textContent="Berhasil";
+  }catch(err){msg(err.message||"Gagal memperbarui kata sandi. Tautan mungkin sudah kedaluwarsa.");b.disabled=false;b.textContent="Simpan Kata Sandi"}
+ });
+}
 async function syncNow(){
  if(!ready||!db||!uid)return;
  const {error}=await db.from("app_state").upsert({business_id:BUSINESS,state_json:state,updated_by:uid,updated_at:new Date().toISOString()},{onConflict:"business_id"});
@@ -454,6 +474,11 @@ async function syncNow(){
  if(s)s.textContent=error?"Cloud gagal":"Tersinkron";
  if(error)throw error;
 }
+if(isRecovery){
+ db=window.supabase.createClient(URL,KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+ setupRecovery();show();
+ db.auth.getSession().then(({data,error})=>{if(error)msg(error.message);else if(!data.session)msg("Tautan pemulihan tidak valid atau sudah kedaluwarsa. Minta email pemulihan baru.")});
+}else{
 document.getElementById("aristaCloudForm").addEventListener("submit",async e=>{
  e.preventDefault();const b=document.getElementById("aristaCloudSubmit");b.disabled=true;b.textContent="Menghubungkan…";msg("");
  try{
@@ -474,9 +499,10 @@ document.getElementById("aristaCloudForm").addEventListener("submit",async e=>{
  }catch(err){msg(err.message||"Gagal masuk. Periksa koneksi dan akun.");show()}
  finally{b.disabled=false;b.textContent="Masuk & Sinkronkan"}
 });
+}
 const originalSave=saveState;
 saveState=function(){originalSave();if(ready){clearTimeout(timer);timer=setTimeout(()=>syncNow().catch(err=>{console.error(err);const s=document.getElementById("aristaCloudStatus");if(s)s.textContent="Cloud gagal";toast("Data lokal tersimpan, cloud gagal disinkronkan")}),700)}};
-show();
+if(!isRecovery)show();
 })();
 </script>
 </body>
