@@ -656,9 +656,9 @@ if(isRecovery){
  async function loadManagedCashiers(){
   const list=document.getElementById("managedCashierList");if(!list||!uid)return;
   const {data:sessionData}=await db.auth.getSession();if(!sessionData.session)return;
-  const {data,error}=await db.from("staff_profiles").select("display_name,role,active,user_id").eq("role","cashier").eq("active",true);
+  const {data,error}=await db.from("staff_profiles").select("role,active,user_id").eq("role","cashier").eq("active",true);
   if(error){list.innerHTML='<p class="users-empty-state">Daftar kasir tidak dapat dimuat.</p>';return;}
-  list.innerHTML=data&&data.length?data.map((u,i)=>'<div class="managed-user-row"><span>♙</span><div><strong>'+String(u.display_name||("Kasir "+(i+1))).replace(/[&<>"]/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[ch]))+'</strong><small>Akun kasir aktif</small></div><span class="pending-pill">Aktif</span></div>').join(""):'<div class="users-empty-state"><strong>Belum ada akun kasir</strong></div>';
+  list.innerHTML=data&&data.length?data.map((u,i)=>'<div class="managed-user-row"><span>♙</span><div><strong>'+String("Kasir "+(i+1)).replace(/[&<>"]/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[ch]))+'</strong><small>Akun kasir aktif</small></div><span class="pending-pill">Aktif</span></div>').join(""):'<div class="users-empty-state"><strong>Belum ada akun kasir</strong></div>';
  }
 
  setupRecovery();show();
