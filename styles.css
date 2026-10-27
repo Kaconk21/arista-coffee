@@ -330,3 +330,55 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{ou
 \n
 /* Kelola Pengguna page */
 .users-summary-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:14px}.users-summary-grid article{display:flex;flex-direction:column;gap:9px;padding:16px;border:1px solid #443725;border-radius:16px;background:linear-gradient(145deg,#24201a,#151310)}.users-summary-grid small{font-size:10px;color:var(--muted)}.users-summary-grid strong{font:500 20px "Libre Baskerville",Georgia,serif;color:var(--gold2)}.users-summary-grid .users-active-status{font:600 14px inherit}.users-create-card{padding:17px;border:1px solid #5a4328;border-radius:18px;background:radial-gradient(ellipse at 0 0,#49351f55,transparent 48%),linear-gradient(145deg,#211c15,#151310);margin-bottom:22px}.users-create-heading{display:flex;align-items:center;gap:11px;padding-bottom:15px;border-bottom:1px solid #3b3022}.users-create-heading>span{display:grid;place-items:center;width:39px;height:39px;border-radius:12px;background:#3b2d1b;color:var(--gold2);font-size:25px}.users-create-heading div{display:flex;flex-direction:column;gap:4px}.users-create-heading strong{font-size:14px}.users-create-heading small{font-size:10px;color:var(--muted);line-height:1.5}.users-create-form{display:flex;flex-direction:column;gap:8px;padding-top:15px}.users-create-form label{font-size:11px;color:#d9c8ad;margin-top:5px}.users-create-form .field{width:100%;box-sizing:border-box}.users-security-note{font-size:10px;color:var(--muted);line-height:1.6;margin:2px 0 7px}.users-form-status{font-size:10px;color:#d9c08f;line-height:1.6;margin:3px 0 0}.users-list-heading{display:flex;align-items:center;justify-content:space-between;margin:24px 2px 12px}.users-list-heading small{font-size:8px;letter-spacing:1.5px;color:var(--gold)}.users-list-heading h3{font:500 20px "Libre Baskerville",Georgia,serif;margin:5px 0 0}.users-list-card{border:1px solid #3c3122;border-radius:16px;background:linear-gradient(145deg,#201d19,#151310);margin-bottom:16px}.users-empty-state{display:flex;flex-direction:column;align-items:center;text-align:center;padding:24px 18px}.users-empty-state>span{display:grid;place-items:center;width:48px;height:48px;border-radius:50%;background:#382b1b;color:var(--gold2);font-size:26px;margin-bottom:10px}.users-empty-state strong{font-size:12px}.users-empty-state p{font-size:10px;line-height:1.6;color:var(--muted);margin:7px 0 0}
+
+
+/* ARISTA POS refresh: product-first cashier with a persistent cart shortcut */
+.cashier-product-heading,.cashier-cart-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:4px 0 12px}
+.cashier-product-heading h3,.cashier-cart-heading h3{margin:5px 0 0;font:500 21px Georgia,serif;color:var(--cream)}
+.cashier-category-filters{display:flex;gap:7px;overflow-x:auto;padding:2px 1px 10px;margin-bottom:5px;scrollbar-width:none}
+.cashier-category-filters::-webkit-scrollbar{display:none}
+.cashier-category-chip{flex:0 0 auto;border:1px solid #493925;border-radius:99px;background:#17130f;color:#c7b69d;padding:8px 13px;font-size:11px;font-weight:700;white-space:nowrap}
+.cashier-category-chip.active{border-color:#c5a16a;background:#3a2b19;color:#f1d7a3}
+.cashier-product-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.cashier-product-card{display:flex;flex-direction:column;align-items:stretch;gap:6px;min-width:0;min-height:172px;padding:10px;border:1px solid #443522;border-radius:15px;background:linear-gradient(150deg,#211b13,#12100d);color:var(--cream);text-align:left;box-shadow:0 8px 20px #0002;transition:transform .12s,border-color .12s}
+.cashier-product-card:active{transform:scale(.98);border-color:var(--gold)}
+.cashier-product-card:disabled{opacity:.45}
+.cashier-product-art{display:grid;place-items:center;min-height:68px;border-radius:10px;background:radial-gradient(circle at 50% 20%,#4a3520,#21180f 72%);color:#e0c18e;font-size:34px}
+.cashier-product-photo{width:100%;height:68px;object-fit:cover;border-radius:10px;background:#211b13}
+.cashier-product-name{font-size:12px;font-weight:800;line-height:1.35;overflow-wrap:anywhere}
+.cashier-product-category{font-size:9px;color:#ad9b83;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cashier-product-price{font-size:12px;color:#f1d7a3;margin-top:auto}
+.cashier-product-add{font-size:10px;font-weight:800;color:#20180f;background:#d9b77b;border-radius:8px;text-align:center;padding:7px 5px}
+.cashier-manual-add{margin:14px 0 20px;border-top:1px solid #352a1d;padding-top:10px}
+.cashier-manual-add summary{font-size:11px;color:#bba88e;cursor:pointer;padding:5px 0}
+.cashier-manual-add .cashier-add-row{display:grid;grid-template-columns:minmax(0,1fr) 90px auto;gap:7px;margin-top:9px}
+.cashier-cart-heading{margin-top:18px;padding-top:15px;border-top:1px solid #392d1f}
+.cashier-cart-dock{display:none}
+#cashierView.active .cashier-cart-dock{position:fixed;left:12px;right:12px;bottom:calc(83px + env(safe-area-inset-bottom));z-index:39;display:flex;align-items:center;gap:10px;min-height:62px;padding:10px 13px;border:1px solid #9c7846;border-radius:16px;background:linear-gradient(110deg,#3a2a18,#20180f 75%);color:#f7e7c8;box-shadow:0 10px 32px #0008;text-align:left}
+.cashier-dock-icon{display:grid;place-items:center;flex:0 0 36px;width:36px;height:36px;border-radius:11px;background:#e0c18e;color:#21180e;font-size:19px}
+.cashier-dock-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:3px}
+.cashier-dock-copy strong{font-size:12px}
+.cashier-dock-copy small{font-size:9px;color:#c8b69a}
+.cashier-dock-total{font-size:14px;font-weight:900;color:#f1d7a3;white-space:nowrap}
+.cashier-dock-arrow{font-size:17px;color:#e0c18e}
+#cashierView.active{padding-bottom:110px}
+@media(max-width:699px){
+ .cashier-combined{padding:11px;border-radius:15px}
+ .cashier-combined .pos-layout{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
+ .cashier-order{min-width:0}
+ .cashier-product-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .cashier-product-card{min-height:156px;padding:9px;border-radius:13px}
+ .cashier-product-art,.cashier-product-photo{height:64px;min-height:64px}
+ .cashier-product-name{font-size:12px}
+ .cashier-product-price{font-size:12px}
+ .cashier-combined .summary-panel{border-top:1px solid #40311f;padding:14px 0 0}
+ .cashier-manual-add .cashier-add-row{grid-template-columns:minmax(0,1fr) 86px}
+ .cashier-manual-add .cashier-add-row #cashierAddProductBtn{grid-column:1/-1;width:100%}
+ .cashier-cart-dock{left:9px!important;right:9px!important}
+}
+@media(min-width:700px){
+ #cashierView .cashier-combined .pos-layout{grid-template-columns:minmax(0,1.1fr) minmax(310px,.9fr);align-items:start}
+ #cashierView .cashier-order{min-width:0}
+ #cashierView .cashier-product-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+ #cashierView .summary-panel{position:sticky;top:16px}
+}
