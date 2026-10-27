@@ -525,6 +525,26 @@ function renderPremiumHome(){
  if(rev)rev.textContent=rupiah(revenue);
  if(count)count.textContent=String(today.length);
  if(date)date.textContent=new Date().toLocaleDateString("id-ID",{day:"2-digit",month:"short"}).toUpperCase();
+ const cashierCount=document.getElementById("cashierHomeCount");
+ const cashierRevenue=document.getElementById("cashierHomeRevenue");
+ const cashierAverage=document.getElementById("cashierHomeAverage");
+ const cashierLastTime=document.getElementById("cashierHomeLastTime");
+ const cashierDate=document.getElementById("cashierHomeDate");
+ if(cashierCount)cashierCount.textContent=String(today.length);
+ if(cashierRevenue)cashierRevenue.textContent=rupiah(revenue);
+ if(cashierAverage)cashierAverage.textContent=rupiah(today.length?Math.round(revenue/today.length):0);
+ if(cashierLastTime)cashierLastTime.textContent=today.length?new Date(today.slice().sort((a,b)=>new Date(b.time)-new Date(a.time))[0].time).toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"}):"—";
+ if(cashierDate)cashierDate.textContent=new Date().toLocaleDateString("id-ID",{day:"2-digit",month:"short"});
+ const cashierRecent=document.getElementById("cashierHomeRecent");
+ if(cashierRecent){
+  const rows=today.slice(0,3);
+  cashierRecent.innerHTML=rows.length?rows.map(s=>`<div class="premium-activity-row"><span class="premium-activity-icon">☕</span><div class="premium-activity-copy"><strong>${esc(s.customer||"Pelanggan umum")}</strong><small>${esc(s.id)} · ${new Date(s.time).toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"})}</small></div><strong class="premium-activity-total">${rupiah(s.total)}</strong></div>`).join(""):'<div class="premium-activity-empty">Belum ada transaksi hari ini.</div>';
+ }
+ const cashierPending=document.getElementById("cashierHomePending");
+ if(cashierPending){
+  const pending=Array.isArray(state.pendingOrders)?state.pendingOrders.slice(0,3):[];
+  cashierPending.innerHTML=pending.length?pending.map(p=>`<div class="premium-activity-row"><span class="premium-activity-icon">◷</span><div class="premium-activity-copy"><strong>${esc(p.customer||"Pesanan tertunda")}</strong><small>${esc(p.id||"Pesanan")} · Belum selesai</small></div><strong class="premium-activity-total">${rupiah(p.total||0)}</strong></div>`).join(""):'<div class="premium-activity-empty">Tidak ada pesanan tertunda.</div>';
+ }
  if(recent){
   const rows=state.sales.slice(0,3);
   recent.innerHTML=rows.length?rows.map(s=>`<div class="premium-activity-row"><span class="premium-activity-icon">☕</span><div class="premium-activity-copy"><strong>${esc(s.customer||"Pelanggan umum")}</strong><small>${esc(s.id)} · ${new Date(s.time).toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"})}</small></div><strong class="premium-activity-total">${rupiah(s.total)}</strong></div>`).join(""):'<div class="premium-activity-empty">Belum ada transaksi hari ini. Transaksi selesai akan muncul di sini.</div>';
