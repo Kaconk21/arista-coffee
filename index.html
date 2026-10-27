@@ -424,6 +424,61 @@ document.getElementById("restoreInput").addEventListener("change",async e=>{cons
 function renderAll(){renderShopStatus();renderFilters();renderMenu();renderCart();renderReports();renderPending();renderManage();updateProfitPreview()}
 renderAll();renderExpenses();
 </script>
+<style>
+#aristaCloudLogin{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;background:#171513;color:#f4ede2}
+#aristaCloudLogin .card{width:min(420px,100%);padding:24px;border:1px solid #5a4632;border-radius:18px;background:#211e1a}
+#aristaCloudLogin h1{font:32px Georgia,serif;color:#e0c18e;margin:0}
+#aristaCloudLogin p{font-size:13px;line-height:1.5;color:#b8ab9b}
+#aristaCloudLogin label{display:block;margin:12px 0 6px;font-size:12px;color:#e0c18e}
+#aristaCloudLogin input{width:100%;padding:12px;border:1px solid #4a3d2e;border-radius:9px;background:#171513;color:#f4ede2}
+#aristaCloudLogin button{width:100%;margin-top:15px;padding:12px;border:0;border-radius:9px;background:#c5a16a;color:#201910;font-weight:800}
+#aristaCloudLogin .err{color:#f1b4a8;min-height:18px}
+</style>
+<div id="aristaCloudLogin"><form class="card" id="aristaCloudForm"><h1>ARISTA</h1><p>COFFEE & ROASTERY</p><p>Masuk untuk memakai data bersama antarperangkat.</p><label>Email akun</label><input id="aristaCloudEmail" type="email" autocomplete="username" required><label>Kata sandi</label><input id="aristaCloudPassword" type="password" autocomplete="current-password" required><button id="aristaCloudSubmit">Masuk & Sinkronkan</button><p class="err" id="aristaCloudError"></p></form></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(function(){
+const URL="https://qnuyyserbcieytqkjjhn.supabase.co";
+const KEY="sb_publishable_128aF9t0kyRjdPoGa5tMcg_QQIldJyo";
+const BUSINESS="51e1a88d-491c-4f3d-b7ab-259b0b1a1979";
+let db,uid,ready=false,timer;
+const gate=document.getElementById("aristaCloudLogin");
+const main=document.querySelector("body > main");
+function msg(s){document.getElementById("aristaCloudError").textContent=s||""}
+function show(){gate.style.display="flex";if(main)main.style.visibility="hidden"}
+function hide(){gate.style.display="none";if(main)main.style.visibility="visible"}
+async function syncNow(){
+ if(!ready||!db||!uid)return;
+ const {error}=await db.from("app_state").upsert({business_id:BUSINESS,state_json:state,updated_by:uid,updated_at:new Date().toISOString()},{onConflict:"business_id"});
+ const s=document.getElementById("aristaCloudStatus");
+ if(s)s.textContent=error?"Cloud gagal":"Tersinkron";
+ if(error)throw error;
+}
+document.getElementById("aristaCloudForm").addEventListener("submit",async e=>{
+ e.preventDefault();const b=document.getElementById("aristaCloudSubmit");b.disabled=true;b.textContent="Menghubungkan…";msg("");
+ try{
+  db=window.supabase.createClient(URL,KEY,{auth:{persistSession:true,autoRefreshToken:true}});
+  const {data,error}=await db.auth.signInWithPassword({email:document.getElementById("aristaCloudEmail").value.trim(),password:document.getElementById("aristaCloudPassword").value});
+  if(error)throw error;uid=data.user.id;
+  const {data:m,error:me}=await db.from("business_memberships").select("business_id,role,active").eq("business_id",BUSINESS).eq("user_id",uid).eq("active",true).maybeSingle();
+  if(me)throw me;if(!m)throw new Error("Akun belum terdaftar sebagai anggota ARISTA.");
+  const {data:r,error:re}=await db.from("app_state").select("state_json").eq("business_id",BUSINESS).maybeSingle();
+  if(re)throw re;
+  if(r&&r.state_json&&Array.isArray(r.state_json.products)&&Array.isArray(r.state_json.sales)){
+   state=r.state_json;state.products=state.products.map(p=>({...p,cost:Number.isFinite(p.cost)?p.cost:null,image:p.image||""}));state.pendingOrders=Array.isArray(state.pendingOrders)?state.pendingOrders:[];state.expenses=Array.isArray(state.expenses)?state.expenses:[];localStorage.setItem("arista_coffee_v1",JSON.stringify(state));
+  }else{
+   const {error:ue}=await db.from("app_state").upsert({business_id:BUSINESS,state_json:state,updated_by:uid,updated_at:new Date().toISOString()},{onConflict:"business_id"});if(ue)throw ue;
+  }
+  ready=true;hide();renderAll();renderExpenses();
+  let badge=document.getElementById("aristaCloudStatus");if(!badge){badge=document.createElement("div");badge.id="aristaCloudStatus";badge.style.cssText="position:fixed;top:5px;right:6px;z-index:80;background:#211e1a;border:1px solid #45392c;border-radius:99px;padding:5px 8px;font-size:10px;color:#e0c18e";document.body.appendChild(badge)}badge.textContent="Tersinkron";
+ }catch(err){msg(err.message||"Gagal masuk. Periksa koneksi dan akun.");show()}
+ finally{b.disabled=false;b.textContent="Masuk & Sinkronkan"}
+});
+const originalSave=saveState;
+saveState=function(){originalSave();if(ready){clearTimeout(timer);timer=setTimeout(()=>syncNow().catch(err=>{console.error(err);const s=document.getElementById("aristaCloudStatus");if(s)s.textContent="Cloud gagal";toast("Data lokal tersimpan, cloud gagal disinkronkan")}),700)}};
+show();
+})();
+</script>
 </body>
 </html>
 
