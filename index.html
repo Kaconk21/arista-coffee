@@ -446,6 +446,7 @@ const gate=document.getElementById("aristaCloudLogin");
 const main=document.querySelector("body > main");
 function msg(s){const el=document.getElementById("aristaCloudError");if(el)el.textContent=s||""}
 function show(){gate.style.display="flex";if(main)main.style.visibility="hidden"}
+gate.style.display="none";
 function hide(){gate.style.display="none";if(main)main.style.visibility="visible"}
 const isRecovery=location.hash.includes("type=recovery")||location.hash.includes("access_token=");
 function setupRecovery(){
