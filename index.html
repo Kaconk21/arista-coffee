@@ -126,6 +126,7 @@ button,input,select,textarea{font-size:14px}
 </nav>
 
 <section id="homeView" class="view active premium-home-view">
+<div id="ownerHomeContent">
   <header class="home-mockup-header">
     <div class="home-mockup-brand"><span class="home-mockup-logo">☕</span><span class="home-mockup-word"><strong>ARISTA</strong><small>COFFEE & ROASTERY</small></span></div>
     <span class="home-cloud-status"><i></i> Cloud aktif</span>
@@ -151,6 +152,17 @@ button,input,select,textarea{font-size:14px}
   <div class="home-section-head home-activity-head"><div><span class="home-kicker">AKTIVITAS TERBARU</span><h2>Transaksi terakhir</h2></div><button type="button" class="premium-see-all" data-view="reportView">Lihat semua <b>›</b></button></div>
   <div class="premium-activity-card" id="premiumRecentActivity"><div class="premium-activity-empty">Belum ada transaksi yang tercatat.</div></div>
   <div class="home-footer-note"><span>✦</span><div><strong>ARISTA Coffee & Roastery</strong><small>Kelola kedai dengan lebih mudah setiap hari.</small></div><span class="home-footer-cloud">● Cloud</span></div>
+</div>
+<section id="cashierHomeContent" class="cashier-home-content hidden">
+  <header class="cashier-home-brand"><div class="cashier-home-logo">☕</div><div><strong>ARISTA</strong><small>COFFEE & ROASTERY</small></div><span class="cashier-cloud"><i></i> Cloud aktif</span></header>
+  <div class="cashier-profile-strip"><span class="cashier-avatar">♙</span><div><small>SELAMAT BERTUGAS</small><strong id="cashierHomeName">Kasir ARISTA</strong><span>Tim Kasir</span></div><button type="button" data-view="profileView" aria-label="Buka profil">›</button></div>
+  <article class="cashier-welcome-hero"><div><p>ARISTA COFFEE & ROASTERY</p><h1>Layani pelanggan<br><em>dengan sepenuh hati.</em></h1><span>Siap untuk transaksi berikutnya?</span></div><div class="cashier-hero-cup">☕</div></article>
+  <div class="cashier-home-section-head"><div><small>RINGKASAN HARI INI</small><h2>Aktivitas penjualan</h2></div><span id="cashierHomeDate"></span></div>
+  <div class="cashier-home-stats"><article><span class="cashier-stat-icon">▣</span><small>Jumlah transaksi</small><strong id="cashierHomeCount">0</strong><span>Transaksi selesai</span></article><article><span class="cashier-stat-icon">↗</span><small>Total penjualan</small><strong id="cashierHomeRevenue">Rp0</strong><span>Omzet hari ini</span></article></div>
+  <button type="button" class="cashier-start-button" data-view="cashierView"><span>▣</span><strong>Mulai Penjualan</strong><b>›</b></button>
+  <div class="cashier-home-section-head"><div><small>AKTIVITAS TERBARU</small><h2>Transaksi terbaru</h2></div><button type="button" data-view="reportView">Lihat semua ›</button></div><div class="cashier-home-list" id="cashierHomeRecent"><p>Belum ada transaksi hari ini.</p></div>
+  <div class="cashier-home-section-head"><div><small>PERLU DILANJUTKAN</small><h2>Pesanan tertunda</h2></div><button type="button" data-view="pendingView">Lihat semua ›</button></div><div class="cashier-home-list" id="cashierHomePending"><p>Tidak ada pesanan tertunda.</p></div>
+</section>
 </section>
 <section id="profileView" class="view premium-profile-view">
   <div class="premium-page-heading"><p class="eyebrow">ACCOUNT CENTER</p><h2>Profil & Akun</h2><p>Kelola informasi akun sesuai peranmu.</p></div>
@@ -527,6 +539,11 @@ function updateAristaProfile(user,role){
  ["premiumProfileEmail","premiumInfoEmail"].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=email;});
  const roleLabel=(r==="owner"||r==="pemilik")?"Pemilik":(r==="cashier"||r==="kasir")?"Kasir":(role||"Anggota");
  ["premiumProfileRole","premiumInfoRole"].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=roleLabel;});
+ const isCashier=roleLabel==="Kasir";
+ const ownerHome=document.getElementById("ownerHomeContent"),cashierHome=document.getElementById("cashierHomeContent");
+ if(ownerHome)ownerHome.classList.toggle("hidden",isCashier);
+ if(cashierHome)cashierHome.classList.toggle("hidden",!isCashier);
+ const cashierName=document.getElementById("cashierHomeName");if(cashierName)cashierName.textContent=name;
  const homeRole=document.getElementById("premiumHomeRole");
  if(homeRole){
   homeRole.textContent=roleLabel==="Pemilik"?"♛ Akun Pemilik":roleLabel==="Kasir"?"☕ Akun Kasir":"☕ Pengguna ARISTA";
