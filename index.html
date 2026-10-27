@@ -185,7 +185,7 @@ button,input,select,textarea{font-size:14px}
       <label for="newCashierPassword">Kata sandi awal</label><input id="newCashierPassword" class="field" type="password" minlength="8" autocomplete="new-password" placeholder="Minimal 8 karakter" required>
       <p class="users-security-note">Gunakan kata sandi awal yang unik dan sampaikan secara pribadi kepada kasir.</p>
       <button class="button button-gold full" type="submit" id="createCashierSubmit">＋ Buat Akun Kasir</button>
-      <p class="users-form-status" id="createCashierStatus" role="status">Formulir siap. Pembuatan akun belum terhubung ke layanan server.</p>
+      <p class="users-form-status" id="createCashierStatus" role="status">Formulir siap. Isi data kasir untuk membuat akun.</p>
     </form>
   </div>
   <div class="users-list-heading"><div><small>DAFTAR TIM</small><h3>Akun kasir</h3></div><span class="premium-role-pill">Aktif</span></div>
@@ -632,6 +632,35 @@ async function syncNow(){
 }
 if(isRecovery){
  db=window.supabase.createClient(URL,KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+ const cashierForm=document.getElementById("createCashierForm");
+ if(cashierForm)cashierForm.addEventListener("submit",async e=>{
+  e.preventDefault();
+  const status=document.getElementById("createCashierStatus"),button=document.getElementById("createCashierSubmit");
+  const name=document.getElementById("newCashierName").value.trim(),email=document.getElementById("newCashierEmail").value.trim(),password=document.getElementById("newCashierPassword").value;
+  if(!name||!email||password.length<8){if(status)status.textContent="Isi nama, email, dan kata sandi minimal 8 karakter.";return;}
+  if(!uid){if(status)status.textContent="Silakan login sebagai pemilik terlebih dahulu.";return;}
+  button.disabled=true;button.textContent="Membuat akun...";
+  if(status)status.textContent="Sedang membuat akun kasir...";
+  try{
+   const {data:{session},error:sessionError}=await db.auth.getSession();
+   if(sessionError||!session)throw new Error("Sesi login berakhir. Silakan login kembali.");
+   const response=await fetch(URL+"/functions/v1/create-cashier",{method:"POST",headers:{"Authorization":"Bearer "+session.access_token,"apikey":KEY,"Content-Type":"application/json"},body:JSON.stringify({name,email,password})});
+   const result=await response.json();
+   if(!response.ok)throw new Error(result.error||"Gagal membuat akun kasir.");
+   cashierForm.reset();
+   if(status)status.textContent="Akun kasir berhasil dibuat. Kasir bisa login memakai email dan kata sandi yang dibuat.";
+   await loadManagedCashiers();
+  }catch(err){if(status)status.textContent=err.message||"Gagal membuat akun kasir.";}
+  finally{button.disabled=false;button.textContent="＋ Buat Akun Kasir";}
+ });
+ async function loadManagedCashiers(){
+  const list=document.getElementById("managedCashierList");if(!list||!uid)return;
+  const {data:sessionData}=await db.auth.getSession();if(!sessionData.session)return;
+  const {data,error}=await db.from("business_memberships").select("display_name,role,active,user_id").eq("business_id",BUSINESS).eq("role","cashier").eq("active",true);
+  if(error){list.innerHTML='<p class="users-empty-state">Daftar kasir tidak dapat dimuat.</p>';return;}
+  list.innerHTML=data&&data.length?data.map((u,i)=>'<div class="managed-user-row"><span>♙</span><div><strong>'+String(u.display_name||("Kasir "+(i+1))).replace(/[&<>"]/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[ch]))+'</strong><small>Akun kasir aktif</small></div><span class="pending-pill">Aktif</span></div>').join(""):'<div class="users-empty-state"><strong>Belum ada akun kasir</strong></div>';
+ }
+
  setupRecovery();show();
  db.auth.getSession().then(({data,error})=>{if(error)msg(error.message);else if(!data.session)msg("Tautan pemulihan tidak valid atau sudah kedaluwarsa. Minta email pemulihan baru.")});
 }else{
@@ -651,7 +680,7 @@ document.getElementById("aristaCloudForm").addEventListener("submit",async e=>{
   }else{
    const {error:ue}=await db.from("app_state").upsert({business_id:BUSINESS,state_json:state,updated_by:uid,updated_at:new Date().toISOString()},{onConflict:"business_id"});if(ue)throw ue;
   }
-  ready=true;hide();renderAll();renderExpenses();
+  ready=true;hide();renderAll();renderExpenses();loadManagedCashiers();
   let badge=document.getElementById("aristaCloudStatus");if(!badge){badge=document.createElement("div");badge.id="aristaCloudStatus";badge.style.cssText="position:fixed;top:5px;right:6px;z-index:80;background:#211e1a;border:1px solid #45392c;border-radius:99px;padding:5px 8px;font-size:10px;color:#e0c18e";document.body.appendChild(badge)}badge.textContent="Tersinkron";
  }catch(err){msg(err.message||"Gagal masuk. Periksa koneksi dan akun.");show()}
  finally{b.disabled=false;b.textContent="Masuk & Sinkronkan"}
