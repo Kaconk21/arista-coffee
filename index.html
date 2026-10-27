@@ -169,11 +169,28 @@ button,input,select,textarea{font-size:14px}
   <div class="premium-account-card"><div class="premium-avatar" id="premiumAvatar">♙</div><div class="premium-account-main"><strong id="premiumProfileName">Akun ARISTA</strong><span id="premiumProfileEmail">Masuk untuk melihat akun</span><span class="premium-role-pill" id="premiumProfileRole">Anggota</span></div></div>
   <div class="premium-profile-links">
     <button class="premium-profile-link" data-view="accountInfoView"><span>♙</span><div><strong>Informasi Akun</strong><small>Lihat informasi akun</small></div><b>›</b></button>
-    <button class="premium-profile-link owner-profile-only" data-view="manageView"><span>♧</span><div><strong>Kelola Pengguna</strong><small>Pengaturan akses pengguna</small></div><b>›</b></button>
+    <button class="premium-profile-link owner-profile-only" data-view="manageUsersView"><span>♧</span><div><strong>Kelola Pengguna</strong><small>Pengaturan akses pengguna</small></div><b>›</b></button>
     <button class="premium-profile-link" data-view="securityInfoView"><span>♢</span><div><strong>Keamanan</strong><small>Kelola sesi dan keamanan akun</small></div><b>›</b></button>
   </div>
   <button class="premium-logout-button" id="profilePageLogout" type="button">Keluar dari akun</button>
   <p class="premium-logout-note">Kamu akan diminta konfirmasi sebelum keluar. Data usaha tetap tersimpan.</p>
+</section>
+<section id="manageUsersView" class="view premium-profile-view">
+  <div class="premium-page-heading"><p class="eyebrow">TEAM & ACCESS</p><h2>Kelola Pengguna</h2><p>Kelola akun kasir ARISTA Coffee dari satu tempat.</p></div>
+  <div class="users-summary-grid"><article><small>Total akun kasir</small><strong id="managedCashierCount">1</strong></article><article><small>Status pengelolaan</small><strong class="users-active-status">Pemilik</strong></article></div>
+  <div class="users-create-card"><div class="users-create-heading"><span>＋</span><div><strong>Tambah akun kasir</strong><small>Buat akses masuk khusus untuk staf kasir.</small></div></div>
+    <form id="createCashierForm" class="users-create-form">
+      <label for="newCashierName">Nama kasir</label><input id="newCashierName" class="field" autocomplete="name" placeholder="Contoh: Andi" required>
+      <label for="newCashierEmail">Email untuk login</label><input id="newCashierEmail" class="field" type="email" autocomplete="off" placeholder="kasir@contoh.com" required>
+      <label for="newCashierPassword">Kata sandi awal</label><input id="newCashierPassword" class="field" type="password" minlength="8" autocomplete="new-password" placeholder="Minimal 8 karakter" required>
+      <p class="users-security-note">Gunakan kata sandi awal yang unik dan sampaikan secara pribadi kepada kasir.</p>
+      <button class="button button-gold full" type="submit" id="createCashierSubmit">＋ Buat Akun Kasir</button>
+      <p class="users-form-status" id="createCashierStatus" role="status">Formulir siap. Pembuatan akun belum terhubung ke layanan server.</p>
+    </form>
+  </div>
+  <div class="users-list-heading"><div><small>DAFTAR TIM</small><h3>Akun kasir</h3></div><span class="premium-role-pill">Aktif</span></div>
+  <div id="managedCashierList" class="users-list-card"><div class="users-empty-state"><span>♙</span><strong>Daftar kasir belum dimuat</strong><p>Daftar akun akan tampil setelah koneksi pengelolaan pengguna diaktifkan.</p></div></div>
+  <button class="button button-outline full" data-view="profileView">Kembali ke Profil</button>
 </section>
 <section id="accountInfoView" class="view premium-profile-view"><div class="premium-page-heading"><p class="eyebrow">ACCOUNT DETAILS</p><h2>Informasi Akun</h2></div><div class="premium-account-card"><div class="premium-avatar">♙</div><div class="premium-account-main"><strong id="premiumInfoName">Akun ARISTA</strong><span id="premiumInfoEmail"></span><span class="premium-role-pill" id="premiumInfoRole">Anggota</span></div></div><button class="button button-outline full" data-view="profileView">Kembali ke Profil</button></section>
 <section id="securityInfoView" class="view premium-profile-view"><div class="premium-page-heading"><p class="eyebrow">ACCOUNT SECURITY</p><h2>Keamanan</h2><p>Jaga kerahasiaan kata sandi dan jangan bagikan kode verifikasi.</p></div><div class="premium-note"><span>♢</span><div><strong>Sesi akun</strong><p>Gunakan tombol Keluar dari akun untuk mengakhiri sesi di perangkat ini.</p></div></div><button class="button button-outline full" data-view="profileView">Kembali ke Profil</button></section>
