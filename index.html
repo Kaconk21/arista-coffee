@@ -634,7 +634,7 @@ async function syncNow(){
  if(error)throw error;
 }
 if(isRecovery){
- db=window.supabase.createClient(URL,KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+ db=window.supabase.createClient(URL,KEY,{auth:{persistSession:true,storage:window.localStorage,autoRefreshToken:true,detectSessionInUrl:true}});
  setupRecovery();show();
  db.auth.getSession().then(({data,error})=>{if(error)msg(error.message);else if(!data.session)msg("Tautan pemulihan tidak valid atau sudah kedaluwarsa. Minta email pemulihan baru.")});
 }else{
@@ -696,7 +696,7 @@ document.getElementById("aristaCloudForm").addEventListener("submit",async e=>{
 const originalSave=saveState;
 saveState=function(){originalSave();if(ready){clearTimeout(timer);timer=setTimeout(()=>syncNow().catch(err=>{console.error(err);const s=document.getElementById("aristaCloudStatus");if(s)s.textContent="Cloud gagal";toast("Data lokal tersimpan, cloud gagal disinkronkan")}),700)}};
 if(!isRecovery){
- db=window.supabase.createClient(URL,KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+ db=window.supabase.createClient(URL,KEY,{auth:{persistSession:true,storage:window.localStorage,autoRefreshToken:true,detectSessionInUrl:true}});
  db.auth.getSession().then(async ({data,error})=>{
   if(error){console.error("Pemeriksaan sesi ARISTA gagal:",error);show();return;}
   if(!data.session){show();return;}
