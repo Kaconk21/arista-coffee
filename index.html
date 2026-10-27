@@ -166,7 +166,7 @@ button,input,select,textarea{font-size:14px}
 </section>
 <section id="profileView" class="view premium-profile-view">
   <div class="premium-page-heading"><p class="eyebrow">ACCOUNT CENTER</p><h2>Profil & Akun</h2><p>Kelola informasi akun sesuai peranmu.</p></div>
-  <div class="premium-account-card"><div class="premium-avatar" id="premiumAvatar">♙</div><div class="premium-account-main"><strong id="premiumProfileName">Akun ARISTA</strong><span id="premiumProfileEmail">Masuk untuk melihat akun</span><span class="premium-role-pill" id="premiumProfileRole">Anggota</span></div></div>
+  <div class="premium-account-card"><div class="premium-avatar" id="premiumAvatar">♙</div><div class="premium-account-main"><strong id="premiumProfileName">Akun ARISTA</strong><span id="premiumProfileEmail">Masuk untuk melihat akun</span><span class="premium-role-pill" id="premiumProfileRole">Menentukan akses setelah login</span></div></div>
   <div class="premium-profile-links">
     <button class="premium-profile-link" data-view="accountInfoView"><span>♙</span><div><strong>Informasi Akun</strong><small>Lihat informasi akun</small></div><b>›</b></button>
     <button class="premium-profile-link owner-profile-only" data-view="manageUsersView"><span>♧</span><div><strong>Kelola Pengguna</strong><small>Pengaturan akses pengguna</small></div><b>›</b></button>
@@ -192,7 +192,7 @@ button,input,select,textarea{font-size:14px}
   <div id="managedCashierList" class="users-list-card"><div class="users-empty-state"><span>♙</span><strong>Daftar kasir belum dimuat</strong><p>Daftar akun akan tampil setelah koneksi pengelolaan pengguna diaktifkan.</p></div></div>
   <button class="button button-outline full" data-view="profileView">Kembali ke Profil</button>
 </section>
-<section id="accountInfoView" class="view premium-profile-view"><div class="premium-page-heading"><p class="eyebrow">ACCOUNT DETAILS</p><h2>Informasi Akun</h2></div><div class="premium-account-card"><div class="premium-avatar">♙</div><div class="premium-account-main"><strong id="premiumInfoName">Akun ARISTA</strong><span id="premiumInfoEmail"></span><span class="premium-role-pill" id="premiumInfoRole">Anggota</span></div></div><button class="button button-outline full" data-view="profileView">Kembali ke Profil</button></section>
+<section id="accountInfoView" class="view premium-profile-view"><div class="premium-page-heading"><p class="eyebrow">ACCOUNT DETAILS</p><h2>Informasi Akun</h2></div><div class="premium-account-card"><div class="premium-avatar">♙</div><div class="premium-account-main"><strong id="premiumInfoName">Akun ARISTA</strong><span id="premiumInfoEmail"></span><span class="premium-role-pill" id="premiumInfoRole">Menentukan akses setelah login</span></div></div><button class="button button-outline full" data-view="profileView">Kembali ke Profil</button></section>
 <section id="securityInfoView" class="view premium-profile-view"><div class="premium-page-heading"><p class="eyebrow">ACCOUNT SECURITY</p><h2>Keamanan</h2><p>Jaga kerahasiaan kata sandi dan jangan bagikan kode verifikasi.</p></div><div class="premium-note"><span>♢</span><div><strong>Sesi akun</strong><p>Gunakan tombol Keluar dari akun untuk mengakhiri sesi di perangkat ini.</p></div></div><button class="button button-outline full" data-view="profileView">Kembali ke Profil</button></section>
 <section id="menuView" class="view"><div class="section-head"><div><p class="eyebrow">OUR SELECTION</p><h2>Menu pilihan</h2></div><span class="muted" id="menuCount"></span></div><div class="panel shop-status-panel"><div><div class="field-label">Status kedai</div><strong id="shopStatusText">BUKA</strong><p id="shopStatusNote" class="tiny muted">Pesanan dapat diterima.</p></div><button id="shopToggleBtn" class="button button-danger" type="button">Tutup kedai</button></div><div id="categoryFilters" class="filters"></div><div id="menuGrid" class="menu-grid"></div></section>
 
@@ -532,7 +532,7 @@ renderAll();renderExpenses();
 #aristaProfileMenu button{width:100%;margin-top:14px;padding:11px;border:1px solid #70483f;border-radius:10px;background:#39231f;color:#f0b0a3;font-weight:800}
 </style>
 <button id="aristaProfileButton" type="button" aria-label="Menu akun" style="display:flex">👤</button>
-<div id="aristaProfileMenu" role="dialog" aria-label="Menu akun"><strong id="aristaProfileName">Akun ARISTA</strong><div class="profile-email" id="aristaProfileEmail"></div><span class="profile-role" id="aristaProfileRole">Anggota</span><button id="aristaLogoutButton" type="button">Keluar dari akun</button></div>
+<div id="aristaProfileMenu" role="dialog" aria-label="Menu akun"><strong id="aristaProfileName">Akun ARISTA</strong><div class="profile-email" id="aristaProfileEmail"></div><span class="profile-role" id="aristaProfileRole">Menentukan akses setelah login</span><button id="aristaLogoutButton" type="button">Keluar dari akun</button></div>
 <div id="aristaCloudLogin"><form class="card" id="aristaCloudForm"><h1>ARISTA</h1><p>COFFEE & ROASTERY</p><p>Masuk untuk memakai data bersama antarperangkat.</p><label>Email pemilik atau nama pengguna kasir</label><input id="aristaCloudEmail" type="text" autocomplete="username" autocapitalize="none" required><label>Kata sandi</label><input id="aristaCloudPassword" type="password" autocomplete="current-password" required><button id="aristaCloudSubmit">Masuk & Sinkronkan</button><p class="err" id="aristaCloudError"></p></form></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -668,7 +668,7 @@ document.getElementById("aristaCloudForm").addEventListener("submit",async e=>{
  e.preventDefault();const b=document.getElementById("aristaCloudSubmit");b.disabled=true;b.textContent="Menghubungkan…";msg("");
  try{
   db=window.supabase.createClient(URL,KEY,{auth:{persistSession:true,autoRefreshToken:true}});
-  const loginId=document.getElementById("aristaCloudEmail").value.trim();\n  const loginEmail=loginId.includes("@")?loginId:loginId.toLowerCase()+"@cashier.arista.invalid";\n  const {data,error}=await db.auth.signInWithPassword({email:loginEmail,password:document.getElementById("aristaCloudPassword").value});
+  const loginId=document.getElementById("aristaCloudEmail").value.trim(); const loginEmail=loginId.includes("@")?loginId:loginId.toLowerCase()+"@cashier.arista.invalid"; const {data,error}=await db.auth.signInWithPassword({email:loginEmail,password:document.getElementById("aristaCloudPassword").value});
   if(error)throw error;uid=data.user.id;
   const {data:m,error:me}=await db.from("business_memberships").select("business_id,role,active").eq("business_id",BUSINESS).eq("user_id",uid).eq("active",true).maybeSingle();
   if(me)throw me;if(!m)throw new Error("Akun belum terdaftar sebagai anggota ARISTA.");
