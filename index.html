@@ -502,7 +502,25 @@ document.getElementById("aristaCloudForm").addEventListener("submit",async e=>{
 }
 const originalSave=saveState;
 saveState=function(){originalSave();if(ready){clearTimeout(timer);timer=setTimeout(()=>syncNow().catch(err=>{console.error(err);const s=document.getElementById("aristaCloudStatus");if(s)s.textContent="Cloud gagal";toast("Data lokal tersimpan, cloud gagal disinkronkan")}),700)}};
-if(!isRecovery)show();
+if(!isRecovery){
+ show();
+ db=window.supabase.createClient(URL,KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+ db.auth.getSession().then(async ({data,error})=>{
+  if(error||!data.session)return;
+  try{
+   uid=data.session.user.id;
+   const {data:m,error:me}=await db.from("business_memberships").select("business_id,role,active").eq("business_id",BUSINESS).eq("user_id",uid).eq("active",true).maybeSingle();
+   if(me||!m)return;
+   const {data:r,error:re}=await db.from("app_state").select("state_json").eq("business_id",BUSINESS).maybeSingle();
+   if(re)throw re;
+   if(r&&r.state_json&&Array.isArray(r.state_json.products)&&Array.isArray(r.state_json.sales)){
+    state=r.state_json;state.products=state.products.map(p=>({...p,cost:Number.isFinite(p.cost)?p.cost:null,image:p.image||""}));state.pendingOrders=Array.isArray(state.pendingOrders)?state.pendingOrders:[];state.expenses=Array.isArray(state.expenses)?state.expenses:[];localStorage.setItem("arista_coffee_v1",JSON.stringify(state));
+   }
+   ready=true;hide();renderAll();renderExpenses();
+   let badge=document.getElementById("aristaCloudStatus");if(!badge){badge=document.createElement("div");badge.id="aristaCloudStatus";badge.style.cssText="position:fixed;top:5px;right:6px;z-index:80;background:#211e1a;border:1px solid #45392c;border-radius:99px;padding:5px 8px;font-size:10px;color:#e0c18e";document.body.appendChild(badge)}badge.textContent="Tersinkron";
+  }catch(err){console.error("Pemulihan sesi ARISTA gagal:",err)}
+ });
+}
 })();
 </script>
 </body>
