@@ -116,7 +116,7 @@ button,input,select,textarea{font-size:14px}
 <body>
 
 
-<main>
+<main style="visibility:hidden">
 
 <nav class="tabs bottom-nav premium-bottom-nav" aria-label="Navigasi utama">
 <button class="tab active" data-view="homeView"><span class="nav-icon" aria-hidden="true">⌂</span><span class="nav-label">Beranda</span></button>
@@ -546,12 +546,13 @@ const main=document.querySelector("body > main");
 function msg(s){const el=document.getElementById("aristaCloudError");if(el)el.textContent=s||""}
 function updateAristaProfile(user,role){
  const email=user&&user.email?user.email:"";
- document.getElementById("aristaProfileName").textContent=email?email.split("@")[0]:"Akun ARISTA";
+ const displayName=(user&&user.user_metadata&&user.user_metadata.display_name)|| (email?email.split("@")[0]:"Akun ARISTA");
+ document.getElementById("aristaProfileName").textContent=displayName;
  document.getElementById("aristaProfileEmail").textContent=email;
  const r=String(role||"Anggota").toLowerCase();
  document.getElementById("aristaProfileRole").textContent=(r==="owner"||r==="pemilik")?"Pemilik":(r==="cashier"||r==="kasir")?"Kasir":(role||"Anggota");
  document.getElementById("aristaProfileButton").style.display="none";
- const name=email?email.split("@")[0]:"Akun ARISTA";
+ const name=displayName;
  ["premiumProfileName","premiumInfoName"].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=name;});
  ["premiumProfileEmail","premiumInfoEmail"].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=email;});
  const roleLabel=(r==="owner"||r==="pemilik")?"Pemilik":(r==="cashier"||r==="kasir")?"Kasir":(role||"Anggota");
@@ -659,9 +660,9 @@ if(isRecovery){
  async function loadManagedCashiers(){
   const list=document.getElementById("managedCashierList");if(!list||!uid)return;
   const {data:sessionData}=await db.auth.getSession();if(!sessionData.session)return;
-  const {data,error}=await db.from("staff_profiles").select("role,active,user_id").eq("role","cashier").eq("active",true);
+  const {data,error}=await db.from("staff_profiles").select("role,active,user_id,display_name").eq("role","cashier").eq("active",true);
   if(error){list.innerHTML='<p class="users-empty-state">Daftar kasir tidak dapat dimuat.</p>';return;}
-  list.innerHTML=data&&data.length?data.map((u,i)=>'<div class="managed-user-row"><span>♙</span><div><strong>'+String("Kasir "+(i+1)).replace(/[&<>"]/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[ch]))+'</strong><small>Akun kasir aktif</small></div><span class="pending-pill">Aktif</span></div>').join(""):'<div class="users-empty-state"><strong>Belum ada akun kasir</strong></div>';
+  list.innerHTML=data&&data.length?data.map((u,i)=>'<div class="managed-user-row"><span>♙</span><div><strong>'+String(u.display_name||("Kasir "+(i+1))).replace(/[&<>"]/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[ch]))+'</strong><small>Akun kasir aktif</small></div><span class="pending-pill">Aktif</span></div>').join(""):'<div class="users-empty-state"><strong>Belum ada akun kasir</strong></div>';
  }
 
 
@@ -696,7 +697,7 @@ if(!isRecovery){
   try{
    uid=data.session.user.id;
    const {data:m,error:me}=await db.from("business_memberships").select("business_id,role,active").eq("business_id",BUSINESS).eq("user_id",uid).eq("active",true).maybeSingle();
-   if(me||!m)return;
+   if(me||!m){show();return;}
    updateAristaProfile(data.session.user,m.role);
    const {data:r,error:re}=await db.from("app_state").select("state_json").eq("business_id",BUSINESS).maybeSingle();
    if(re)throw re;
