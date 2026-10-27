@@ -699,7 +699,7 @@ saveState=function(){originalSave();if(ready){clearTimeout(timer);timer=setTimeo
 if(!isRecovery){
  db=window.supabase.createClient(URL,KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
  db.auth.getSession().then(async ({data,error})=>{
-  if(error||!data.session){show();return;}
+  if(error){console.error("Pemeriksaan sesi ARISTA gagal:",error);show();return;}\n  if(!data.session){show();return;}
   try{
    uid=data.session.user.id;
    const [membershipResult,stateResult]=await Promise.all([
@@ -707,7 +707,7 @@ if(!isRecovery){
     db.from("app_state").select("state_json").eq("business_id",BUSINESS).maybeSingle()
    ]);
    const {data:m,error:me}=membershipResult;
-   if(me||!m){show();return;}
+   if(me||!m){console.error("Membership ARISTA tidak valid:",me);await db.auth.signOut();uid=null;show();msg("Akun ini belum terdaftar sebagai pemilik atau kasir aktif ARISTA.");return;}
    updateAristaProfile(data.session.user,m.role);
    const {data:r,error:re}=stateResult;
    if(re)throw re;
@@ -716,7 +716,7 @@ if(!isRecovery){
    }
    ready=true;hide();renderAll();renderExpenses();
    let badge=document.getElementById("aristaCloudStatus");if(!badge){badge=document.createElement("div");badge.id="aristaCloudStatus";badge.style.cssText="position:fixed;top:5px;right:6px;z-index:80;background:#211e1a;border:1px solid #45392c;border-radius:99px;padding:5px 8px;font-size:10px;color:#e0c18e";document.body.appendChild(badge)}badge.textContent="Tersinkron";
-  }catch(err){console.error("Pemulihan sesi ARISTA gagal:",err);show();msg("Sesi belum siap. Silakan masuk kembali.");}
+  }catch(err){console.error("Pemulihan sesi ARISTA gagal:",err);\n    // Sesi login tetap dipertahankan jika hanya sinkronisasi data yang gagal.\n    if(uid){ready=true;hide();renderAll();renderExpenses();msg("");toast("Login berhasil, tetapi sinkronisasi data gagal. Periksa koneksi.");}\n    else{show();msg("Sesi belum siap. Silakan masuk kembali.");}}
  });
 }
 })();
