@@ -632,6 +632,9 @@ async function syncNow(){
 }
 if(isRecovery){
  db=window.supabase.createClient(URL,KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+ setupRecovery();show();
+ db.auth.getSession().then(({data,error})=>{if(error)msg(error.message);else if(!data.session)msg("Tautan pemulihan tidak valid atau sudah kedaluwarsa. Minta email pemulihan baru.")});
+}else{
  const cashierForm=document.getElementById("createCashierForm");
  if(cashierForm)cashierForm.addEventListener("submit",async e=>{
   e.preventDefault();
@@ -661,9 +664,7 @@ if(isRecovery){
   list.innerHTML=data&&data.length?data.map((u,i)=>'<div class="managed-user-row"><span>♙</span><div><strong>'+String("Kasir "+(i+1)).replace(/[&<>"]/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[ch]))+'</strong><small>Akun kasir aktif</small></div><span class="pending-pill">Aktif</span></div>').join(""):'<div class="users-empty-state"><strong>Belum ada akun kasir</strong></div>';
  }
 
- setupRecovery();show();
- db.auth.getSession().then(({data,error})=>{if(error)msg(error.message);else if(!data.session)msg("Tautan pemulihan tidak valid atau sudah kedaluwarsa. Minta email pemulihan baru.")});
-}else{
+
 document.getElementById("aristaCloudForm").addEventListener("submit",async e=>{
  e.preventDefault();const b=document.getElementById("aristaCloudSubmit");b.disabled=true;b.textContent="Menghubungkan…";msg("");
  try{
