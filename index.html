@@ -671,7 +671,6 @@ if(isRecovery){
 document.getElementById("aristaCloudForm").addEventListener("submit",async e=>{
  e.preventDefault();const b=document.getElementById("aristaCloudSubmit");b.disabled=true;b.textContent="Menghubungkan…";msg("");
  try{
-  db=window.supabase.createClient(URL,KEY,{auth:{persistSession:true,autoRefreshToken:true}});
   const loginId=document.getElementById("aristaCloudEmail").value.trim(); const loginEmail=loginId.includes("@")?loginId:loginId.toLowerCase()+"@cashier.arista.invalid"; const {data,error}=await db.auth.signInWithPassword({email:loginEmail,password:document.getElementById("aristaCloudPassword").value});
   if(error)throw error;uid=data.user.id;
   const [membershipResult,stateResult]=await Promise.all([
@@ -690,7 +689,7 @@ document.getElementById("aristaCloudForm").addEventListener("submit",async e=>{
   }
   ready=true;hide();renderAll();renderExpenses();loadManagedCashiers();
   let badge=document.getElementById("aristaCloudStatus");if(!badge){badge=document.createElement("div");badge.id="aristaCloudStatus";badge.style.cssText="position:fixed;top:5px;right:6px;z-index:80;background:#211e1a;border:1px solid #45392c;border-radius:99px;padding:5px 8px;font-size:10px;color:#e0c18e";document.body.appendChild(badge)}badge.textContent="Tersinkron";
- }catch(err){msg(err.message||"Gagal masuk. Periksa koneksi dan akun.");show()}
+ }catch(err){console.error("Login ARISTA gagal:",err);const {data:sessionCheck}=db?await db.auth.getSession():{data:{session:null}};if(sessionCheck&&sessionCheck.session){uid=sessionCheck.session.user.id;ready=true;hide();msg("");toast("Login berhasil. Jika data belum tampil, periksa koneksi.");}else{msg(err.message||"Gagal masuk. Periksa koneksi dan akun.");show()}}
  finally{b.disabled=false;b.textContent="Masuk & Sinkronkan"}
 });
 }
