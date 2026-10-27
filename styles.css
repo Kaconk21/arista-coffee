@@ -85,3 +85,63 @@ main{width:min(1080px,100% - 28px);margin:0 auto;padding-top:12px}
 #aristaProfileButton{display:none!important}
 @media(min-width:700px){.premium-shortcut-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.premium-hero{padding:32px;min-height:235px}.premium-home-view,.premium-profile-view{padding-top:8px}.premium-bottom-nav{left:50%!important;right:auto!important;transform:translateX(-50%);width:min(640px,100%);border:1px solid #5b452b!important;border-bottom:0!important;border-radius:18px 18px 0 0}}
 @media(max-width:380px){main{width:calc(100% - 20px)}.premium-hero{padding:20px 15px}.premium-hero-beans{right:10px;font-size:18px}.premium-shortcut{padding:13px 11px}}
+
+
+/* ARISTA mockup alignment pass: compact POS layout for phone screens */
+@media(max-width:699px){
+  body{background:#090807}
+  main{width:calc(100% - 24px);padding-bottom:94px}
+  .topbar{height:58px;padding:0 14px;gap:8px;background:#090807f5;border-bottom:1px solid #3a2b19}
+  .brandmark{width:34px;height:34px;font-size:22px}
+  .brandtext{letter-spacing:1.4px}
+  .brandtext strong{font-size:16px}
+  .brandtext span{font-size:8px;letter-spacing:1.3px}
+  .premium-brand-row{padding:8px 0 12px;gap:8px}
+  .premium-brand-mark{width:36px;height:36px;font-size:20px}
+  .premium-brand-word strong{font-size:17px;letter-spacing:2px}
+  .premium-brand-word span{font-size:7px;letter-spacing:1.5px}
+  .premium-cloud-pill{font-size:9px;padding:5px 7px}
+  .premium-hero{min-height:118px;padding:14px 14px;border-radius:14px;background:linear-gradient(115deg,#211a11,#11100d 70%,#080706);box-shadow:none}
+  .premium-hero .eyebrow{font-size:8px;letter-spacing:1.3px;margin-bottom:6px}
+  .premium-hero h1{font-size:24px;line-height:1.12;letter-spacing:-.6px;margin:5px 0}
+  .premium-hero p:not(.eyebrow){max-width:240px;font-size:10px;line-height:1.45}
+  .premium-hero-beans{font-size:18px;right:10px;bottom:10px}
+  .premium-section-title{margin:17px 1px 9px;align-items:center}
+  .premium-section-title h2,.premium-page-heading h2{font-size:19px}
+  .premium-date-label{font-size:8px;letter-spacing:.8px}
+  .premium-shortcut-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+  .premium-shortcut{align-items:center;text-align:center;justify-content:center;gap:5px;min-height:76px;padding:8px 3px;border-radius:11px;box-shadow:none;background:linear-gradient(145deg,#1a1712,#100f0c)}
+  .premium-shortcut>span{width:29px;height:29px;border-radius:9px;font-size:18px}
+  .premium-shortcut strong{font-size:9px;line-height:1.15}
+  .premium-shortcut small{display:none}
+  .premium-note{margin-top:12px;padding:11px;border-radius:12px;gap:8px}
+  .premium-note>span{font-size:17px}
+  .premium-note strong{font-size:10px}
+  .premium-note p{font-size:9px;line-height:1.45}
+  .premium-page-heading{padding:8px 1px 13px}
+  .premium-page-heading .eyebrow{margin-bottom:5px}
+  .premium-page-heading p:not(.eyebrow){font-size:10px;margin:6px 0}
+  .premium-account-card{padding:13px;border-radius:14px;gap:10px}
+  .premium-avatar{width:48px;height:48px;flex-basis:48px;font-size:22px}
+  .premium-account-main strong{font-size:13px}
+  .premium-account-main>span:not(.premium-role-pill){font-size:9px}
+  .premium-role-pill{font-size:9px;padding:4px 8px}
+  .premium-profile-links{gap:7px;margin-top:12px}
+  .premium-profile-link{padding:10px;gap:9px;border-radius:11px}
+  .premium-profile-link>span{width:30px;height:30px;font-size:18px}
+  .premium-profile-link strong{font-size:10px}
+  .premium-profile-link small{font-size:9px}
+  .premium-logout-button{margin-top:16px;padding:11px;font-size:11px}
+  .premium-logout-note{font-size:9px}
+  .premium-bottom-nav{position:fixed!important;left:0!important;right:0!important;bottom:0!important;top:auto!important;z-index:100!important;display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px!important;width:100%!important;padding:7px 12px calc(7px + env(safe-area-inset-bottom))!important;border:0!important;border-top:1px solid #4a3822!important;border-radius:15px 15px 0 0!important;background:#0b0a08f7!important;box-shadow:0 -8px 24px #0009!important;backdrop-filter:blur(18px)}
+  .premium-bottom-nav .tab{min-height:42px}
+  .premium-bottom-nav .nav-icon{font-size:18px}
+  .premium-bottom-nav .nav-label{font-size:9px}
+  .section-head{margin:12px 0}
+  .section-head h2{font-size:22px}
+  .panel,.stat-card{border-radius:13px}
+  .menu-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+  .menu-grid .product-card{padding:9px;border-radius:12px}
+  .cashier-combined{padding:10px}
+  .pos-layout{gap:10px}
+}
