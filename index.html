@@ -112,7 +112,7 @@ button,input,select,textarea{font-size:14px}
 @media(max-width:520px){.report-export-tools{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:18px 0 14px}.report-export-group{padding:9px 7px;gap:7px}.report-export-heading{font-size:14px}.report-export-group .field-label{font-size:10px}.report-export-group .field{font-size:11px;min-height:37px}.report-export-group .button{font-size:10px;min-height:40px}.report-export-extra .button{width:100%}}
 
 </style>
-<link rel="stylesheet" href="./styles.css?v=mockup4">\n</head>
+<link rel="stylesheet" href="./styles.css?v=home1">\n</head>
 <body>
 
 
@@ -126,25 +126,31 @@ button,input,select,textarea{font-size:14px}
 </nav>
 
 <section id="homeView" class="view active premium-home-view">
-  <div class="premium-brand-row"><div class="premium-brand-mark">☕</div><div class="premium-brand-word"><strong>ARISTA</strong><span>COFFEE & ROASTERY</span></div><span class="premium-cloud-pill">● Cloud</span></div>
-  <div class="premium-hero"><p class="eyebrow">GOOD COFFEE, BETTER MOMENTS</p><h1>Selamat datang di<br><em>ARISTA Coffee.</em></h1><p>Kelola kedai dengan lebih mudah, dalam satu pengalaman yang elegan.</p><div class="premium-hero-beans" aria-hidden="true">✦　☕　✦</div></div>
-  <div class="premium-section-title"><div><p class="eyebrow">RINGKASAN HARI INI</p><h2>Performa kedai</h2></div><span class="premium-date-label" id="premiumTodayLabel">HARI INI</span></div>
+  <header class="home-mockup-header">
+    <div class="home-mockup-brand"><span class="home-mockup-logo">☕</span><span class="home-mockup-word"><strong>ARISTA</strong><small>COFFEE & ROASTERY</small></span></div>
+    <span class="home-cloud-status"><i></i> Cloud aktif</span>
+  </header>
+  <article class="home-welcome-card">
+    <div class="home-welcome-copy"><span class="home-kicker">SELAMAT DATANG KEMBALI</span><h1>Selamat datang,<br><em>ARISTA Coffee!</em></h1><p>Semua yang kamu butuhkan untuk mengelola kedai, dalam satu tempat.</p><span class="home-role-chip" id="premiumHomeRole">☕ Pengguna ARISTA</span></div>
+    <div class="home-coffee-art" aria-hidden="true"><div class="home-coffee-glow"></div><div class="home-coffee-beans">✦　·　✦</div><div class="home-cup"><span>ARISTA</span><i></i></div><div class="home-saucer"></div></div>
+  </article>
+  <div class="home-section-head"><div><span class="home-kicker">RINGKASAN HARI INI</span><h2>Dashboard</h2></div><span class="home-date-chip" id="premiumTodayLabel">HARI INI</span></div>
   <div class="premium-stats-grid">
-    <article class="premium-stat-card"><span>Total penjualan</span><strong id="premiumTodayRevenue">Rp0</strong><small>Omzet hari ini</small></article>
-    <article class="premium-stat-card"><span>Transaksi hari ini</span><strong id="premiumTodayCount">0</strong><small>Pesanan selesai</small></article>
+    <article class="premium-stat-card home-revenue-card"><span><i class="home-stat-symbol">↗</i> Total penjualan</span><strong id="premiumTodayRevenue">Rp0</strong><small><b></b> Omzet hari ini</small></article>
+    <article class="premium-stat-card home-count-card"><span><i class="home-stat-symbol">▤</i> Transaksi</span><strong id="premiumTodayCount">0</strong><small><b></b> Transaksi hari ini</small></article>
   </div>
-  <div class="premium-section-title premium-shortcut-heading"><div><p class="eyebrow">AKSES CEPAT</p><h2>Menu utama</h2></div></div>
+  <div class="home-section-head home-shortcut-head"><div><span class="home-kicker">AKSES CEPAT</span><h2>Menu utama</h2></div></div>
   <div class="premium-shortcut-grid">
     <button class="premium-shortcut" data-view="menuView"><span>☕</span><strong>Menu Produk</strong><small>Lihat pilihan minuman</small></button>
     <button class="premium-shortcut" data-view="cashierView"><span>▣</span><strong>Kasir</strong><small>Mulai transaksi</small></button>
     <button class="premium-shortcut" data-view="reportView"><span>▥</span><strong>Laporan</strong><small>Ringkasan usaha</small></button>
-    <button class="premium-shortcut owner-shortcut" data-view="manageView"><span>⚙</span><strong>Kelola</strong><small>Produk dan pengaturan</small></button>
+    <button class="premium-shortcut owner-shortcut" data-view="manageView"><span>⚙</span><strong>Kelola Menu</strong><small>Produk dan harga</small></button>
     <button class="premium-shortcut owner-shortcut" data-view="expensesView"><span>↗</span><strong>Keuangan</strong><small>Catat pengeluaran</small></button>
     <button class="premium-shortcut" data-view="profileView"><span>♙</span><strong>Profil</strong><small>Akun dan keamanan</small></button>
   </div>
-  <div class="premium-section-title premium-activity-heading"><div><p class="eyebrow">AKTIVITAS TERBARU</p><h2>Transaksi terakhir</h2></div><button type="button" class="premium-see-all" data-view="reportView">Lihat laporan ›</button></div>
-  <div class="premium-activity-card" id="premiumRecentActivity"><div class="premium-activity-empty">Aktivitas transaksi akan tampil di sini.</div></div>
-  <div class="premium-note"><span>✦</span><div><strong>Data usaha tersimpan di cloud</strong><p>Logout hanya mengakhiri sesi akun. Data usaha bersama tetap tersimpan.</p></div></div>
+  <div class="home-section-head home-activity-head"><div><span class="home-kicker">AKTIVITAS TERBARU</span><h2>Transaksi terakhir</h2></div><button type="button" class="premium-see-all" data-view="reportView">Lihat semua <b>›</b></button></div>
+  <div class="premium-activity-card" id="premiumRecentActivity"><div class="premium-activity-empty">Belum ada transaksi yang tercatat.</div></div>
+  <div class="home-footer-note"><span>✦</span><div><strong>ARISTA Coffee & Roastery</strong><small>Kelola kedai dengan lebih mudah setiap hari.</small></div><span class="home-footer-cloud">● Cloud</span></div>
 </section>
 <section id="profileView" class="view premium-profile-view">
   <div class="premium-page-heading"><p class="eyebrow">ACCOUNT CENTER</p><h2>Profil & Akun</h2><p>Kelola informasi akun sesuai peranmu.</p></div>
