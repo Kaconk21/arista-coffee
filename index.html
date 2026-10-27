@@ -707,7 +707,9 @@ if(!isRecovery){
     db.from("app_state").select("state_json").eq("business_id",BUSINESS).maybeSingle()
    ]);
    const {data:m,error:me}=membershipResult;
-   if(me||!m){console.error("Membership ARISTA tidak valid:",me);await db.auth.signOut();uid=null;show();msg("Akun ini belum terdaftar sebagai pemilik atau kasir aktif ARISTA.");return;}
+   // Jangan menghapus sesi yang valid hanya karena pemeriksaan keanggotaan gagal sesaat.
+   if(me)throw me;
+   if(!m){console.error("Membership ARISTA tidak ditemukan untuk sesi aktif.");show();msg("Akun ini belum terdaftar sebagai pemilik atau kasir aktif ARISTA.");return;}
    updateAristaProfile(data.session.user,m.role);
    const {data:r,error:re}=stateResult;
    if(re)throw re;
