@@ -557,7 +557,6 @@ function updateAristaProfile(user,role){
  const name=displayName;
  ["premiumProfileName","premiumInfoName"].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=name;});
  ["premiumProfileEmail","premiumInfoEmail"].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=email;});
- const roleLabel=(r==="owner"||r==="pemilik"||r==="pemilik arista")?"Pemilik":(r==="cashier"||r==="kasir")?"Kasir":(role||"Anggota");
  ["premiumProfileRole","premiumInfoRole"].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=roleLabel;});
  const isCashier=roleLabel==="Kasir";
  const ownerHome=document.getElementById("ownerHomeContent"),cashierHome=document.getElementById("cashierHomeContent");
