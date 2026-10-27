@@ -550,13 +550,14 @@ function updateAristaProfile(user,role){
  const displayName=(user&&user.user_metadata&&user.user_metadata.display_name)|| (email?email.split("@")[0]:"Akun ARISTA");
  document.getElementById("aristaProfileName").textContent=displayName;
  document.getElementById("aristaProfileEmail").textContent=email;
- const r=String(role||"Anggota").toLowerCase();
- document.getElementById("aristaProfileRole").textContent=(r==="owner"||r==="pemilik")?"Pemilik":(r==="cashier"||r==="kasir")?"Kasir":(role||"Anggota");
+ const r=String(role||"Anggota").trim().toLowerCase();
+ const roleLabel=(r==="owner"||r==="pemilik"||r==="pemilik arista")?"Pemilik":(r==="cashier"||r==="kasir")?"Kasir":(role||"Anggota");
+ document.getElementById("aristaProfileRole").textContent=roleLabel;
  document.getElementById("aristaProfileButton").style.display="none";
  const name=displayName;
  ["premiumProfileName","premiumInfoName"].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=name;});
  ["premiumProfileEmail","premiumInfoEmail"].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=email;});
- const roleLabel=(r==="owner"||r==="pemilik")?"Pemilik":(r==="cashier"||r==="kasir")?"Kasir":(role||"Anggota");
+ const roleLabel=(r==="owner"||r==="pemilik"||r==="pemilik arista")?"Pemilik":(r==="cashier"||r==="kasir")?"Kasir":(role||"Anggota");
  ["premiumProfileRole","premiumInfoRole"].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=roleLabel;});
  const isCashier=roleLabel==="Kasir";
  const ownerHome=document.getElementById("ownerHomeContent"),cashierHome=document.getElementById("cashierHomeContent");
