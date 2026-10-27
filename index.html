@@ -672,10 +672,14 @@ document.getElementById("aristaCloudForm").addEventListener("submit",async e=>{
   db=window.supabase.createClient(URL,KEY,{auth:{persistSession:true,autoRefreshToken:true}});
   const loginId=document.getElementById("aristaCloudEmail").value.trim(); const loginEmail=loginId.includes("@")?loginId:loginId.toLowerCase()+"@cashier.arista.invalid"; const {data,error}=await db.auth.signInWithPassword({email:loginEmail,password:document.getElementById("aristaCloudPassword").value});
   if(error)throw error;uid=data.user.id;
-  const {data:m,error:me}=await db.from("business_memberships").select("business_id,role,active").eq("business_id",BUSINESS).eq("user_id",uid).eq("active",true).maybeSingle();
+  const [membershipResult,stateResult]=await Promise.all([
+   db.from("business_memberships").select("business_id,role,active").eq("business_id",BUSINESS).eq("user_id",uid).eq("active",true).maybeSingle(),
+   db.from("app_state").select("state_json").eq("business_id",BUSINESS).maybeSingle()
+  ]);
+  const {data:m,error:me}=membershipResult;
   if(me)throw me;if(!m)throw new Error("Akun belum terdaftar sebagai anggota ARISTA.");
   updateAristaProfile(data.user,m.role);
-  const {data:r,error:re}=await db.from("app_state").select("state_json").eq("business_id",BUSINESS).maybeSingle();
+  const {data:r,error:re}=stateResult;
   if(re)throw re;
   if(r&&r.state_json&&Array.isArray(r.state_json.products)&&Array.isArray(r.state_json.sales)){
    state=r.state_json;state.products=state.products.map(p=>({...p,cost:Number.isFinite(p.cost)?p.cost:null,image:p.image||""}));state.pendingOrders=Array.isArray(state.pendingOrders)?state.pendingOrders:[];state.expenses=Array.isArray(state.expenses)?state.expenses:[];localStorage.setItem("arista_coffee_v1",JSON.stringify(state));
@@ -696,10 +700,14 @@ if(!isRecovery){
   if(error||!data.session){show();return;}
   try{
    uid=data.session.user.id;
-   const {data:m,error:me}=await db.from("business_memberships").select("business_id,role,active").eq("business_id",BUSINESS).eq("user_id",uid).eq("active",true).maybeSingle();
+   const [membershipResult,stateResult]=await Promise.all([
+    db.from("business_memberships").select("business_id,role,active").eq("business_id",BUSINESS).eq("user_id",uid).eq("active",true).maybeSingle(),
+    db.from("app_state").select("state_json").eq("business_id",BUSINESS).maybeSingle()
+   ]);
+   const {data:m,error:me}=membershipResult;
    if(me||!m){show();return;}
    updateAristaProfile(data.session.user,m.role);
-   const {data:r,error:re}=await db.from("app_state").select("state_json").eq("business_id",BUSINESS).maybeSingle();
+   const {data:r,error:re}=stateResult;
    if(re)throw re;
    if(r&&r.state_json&&Array.isArray(r.state_json.products)&&Array.isArray(r.state_json.sales)){
     state=r.state_json;state.products=state.products.map(p=>({...p,cost:Number.isFinite(p.cost)?p.cost:null,image:p.image||""}));state.pendingOrders=Array.isArray(state.pendingOrders)?state.pendingOrders:[];state.expenses=Array.isArray(state.expenses)?state.expenses:[];localStorage.setItem("arista_coffee_v1",JSON.stringify(state));
