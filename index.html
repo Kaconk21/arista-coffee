@@ -126,6 +126,32 @@ button,input,select,textarea{font-size:14px}
 .cashier-home-list{display:grid;gap:8px}.cashier-home-list:empty{display:none}.cashier-home-list>p{margin:0;padding:16px;border:1px dashed #493a2a;border-radius:13px;color:#a99c8c;font-size:12px;text-align:center;background:#1d1a17}.cashier-home-list>div,.cashier-home-list>article{border:1px solid #403428;border-radius:13px;background:#211e1a;padding:12px;color:#eee4d6}
 @media(min-width:560px){.cashier-home-content{padding-left:22px;padding-right:22px}.cashier-home-stats{grid-template-columns:repeat(4,minmax(0,1fr))}.cashier-home-stats article{padding:13px 10px}.cashier-home-stats article small{min-height:25px}.cashier-welcome-hero{min-height:175px;padding:26px}}
 @media(max-width:380px){.cashier-home-content{padding-left:12px;padding-right:12px}.cashier-welcome-hero{padding:18px 14px}.cashier-welcome-hero h1{font-size:21px}.cashier-hero-cup{font-size:39px}.cashier-home-stats article{padding:12px 10px}}
+
+/* ARISTA reports screen — premium mobile dashboard pass */
+#reportView{padding-bottom:calc(104px + env(safe-area-inset-bottom))}
+#reportView>.section-head{align-items:flex-start;margin-bottom:18px;padding:4px 1px}
+#reportView>.section-head .eyebrow{color:#c5a16a;letter-spacing:1.6px;font-size:10px;font-weight:800}
+#reportView>.section-head h2{font-family:'Libre Baskerville',serif;font-size:clamp(23px,6vw,30px);line-height:1.25;margin:5px 0;color:#fff5e7}
+#reportView>.section-head .muted{max-width:430px;color:#b8ab9b!important}
+#reportView .report-nav{position:sticky;top:8px;z-index:5;padding:7px;border:1px solid #403326;border-radius:14px;background:#1b1815eF;backdrop-filter:blur(12px);gap:7px;margin:0 0 20px}
+#reportView .report-nav-item{flex:1;text-align:center;border-radius:10px;padding:11px 8px;font-size:10px;letter-spacing:.4px}
+#reportView .report-anchor>.eyebrow{color:#c5a16a;font-weight:800;letter-spacing:1.4px;font-size:10px}
+#reportView .stats-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:18px}
+#reportView .stat-card{min-width:0;position:relative;overflow:hidden;padding:15px 13px;border:1px solid #45392c;border-radius:16px;background:linear-gradient(145deg,#29231d,#1d1a17);box-shadow:0 7px 18px #0002}
+#reportView .stat-card span{display:block;color:#b8ab9b;font-size:11px;line-height:1.4;margin-bottom:9px}
+#reportView .stat-card strong{display:block;color:#f8efdf;font-size:clamp(17px,4.8vw,23px);line-height:1.25;overflow-wrap:anywhere;letter-spacing:-.5px}
+#reportView #reportDashboard+.stats-grid .stat-card:nth-child(1){background:radial-gradient(ellipse at 100% 0,#6b4b2938,transparent 60%),linear-gradient(145deg,#2c241b,#1d1a17);border-color:#725536}
+#reportView #reportDashboard+.stats-grid .stat-card:nth-child(1) strong{color:#e0c18e}
+#reportView .panel{border-radius:17px;border-color:#45392c;background:linear-gradient(145deg,#24201b,#1d1a17);padding:15px;margin-bottom:14px}
+#reportView .panel .section-head{gap:10px;align-items:center;margin-bottom:14px}
+#reportView .panel h3{font-family:'Libre Baskerville',serif;font-size:17px;color:#fff3e2;margin:0}
+#reportView .panel .muted{color:#b8ab9b!important}
+#reportView .report-anchor{scroll-margin-top:75px;margin-bottom:18px}
+#reportView .report-nav-item.active{box-shadow:0 3px 10px #c5a16a22}
+#reportView .report-export-tools,#reportView .form-grid{gap:10px}
+#reportView .field{min-width:0}
+@media(min-width:600px){#reportView .stats-grid{grid-template-columns:repeat(3,minmax(0,1fr))}#reportView .stat-card{padding:18px}#reportView .report-nav-item{font-size:11px}}
+@media(max-width:360px){#reportView .stats-grid{gap:8px}#reportView .stat-card{padding:12px 10px}#reportView .stat-card span{font-size:10px}#reportView .stat-card strong{font-size:16px}}
 </style>
 <link rel="stylesheet" href="./styles.css?v=pos-grid-20261027">
 </head>
