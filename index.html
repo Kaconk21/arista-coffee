@@ -714,7 +714,7 @@ if(!isRecovery){
    }
    ready=true;hide();renderAll();renderExpenses();
    let badge=document.getElementById("aristaCloudStatus");if(!badge){badge=document.createElement("div");badge.id="aristaCloudStatus";badge.style.cssText="position:fixed;top:5px;right:6px;z-index:80;background:#211e1a;border:1px solid #45392c;border-radius:99px;padding:5px 8px;font-size:10px;color:#e0c18e";document.body.appendChild(badge)}badge.textContent="Tersinkron";
-  }catch(err){console.error("Pemulihan sesi ARISTA gagal:",err)}
+  }catch(err){console.error("Pemulihan sesi ARISTA gagal:",err);show();msg("Sesi belum siap. Silakan masuk kembali.");}
  });
 }
 })();
