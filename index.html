@@ -112,7 +112,7 @@ button,input,select,textarea{font-size:14px}
 @media(max-width:520px){.report-export-tools{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:18px 0 14px}.report-export-group{padding:9px 7px;gap:7px}.report-export-heading{font-size:14px}.report-export-group .field-label{font-size:10px}.report-export-group .field{font-size:11px;min-height:37px}.report-export-group .button{font-size:10px;min-height:40px}.report-export-extra .button{width:100%}}
 
 </style>
-<link rel="stylesheet" href="./styles.css?v=home2">\n</head>
+<link rel="stylesheet" href="./styles.css?v=owner-home1">\n</head>
 <body>
 
 
@@ -527,6 +527,22 @@ function updateAristaProfile(user,role){
  ["premiumProfileEmail","premiumInfoEmail"].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=email;});
  const roleLabel=(r==="owner"||r==="pemilik")?"Pemilik":(r==="cashier"||r==="kasir")?"Kasir":(role||"Anggota");
  ["premiumProfileRole","premiumInfoRole"].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=roleLabel;});
+ const homeRole=document.getElementById("premiumHomeRole");
+ if(homeRole){
+  homeRole.textContent=roleLabel==="Pemilik"?"♛ Akun Pemilik":roleLabel==="Kasir"?"☕ Akun Kasir":"☕ Pengguna ARISTA";
+  homeRole.classList.toggle("home-owner-role",roleLabel==="Pemilik");
+ }
+ const homeHeading=document.querySelector(".home-welcome-copy h1");
+ const homeCopy=document.querySelector(".home-welcome-copy p");
+ if(homeHeading&&homeCopy){
+  if(roleLabel==="Pemilik"){
+   homeHeading.innerHTML='Selamat datang,<br><em>Owner ARISTA!</em>';
+   homeCopy.textContent="Pantau penjualan dan kelola operasional kedai dalam satu tempat.";
+  }else if(roleLabel==="Kasir"){
+   homeHeading.innerHTML='Selamat bertugas,<br><em>Tim ARISTA!</em>';
+   homeCopy.textContent="Mulai transaksi dan bantu setiap pelanggan menikmati kopi terbaik.";
+  }
+ }
  document.querySelectorAll(".owner-shortcut,.owner-profile-only").forEach(el=>{el.style.display=(roleLabel==="Pemilik")?"flex":"none";});
  document.querySelectorAll("#aristaProfileButton").forEach(el=>el.style.display="none");
 }
