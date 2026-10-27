@@ -434,6 +434,15 @@ renderAll();renderExpenses();
 #aristaCloudLogin button{width:100%;margin-top:15px;padding:12px;border:0;border-radius:9px;background:#c5a16a;color:#201910;font-weight:800}
 #aristaCloudLogin .err{color:#f1b4a8;min-height:18px}
 </style>
+<style>
+#aristaProfileButton{position:fixed;right:12px;top:14px;z-index:60;width:42px;height:42px;border:1px solid #5a4632;border-radius:50%;background:#211e1a;color:#e0c18e;display:none;align-items:center;justify-content:center;font-size:17px}
+#aristaProfileMenu{position:fixed;right:12px;top:62px;z-index:100000;width:min(290px,calc(100vw - 24px));padding:16px;border:1px solid #5a4632;border-radius:16px;background:#211e1a;color:#f4ede2;box-shadow:0 16px 40px #0008;display:none}
+#aristaProfileMenu .profile-email{font-size:12px;color:#b8ab9b;overflow-wrap:anywhere;margin-top:5px}
+#aristaProfileMenu .profile-role{display:inline-block;margin-top:10px;padding:5px 9px;border-radius:99px;background:#3a2f22;color:#e0c18e;font-size:11px}
+#aristaProfileMenu button{width:100%;margin-top:14px;padding:11px;border:1px solid #70483f;border-radius:10px;background:#39231f;color:#f0b0a3;font-weight:800}
+</style>
+<button id="aristaProfileButton" type="button" aria-label="Menu akun" style="display:none">👤</button>
+<div id="aristaProfileMenu" role="dialog" aria-label="Menu akun"><strong id="aristaProfileName">Akun ARISTA</strong><div class="profile-email" id="aristaProfileEmail"></div><span class="profile-role" id="aristaProfileRole">Anggota</span><button id="aristaLogoutButton" type="button">Keluar dari akun</button></div>
 <div id="aristaCloudLogin"><form class="card" id="aristaCloudForm"><h1>ARISTA</h1><p>COFFEE & ROASTERY</p><p>Masuk untuk memakai data bersama antarperangkat.</p><label>Email akun</label><input id="aristaCloudEmail" type="email" autocomplete="username" required><label>Kata sandi</label><input id="aristaCloudPassword" type="password" autocomplete="current-password" required><button id="aristaCloudSubmit">Masuk & Sinkronkan</button><p class="err" id="aristaCloudError"></p></form></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -445,6 +454,33 @@ let db,uid,ready=false,timer;
 const gate=document.getElementById("aristaCloudLogin");
 const main=document.querySelector("body > main");
 function msg(s){const el=document.getElementById("aristaCloudError");if(el)el.textContent=s||""}
+function updateAristaProfile(user,role){
+ const email=user&&user.email?user.email:"";
+ document.getElementById("aristaProfileName").textContent=email?email.split("@")[0]:"Akun ARISTA";
+ document.getElementById("aristaProfileEmail").textContent=email;
+ const r=String(role||"Anggota").toLowerCase();
+ document.getElementById("aristaProfileRole").textContent=(r==="owner"||r==="pemilik")?"Pemilik":(r==="cashier"||r==="kasir")?"Kasir":(role||"Anggota");
+ document.getElementById("aristaProfileButton").style.display="flex";
+}
+document.getElementById("aristaProfileButton").addEventListener("click",()=>{
+ const m=document.getElementById("aristaProfileMenu");m.style.display=m.style.display==="block"?"none":"block";
+});
+document.addEventListener("click",e=>{
+ const b=document.getElementById("aristaProfileButton"),m=document.getElementById("aristaProfileMenu");
+ if(m&&!m.contains(e.target)&&!b.contains(e.target))m.style.display="none";
+});
+document.getElementById("aristaLogoutButton").addEventListener("click",async()=>{
+ if(!confirm("Keluar dari akun ARISTA? Data usaha tetap tersimpan."))return;
+ const b=document.getElementById("aristaLogoutButton");b.disabled=true;b.textContent="Keluar…";
+ try{
+  if(db){const {error}=await db.auth.signOut();if(error)throw error;}
+  ready=false;uid=null;
+  document.getElementById("aristaProfileMenu").style.display="none";
+  document.getElementById("aristaProfileButton").style.display="none";
+  show();
+ }catch(err){alert("Logout gagal: "+(err.message||"Coba lagi."))}
+ finally{b.disabled=false;b.textContent="Keluar dari akun"}
+}
 function show(){gate.style.display="flex";if(main)main.style.visibility="hidden"}
 gate.style.display="none";
 function hide(){gate.style.display="none";if(main)main.style.visibility="visible"}
@@ -488,6 +524,7 @@ document.getElementById("aristaCloudForm").addEventListener("submit",async e=>{
   if(error)throw error;uid=data.user.id;
   const {data:m,error:me}=await db.from("business_memberships").select("business_id,role,active").eq("business_id",BUSINESS).eq("user_id",uid).eq("active",true).maybeSingle();
   if(me)throw me;if(!m)throw new Error("Akun belum terdaftar sebagai anggota ARISTA.");
+  updateAristaProfile(data.user,m.role);
   const {data:r,error:re}=await db.from("app_state").select("state_json").eq("business_id",BUSINESS).maybeSingle();
   if(re)throw re;
   if(r&&r.state_json&&Array.isArray(r.state_json.products)&&Array.isArray(r.state_json.sales)){
@@ -511,6 +548,7 @@ if(!isRecovery){
    uid=data.session.user.id;
    const {data:m,error:me}=await db.from("business_memberships").select("business_id,role,active").eq("business_id",BUSINESS).eq("user_id",uid).eq("active",true).maybeSingle();
    if(me||!m)return;
+   updateAristaProfile(data.session.user,m.role);
    const {data:r,error:re}=await db.from("app_state").select("state_json").eq("business_id",BUSINESS).maybeSingle();
    if(re)throw re;
    if(r&&r.state_json&&Array.isArray(r.state_json.products)&&Array.isArray(r.state_json.sales)){
