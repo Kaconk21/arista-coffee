@@ -181,7 +181,7 @@ button,input,select,textarea{font-size:14px}
   <div class="users-create-card"><div class="users-create-heading"><span>＋</span><div><strong>Tambah akun kasir</strong><small>Buat akses masuk khusus untuk staf kasir.</small></div></div>
     <form id="createCashierForm" class="users-create-form">
       <label for="newCashierName">Nama kasir</label><input id="newCashierName" class="field" autocomplete="name" placeholder="Contoh: Andi" required>
-      <label for="newCashierEmail">Email untuk login</label><input id="newCashierEmail" class="field" type="email" autocomplete="off" placeholder="kasir@contoh.com" required>
+      <label for="newCashierUsername">Nama pengguna kasir</label><input id="newCashierUsername" class="field" autocomplete="off" autocapitalize="none" placeholder="Contoh: andi" pattern="[A-Za-z0-9._-]{3,30}" required><small class="users-security-note">Gunakan 3–30 karakter: huruf, angka, titik, garis bawah, atau tanda hubung.</small>
       <label for="newCashierPassword">Kata sandi awal</label><input id="newCashierPassword" class="field" type="password" minlength="8" autocomplete="new-password" placeholder="Minimal 8 karakter" required>
       <p class="users-security-note">Gunakan kata sandi awal yang unik dan sampaikan secara pribadi kepada kasir.</p>
       <button class="button button-gold full" type="submit" id="createCashierSubmit">＋ Buat Akun Kasir</button>
@@ -533,7 +533,7 @@ renderAll();renderExpenses();
 </style>
 <button id="aristaProfileButton" type="button" aria-label="Menu akun" style="display:flex">👤</button>
 <div id="aristaProfileMenu" role="dialog" aria-label="Menu akun"><strong id="aristaProfileName">Akun ARISTA</strong><div class="profile-email" id="aristaProfileEmail"></div><span class="profile-role" id="aristaProfileRole">Anggota</span><button id="aristaLogoutButton" type="button">Keluar dari akun</button></div>
-<div id="aristaCloudLogin"><form class="card" id="aristaCloudForm"><h1>ARISTA</h1><p>COFFEE & ROASTERY</p><p>Masuk untuk memakai data bersama antarperangkat.</p><label>Email akun</label><input id="aristaCloudEmail" type="email" autocomplete="username" required><label>Kata sandi</label><input id="aristaCloudPassword" type="password" autocomplete="current-password" required><button id="aristaCloudSubmit">Masuk & Sinkronkan</button><p class="err" id="aristaCloudError"></p></form></div>
+<div id="aristaCloudLogin"><form class="card" id="aristaCloudForm"><h1>ARISTA</h1><p>COFFEE & ROASTERY</p><p>Masuk untuk memakai data bersama antarperangkat.</p><label>Email pemilik atau nama pengguna kasir</label><input id="aristaCloudEmail" type="text" autocomplete="username" autocapitalize="none" required><label>Kata sandi</label><input id="aristaCloudPassword" type="password" autocomplete="current-password" required><button id="aristaCloudSubmit">Masuk & Sinkronkan</button><p class="err" id="aristaCloudError"></p></form></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (function(){
@@ -636,15 +636,15 @@ if(isRecovery){
  if(cashierForm)cashierForm.addEventListener("submit",async e=>{
   e.preventDefault();
   const status=document.getElementById("createCashierStatus"),button=document.getElementById("createCashierSubmit");
-  const name=document.getElementById("newCashierName").value.trim(),email=document.getElementById("newCashierEmail").value.trim(),password=document.getElementById("newCashierPassword").value;
-  if(!name||!email||password.length<8){if(status)status.textContent="Isi nama, email, dan kata sandi minimal 8 karakter.";return;}
+  const name=document.getElementById("newCashierName").value.trim(),username=document.getElementById("newCashierUsername").value.trim().toLowerCase(),password=document.getElementById("newCashierPassword").value;
+  if(!name||!/^[a-z0-9._-]{3,30}$/.test(username)||password.length<8){if(status)status.textContent="Isi nama, nama pengguna 3–30 karakter, dan kata sandi minimal 8 karakter.";return;}
   if(!uid){if(status)status.textContent="Silakan login sebagai pemilik terlebih dahulu.";return;}
   button.disabled=true;button.textContent="Membuat akun...";
   if(status)status.textContent="Sedang membuat akun kasir...";
   try{
    const {data:{session},error:sessionError}=await db.auth.getSession();
    if(sessionError||!session)throw new Error("Sesi login berakhir. Silakan login kembali.");
-   const response=await fetch(URL+"/functions/v1/create-cashier",{method:"POST",headers:{"Authorization":"Bearer "+session.access_token,"apikey":KEY,"Content-Type":"application/json"},body:JSON.stringify({name,email,password})});
+   const response=await fetch(URL+"/functions/v1/create-cashier",{method:"POST",headers:{"Authorization":"Bearer "+session.access_token,"apikey":KEY,"Content-Type":"application/json"},body:JSON.stringify({name,username,password})});
    const result=await response.json();
    if(!response.ok)throw new Error(result.error||"Gagal membuat akun kasir.");
    cashierForm.reset();
@@ -668,7 +668,7 @@ document.getElementById("aristaCloudForm").addEventListener("submit",async e=>{
  e.preventDefault();const b=document.getElementById("aristaCloudSubmit");b.disabled=true;b.textContent="Menghubungkan…";msg("");
  try{
   db=window.supabase.createClient(URL,KEY,{auth:{persistSession:true,autoRefreshToken:true}});
-  const {data,error}=await db.auth.signInWithPassword({email:document.getElementById("aristaCloudEmail").value.trim(),password:document.getElementById("aristaCloudPassword").value});
+  const loginId=document.getElementById("aristaCloudEmail").value.trim();\n  const loginEmail=loginId.includes("@")?loginId:loginId.toLowerCase()+"@cashier.arista.invalid";\n  const {data,error}=await db.auth.signInWithPassword({email:loginEmail,password:document.getElementById("aristaCloudPassword").value});
   if(error)throw error;uid=data.user.id;
   const {data:m,error:me}=await db.from("business_memberships").select("business_id,role,active").eq("business_id",BUSINESS).eq("user_id",uid).eq("active",true).maybeSingle();
   if(me)throw me;if(!m)throw new Error("Akun belum terdaftar sebagai anggota ARISTA.");
