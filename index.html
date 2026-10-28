@@ -275,10 +275,7 @@ async function printReceiptViaCleanter(s){
  content.push({type:"divider"});
  (s.items||[]).forEach(item=>{
   const temp=item.servedTemp==="cold"?"Dingin":"Panas";
-  const qty=Number(item.qty)||0;
-  const price=Number(item.price)||0;
-  content.push({type:"text",text:String(item.name||"Produk")+" ("+temp+")"});
-  content.push({type:"row",left:String(qty)+" x "+rupiah(price),right:rupiah(price*qty)});
+  content.push({type:"row",left:String(item.name||"Produk")+" ("+temp+") x "+String(Number(item.qty)||0),right:rupiah(Number(item.price||0)*Number(item.qty||0))});
  });
  content.push(
   {type:"divider"},
