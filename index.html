@@ -277,20 +277,19 @@ async function printReceiptViaCleanter(s){
   const qty=Number(item.qty)||0;
   const price=Number(item.price)||0;
   const name=String(item.name||"Produk");
-  // Cleanter handles column widths; omit "Rp" so numeric value sits flush right.
-  content.push({type:"row",left:name,right:rupiah(price*qty).replace(/^Rp\\s*/,"")});
-  content.push({type:"text",text:"  "+String(qty)+" x "+rupiah(price)});
+  // One row per item, following Cleanter's documented 80mm example.
+  content.push({type:"row",left:name+" x"+qty,right:rupiah(price*qty).replace(/^Rp\s*/,"")});
  });
  content.push(
   {type:"divider"},
-  {type:"row",left:"Subtotal",right:rupiah(s.subtotal).replace(/^Rp\\s*/,"")},
-  {type:"row",left:"Diskon",right:"- "+rupiah(s.discount).replace(/^Rp\\s*/,"")},
-  {type:"row",left:"TOTAL",right:rupiah(s.total).replace(/^Rp\\s*/,""),bold:true},
+  {type:"row",left:"Subtotal",right:rupiah(s.subtotal).replace(/^Rp\s*/,"")},
+  {type:"row",left:"Diskon",right:"- "+rupiah(s.discount).replace(/^Rp\s*/,"")},
+  {type:"row",left:"TOTAL",right:rupiah(s.total).replace(/^Rp\s*/,""),bold:true},
   {type:"text",text:"Pembayaran: "+String(s.method||"-")}
  );
  if(s.method==="Tunai"){
-  content.push({type:"row",left:"Diterima",right:rupiah(s.paid).replace(/^Rp\\s*/,"")});
-  content.push({type:"row",left:"Kembalian",right:rupiah(s.change).replace(/^Rp\\s*/,"")});
+  content.push({type:"row",left:"Diterima",right:rupiah(s.paid).replace(/^Rp\s*/,"")});
+  content.push({type:"row",left:"Kembalian",right:rupiah(s.change).replace(/^Rp\s*/,"")});
  }
  content.push(
   {type:"divider"},
