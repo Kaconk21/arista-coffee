@@ -685,10 +685,10 @@ function hide(){gate.style.display="none";if(main)main.style.visibility="visible
 const isRecovery=location.hash.includes("type=recovery")||location.hash.includes("access_token=");
 // Tampilkan layar login sejak awal agar tidak ada layar hitam saat sesi dimuat.
 // Jangan tampilkan popup login sebelum pemulihan sesi selesai; tampilkan hanya jika sesi memang tidak ada.
+function resetMsg(s){const el=document.getElementById("aristaResetError");if(el)el.textContent=s||""}
 function setupRecovery(){
  gate.innerHTML='<form class="card" id="aristaResetForm"><h1>ARISTA</h1><p>COFFEE & ROASTERY</p><p>Buat kata sandi baru untuk akun ARISTA.</p><label>Kata sandi baru</label><input id="aristaNewPassword" type="password" autocomplete="new-password" minlength="8" required><label>Ulangi kata sandi baru</label><input id="aristaConfirmPassword" type="password" autocomplete="new-password" minlength="8" required><button id="aristaResetSubmit">Simpan Kata Sandi</button><p class="err" id="aristaResetError"></p></form>';
  const form=document.getElementById("aristaResetForm");
- function resetMsg(s){const el=document.getElementById("aristaResetError");if(el)el.textContent=s||""}
  form.addEventListener("submit",async e=>{
   e.preventDefault();
   const p=document.getElementById("aristaNewPassword").value;
