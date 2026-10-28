@@ -263,6 +263,14 @@ function payPending(id){const order=state.pendingOrders.find(x=>x.id===id);if(!o
 function reviewPending(id){const order=state.pendingOrders.find(x=>x.id===id);if(!order)return;if(cart.length&&!confirm("Keranjang saat ini akan diganti dengan pesanan yang ditinjau. Lanjutkan?"))return;editingPendingId=id;cart=(order.items||[]).map(x=>({...x}));document.getElementById("customerName").value=order.customer||"";document.getElementById("discount").value=Number(order.subtotal)>0?Math.min(100,Math.max(0,Number(order.discount||0)/Number(order.subtotal)*100)).toFixed(2):0;document.getElementById("paidAmount").value="";document.getElementById("savePendingBtn").textContent="Simpan perubahan pesanan";document.getElementById("checkoutBtn").textContent="Terima pembayaran & selesaikan";renderCart();switchView("cashierView");document.getElementById("cashierView").scrollIntoView({behavior:"smooth"});toast("Periksa item, jumlah, diskon, dan nama pelanggan. Pesanan lama tetap tersimpan sampai diperbarui.")}function cancelPending(id){if(!confirm("Hapus pesanan tertunda ini?"))return;state.pendingOrders=state.pendingOrders.filter(x=>x.id!==id);saveState();renderPending();renderReports();toast("Pesanan tertunda dihapus")}
 function renderPending(){const list=document.getElementById("pendingList");document.getElementById("pendingCount").textContent=`${state.pendingOrders.length} pesanan`;const navBadge=document.getElementById("pendingNavBadge");navBadge.textContent=state.pendingOrders.length;navBadge.classList.toggle("hidden",!state.pendingOrders.length);document.getElementById("pendingReportCount").textContent=state.pendingOrders.length;list.innerHTML=state.pendingOrders.length?state.pendingOrders.map(o=>`<div class="pending-item"><div><strong>${esc(o.id)} · ${esc(o.customer||"Pelanggan")}</strong><small>${new Date(o.createdAt||o.time||Date.now()).toLocaleString("id-ID")} · ${(o.items||[]).reduce((n,x)=>n+x.qty,0)} item</small><small>${(o.items||[]).map(x=>`${esc(x.name)} × ${x.qty}`).join(", ")}</small><small>Total: <b>${rupiah(o.total)}</b> · Belum dibayar</small></div><div class="manage-actions"><button class="button button-outline" data-review-pending="${esc(o.id)}">Tinjau / Edit</button><button class="button button-gold" data-pay="${esc(o.id)}">Terima pembayaran</button><button class="button button-danger" data-cancel-pending="${esc(o.id)}">Hapus</button></div></div>`).join(""):`<div class="empty-state">Belum ada pesanan tertunda.</div>`;list.querySelectorAll("[data-review-pending]").forEach(b=>b.onclick=()=>reviewPending(b.dataset.reviewPending));list.querySelectorAll("[data-pay]").forEach(b=>b.onclick=()=>payPending(b.dataset.pay));list.querySelectorAll("[data-cancel-pending]").forEach(b=>b.onclick=()=>cancelPending(b.dataset.cancelPending))}
 async function printReceiptViaCleanter(s){
+ // Gunakan satu blok teks monospace per baris. Jangan gunakan type:"row":
+ // pada printer ini kolom right terbungkus sehingga nominal terpisah.
+ const WIDTH=32;
+ const line=(left,right="")=>{
+  left=String(left||"");right=String(right||"");
+  if(right.length>=WIDTH)return right.slice(-WIDTH);
+  return left.slice(0,Math.max(0,WIDTH-right.length-1)).padEnd(WIDTH-right.length," ")+right;
+ };
  const content=[
   {type:"text",text:"ARISTA",align:"center",bold:true,size:"large"},
   {type:"text",text:"COFFEE & ROASTERY",align:"center"},
@@ -276,17 +284,15 @@ async function printReceiptViaCleanter(s){
  (s.items||[]).forEach(item=>{
   const qty=Number(item.qty)||0;
   const price=Number(item.price)||0;
-  const fullName=String(item.name||"Produk");
-  // Ringkas nama produk supaya harga punya ruang di sampingnya.
-  const shortName=fullName.length>9?fullName.slice(0,8)+"…":fullName;
-  content.push({type:"row",left:shortName,right:rupiah(price*qty)});
+  const name=String(item.name||"Produk");
+  content.push({type:"text",text:line(name,rupiah(price*qty))});
   content.push({type:"text",text:"  "+String(qty)+" x "+rupiah(price)});
  });
  content.push(
   {type:"divider"},
-  {type:"row",left:"Subtotal",right:rupiah(s.subtotal)},
-  {type:"row",left:"Diskon",right:"- "+rupiah(s.discount)},
-  {type:"row",left:"TOTAL",right:rupiah(s.total),bold:true},
+  {type:"text",text:line("Subtotal",rupiah(s.subtotal))},
+  {type:"text",text:line("Diskon","- "+rupiah(s.discount))},
+  {type:"text",text:line("TOTAL",rupiah(s.total)),bold:true},
   {type:"text",text:"Pembayaran: "+String(s.method||"-")}
  );
  if(s.method==="Tunai"){
