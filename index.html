@@ -274,14 +274,13 @@ async function printReceiptViaCleanter(s){
  if(s.customer)content.push({type:"text",text:"Pelanggan: "+String(s.customer)});
  content.push({type:"divider"});
  (s.items||[]).forEach(item=>{
-  const temp=item.servedTemp==="cold"?"Dingin":"Panas";
   const qty=Number(item.qty)||0;
   const price=Number(item.price)||0;
   const fullName=String(item.name||"Produk");
-  // Pendekkan nama agar harga kanan tidak turun baris pada kertas thermal.
-  const shortName=fullName.length>13?fullName.slice(0,12)+"…":fullName;
+  // Ringkas nama produk supaya harga punya ruang di sampingnya.
+  const shortName=fullName.length>9?fullName.slice(0,8)+"…":fullName;
   content.push({type:"row",left:shortName,right:rupiah(price*qty)});
-  content.push({type:"text",text:"  "+temp+" · "+String(qty)+" x "+rupiah(price)});
+  content.push({type:"text",text:"  "+String(qty)+" x "+rupiah(price)});
  });
  content.push(
   {type:"divider"},
