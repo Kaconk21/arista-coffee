@@ -137,36 +137,7 @@ document.getElementById("restoreInput").addEventListener("change",async e=>{
  const file=e.target.files[0];if(!file)return;
  try{const obj=JSON.parse(await file.text());if(!Array.isArray(obj.products)||!Array.isArray(obj.sales))throw new Error("Format tidak sesuai");if(confirm("Pulihkan data dari backup? Data saat ini akan diganti.")){state=obj;saveState();cart=[];renderAll();toast("Backup berhasil dipulihkan");}}catch(err){toast("File backup tidak valid");}e.target.value="";
 });
-function renderPremiumHome(){
- const today=state.sales.filter(s=>s.date===todayKey());
- const revenue=today.reduce((sum,s)=>sum+(Number(s.total)||0),0);
- const rev=document.getElementById("premiumTodayRevenue");
- const count=document.getElementById("premiumTodayCount");
- const date=document.getElementById("premiumTodayLabel");
- const recent=document.getElementById("premiumRecentActivity");
- if(rev)rev.textContent=rupiah(revenue);
- if(count)count.textContent=String(today.length);
- if(date)date.textContent=new Date().toLocaleDateString("id-ID",{day:"2-digit",month:"short"}).toUpperCase();
- if(recent){
-  const rows=state.sales.slice(0,3);
-  recent.innerHTML=rows.length?rows.map(s=>`<div class="premium-activity-row"><span class="premium-activity-icon">☕</span><div class="premium-activity-copy"><strong>${esc(s.customer||"Pelanggan umum")}</strong><small>${esc(s.id)} · ${new Date(s.time).toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"})}</small></div><strong class="premium-activity-total">${rupiah(s.total)}</strong></div>`).join(""):'<div class="premium-activity-empty">Belum ada transaksi hari ini. Transaksi selesai akan muncul di sini.</div>';
- }
-}
-
-function renderCashierHome(){
- const today=state.sales.filter(s=>s.date===todayKey());
- const revenue=today.reduce((sum,s)=>sum+(Number(s.total)||0),0);
- const count=document.getElementById("cashierHomeCount"),rev=document.getElementById("cashierHomeRevenue"),date=document.getElementById("cashierHomeDate");
- if(count)count.textContent=String(today.length);
- if(rev)rev.textContent=rupiah(revenue);
- if(date)date.textContent=new Date().toLocaleDateString("id-ID",{day:"2-digit",month:"short"});
- const recent=document.getElementById("cashierHomeRecent");
- if(recent){const rows=state.sales.slice(0,3);recent.innerHTML=rows.length?rows.map(s=>`<div class="cashier-home-row"><span>☕</span><div><strong>${esc(s.customer||"Pelanggan umum")}</strong><small>${esc(s.id||"Transaksi")} · ${new Date(s.time||Date.now()).toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"})}</small></div><strong>${rupiah(s.total)}</strong></div>`).join(""):'<p>Belum ada transaksi yang tercatat.</p>';}
- const pending=document.getElementById("cashierHomePending");
- if(pending){const rows=Array.isArray(state.pendingOrders)?state.pendingOrders:[];pending.innerHTML=rows.length?rows.slice(0,3).map((o,i)=>`<div class="cashier-home-row"><span>◷</span><div><strong>${esc(o.customer||o.name||("Pesanan "+(i+1)))}</strong><small>${esc(o.id||"Menunggu pembayaran")}</small></div><span class="pending-pill">Tertunda</span></div>`).join(""):'<p>Tidak ada pesanan tertunda.</p>';}
-}
-
-function renderAll(){renderFilters();renderMenu();renderCart();renderReports();renderManage();renderPremiumHome();renderCashierHome();}
+function renderAll(){renderFilters();renderMenu();renderCart();renderReports();renderManage();}
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;document.getElementById("installBtn").classList.remove("hidden");});
 document.getElementById("installBtn").addEventListener("click",async()=>{if(!deferredPrompt){toast("Gunakan menu browser: Tambahkan ke layar utama");return;}deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;document.getElementById("installBtn").classList.add("hidden");});
 if("serviceWorker" in navigator && (location.protocol==="https:"||location.hostname==="localhost"))navigator.serviceWorker.register("./sw.js").catch(()=>{});
