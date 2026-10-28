@@ -4,7 +4,7 @@
   "name": "ARISTA Coffee",
   "short_name": "ARISTA",
   "description": "Menu digital ARISTA Coffee",
-  "start_url": "/arista-coffee/?v=20261027-2",
+  "start_url": "/arista-coffee/",
   "scope": "/arista-coffee/",
   "display": "standalone",
   "background_color": "#171513",
