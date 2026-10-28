@@ -765,6 +765,25 @@ document.getElementById("aristaCloudForm").addEventListener("submit",async e=>{
  finally{b.disabled=false;b.textContent="Masuk & Sinkronkan"}
 });
 }
+/* ARISTA_PULL_TO_REFRESH: reload when user pulls down from the top in standalone Android app */
+(function(){
+ let startX=0,startY=0,startTarget=null;
+ document.addEventListener("touchstart",function(e){
+  if(e.touches.length!==1)return;
+  startX=e.touches[0].clientX;startY=e.touches[0].clientY;startTarget=e.target;
+ },{passive:true});
+ document.addEventListener("touchend",function(e){
+  if(!startTarget||e.changedTouches.length!==1)return;
+  const dx=e.changedTouches[0].clientX-startX;
+  const dy=e.changedTouches[0].clientY-startY;
+  const target=startTarget;startTarget=null;
+  if(dy<100||Math.abs(dy)<Math.abs(dx)*1.4)return;
+  if(startY>150)return;
+  if(target&&target.closest&&target.closest("input,textarea,select,[contenteditable='true'],button"))return;
+  if(window.scrollY>2)return;
+  window.location.reload();
+ },{passive:true});
+})();
 const originalSave=saveState;
 saveState=function(){originalSave();if(ready){clearTimeout(timer);timer=setTimeout(()=>syncNow().catch(err=>{console.error(err);const s=document.getElementById("aristaCloudStatus");if(s)s.textContent="Cloud gagal";toast("Data lokal tersimpan, cloud gagal disinkronkan")}),700)}};
 if(!isRecovery){
