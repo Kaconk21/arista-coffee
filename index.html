@@ -40,7 +40,7 @@ nav button.on{color:var(--gold)}
 <script src="./config.js"></script>
 <script>
 const KEY="arista_pos_v1";
-const SUPABASE_URL=(window.ARISTA_CONFIG||{}).url||"",SUPABASE_ANON_KEY=(window.ARISTA_CONFIG||{}).anonKey||"";
+const SUPABASE_URL=((window.ARISTA_CONFIG||{}).url||"").trim().replace(/\/rest\/v1\/?$/,"").replace(/\/$/,""),SUPABASE_ANON_KEY=((window.ARISTA_CONFIG||{}).anonKey||"").trim();
 const newId=()=>crypto.randomUUID?crypto.randomUUID():"xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g,c=>{const r=Math.random()*16|0;return (c==="x"?r:(r&3|8)).toString(16)});
 const $=id=>document.getElementById(id);
 const rp=n=>"Rp "+Math.round(Number(n)||0).toLocaleString("id-ID");
@@ -136,7 +136,7 @@ async function syncNow(){
   try{
     while(S.outbox.length){
       const sale=S.outbox[0];
-      const res=await fetch(SUPABASE_URL+"/rest/v1/sales",{method:"POST",headers:{apikey:SUPABASE_ANON_KEY,Authorization:"Bearer "+SUPABASE_ANON_KEY,"Content-Type":"application/json",Prefer:"resolution=ignore-duplicates,return=minimal"},body:JSON.stringify(toRow(sale))});
+      const res=await fetch(SUPABASE_URL+"/rest/v1/sales",{method:"POST",headers:{apikey:SUPABASE_ANON_KEY,"Content-Type":"application/json",Prefer:"resolution=ignore-duplicates,return=minimal"},body:JSON.stringify(toRow(sale))});
       if(!res.ok)throw new Error("HTTP "+res.status);
       S.outbox.shift();save();
     }
