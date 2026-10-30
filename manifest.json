@@ -1,24 +1,23 @@
-
 {
-  "id": "/arista-coffee/",
-  "name": "ARISTA Coffee",
+  "name": "ARISTA POS",
   "short_name": "ARISTA",
-  "description": "Menu digital ARISTA Coffee",
-  "start_url": "/arista-coffee/",
-  "scope": "/arista-coffee/",
+  "description": "Kasir dan manajemen ARISTA Coffee & Roastery",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#171513",
   "theme_color": "#171513",
   "icons": [
     {
-      "src": "/arista-coffee/icon/icon-192.png",
+      "src": "icon/icon-192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/arista-coffee/icon/icon-512.png",
+      "src": "icon/icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
-  ]
+  ],
+  "id": "/arista-coffee/"
 }
