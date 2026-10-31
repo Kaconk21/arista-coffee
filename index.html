@@ -154,11 +154,6 @@ function tambahMenu(){
   if(!nm){toast("Nama menu wajib diisi");return}
   if(!(pr>0)){toast("Harga harus lebih dari 0");return}
   const cost=cs===""?null:Number(cs);
-  if(EDIT_ID){
-    const p=S.products.find(x=>x.id===EDIT_ID);
-    if(p){p.name=nm;p.cat=ct;p.price=pr;p.cost=cost;p.stock=sk;S.menuDirty.push(p.id)}
-    EDIT_ID=null;save();toast("Menu diperbarui");render();syncNow();return;
-  }
   const nid="p"+Date.now();S.menuDirty.push(nid);S.products.push({id:nid,name:nm,cat:ct,price:pr,cost,stock:sk});
   save();toast("Menu tersimpan");render();syncNow();
 }
@@ -288,15 +283,27 @@ ${LAP_NOTE?`<div class="muted" style="margin-bottom:8px;color:var(--warn)">${LAP
 ${S.session.role==="Pemilik"?`<div class="card" style="margin-top:10px"><div class="muted">Margin kotor</div><h3>${margin}</h3><div class="muted">${unknown?"Isi harga modal di Kelola agar margin terhitung.":""}</div></div>`:""}
 <h3 style="margin:18px 0 8px">Transaksi</h3>${list.slice(0,20).map(saleRow).join("")||'<div class="muted">Belum ada transaksi pada periode ini.</div>'}`}
 let EDIT_ID=null;
+const esc=v=>String(v==null?"":v).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");
+function bukaEdit(id){EDIT_ID=id;render();window.scrollTo(0,0)}
+function batalEdit(){EDIT_ID=null;render()}
+function simpanEdit(){
+  const p=S.products.find(x=>x.id===EDIT_ID);if(!p){EDIT_ID=null;return render()}
+  const nm=$("ed_nm").value.trim(),pr=Number($("ed_pr").value),cs=$("ed_cs").value,ct=$("ed_ct").value.trim()||"Lainnya";
+  if(!nm){toast("Nama menu wajib diisi");return}
+  if(!(pr>0)){toast("Harga harus lebih dari 0");return}
+  Object.assign(p,{name:nm,cat:ct,price:pr,cost:cs===""?null:Number(cs)});
+  if(!S.menuDirty.includes(p.id))S.menuDirty.push(p.id);
+  EDIT_ID=null;save();toast("Menu diperbarui");render();syncNow();
+}
+function editCard(){
+  const ed=EDIT_ID&&S.products.find(p=>p.id===EDIT_ID);if(!ed)return "";
+  return `<div class="card" style="margin:12px 0;border-color:var(--gold)"><h3 style="margin-bottom:8px">Edit menu</h3><input id="ed_nm" value="${esc(ed.name)}" placeholder="Nama menu"><div class="grid" style="margin-top:8px"><input id="ed_ct" value="${esc(ed.cat)}" placeholder="Kategori"><input id="ed_pr" type="number" value="${esc(ed.price)}" placeholder="Harga"></div><div class="grid" style="margin-top:8px"><input id="ed_cs" type="number" value="${esc(ed.cost)}" placeholder="Harga modal (opsional)"><button class="btn ghost" onclick="batalEdit()">Batal</button></div><button class="btn" style="margin-top:10px" onclick="simpanEdit()">Simpan perubahan</button></div>`;
+}
 function kelola(){
   if(S.session.role!=="Pemilik")return '<div class="muted">Halaman ini hanya untuk Pemilik.</div>';
-  const e=EDIT_ID?S.products.find(p=>p.id===EDIT_ID):null;
-  const v=x=>x==null?"":String(x).replace(/"/g,"&quot;");
-  return `<h2>Kelola menu</h2>${backupCard()}<div class="card" style="margin:12px 0"><h3 style="margin-bottom:8px">${e?"Edit menu":"Tambah menu"}</h3><input id="nm" placeholder="Nama menu" value="${v(e&&e.name)}"><div class="grid" style="margin-top:8px"><input id="ct" placeholder="Kategori: Kopi / Non Kopi / Makanan" value="${v(e&&e.cat)}"><input id="pr" type="number" placeholder="Harga" value="${v(e&&e.price)}"></div><div class="grid" style="margin-top:8px"><input id="cs" type="number" placeholder="Harga modal (opsional)" value="${v(e&&e.cost)}"><input id="sk" type="number" placeholder="Stok (hanya di perangkat ini)" value="${v(e&&e.stock)}"></div><button class="btn" style="margin-top:10px" onclick="tambahMenu()">${e?"Simpan perubahan":"Simpan menu"}</button>${e?'<button class="btn ghost" style="margin-top:8px" onclick="batalEdit()">Batal</button>':""}</div>
-${S.products.map(p=>`<div class="card row" style="margin-bottom:8px"><div><strong>${p.name}</strong><div class="muted">${p.cat} · ${rp(p.price)} · stok ${p.stock}</div></div><div class="row"><button class="btn sm ghost" onclick="editMenu('${p.id}')">Edit</button><button class="btn sm ghost" onclick="hapusMenu('${p.id}')">Hapus</button></div></div>`).join("")}`;
+  return `<h2>Kelola menu</h2>${backupCard()}${editCard()}<div class="card" style="margin:12px 0"><h3 style="margin-bottom:8px">Tambah menu</h3><input id="nm" placeholder="Nama menu"><div class="grid" style="margin-top:8px"><input id="ct" placeholder="Kategori: Kopi / Non Kopi / Makanan"><input id="pr" type="number" placeholder="Harga"></div><div class="grid" style="margin-top:8px"><input id="cs" type="number" placeholder="Harga modal (opsional)"><input id="sk" type="number" placeholder="Stok (hanya di perangkat ini)"></div><button class="btn" style="margin-top:10px" onclick="tambahMenu()">Simpan menu</button></div>
+${S.products.map(p=>`<div class="card row" style="margin-bottom:8px"><div><strong>${esc(p.name)}</strong><div class="muted">${esc(p.cat)} · ${rp(p.price)} · stok ${p.stock}</div></div><div class="row" style="gap:6px"><button class="btn sm ghost" onclick="bukaEdit('${p.id}')">Edit</button><button class="btn sm ghost" onclick="hapusMenu('${p.id}')">Hapus</button></div></div>`).join("")}`;
 }
-function editMenu(id){EDIT_ID=id;render();window.scrollTo(0,0)}
-function batalEdit(){EDIT_ID=null;render()}
 
 function profil(){return `<h2>Profil</h2><div class="card" style="margin:12px 0"><strong>${S.session.name}</strong><div class="muted">${S.session.role}</div></div>
 <div class="card"><div class="row"><span>Status</span><span>${navigator.onLine?"Online":"Offline"}</span></div><div class="row" style="margin-top:6px"><span>Menunggu sinkron</span><span>${S.outbox.length}</span></div><div class="muted" style="margin-top:8px">${SUPABASE_URL?"Terhubung ke cloud.":"Cloud belum dihubungkan. Data tersimpan di perangkat ini."}</div></div>
