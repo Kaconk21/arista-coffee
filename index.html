@@ -101,7 +101,7 @@ function pulihkanBackup(file){
 function backupCard(){const ada=localStorage.getItem(BACKUP_KEY);
   return `<div class="card" style="margin:12px 0"><h3 style="margin-bottom:6px">Backup dan pemulihan</h3><div class="muted" style="margin-bottom:10px">${ada?"Backup terakhir: "+new Date(Number(ada)).toLocaleString("id-ID"):"Belum pernah diunduh."} Simpan file backup di tempat aman.</div><button class="btn" onclick="unduhBackup()">Unduh backup JSON</button><label class="btn ghost" style="display:block;text-align:center;margin-top:8px;cursor:pointer">Pulihkan backup<input type="file" accept=".json,application/json" onchange="pulihkanBackup(this.files[0]);this.value=''" style="display:none"></label></div>`}
 function toast(m){const t=$("toast");t.textContent=m;t.classList.add("show");clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove("show"),2200)}
-function go(v){V=v;render();window.scrollTo(0,0)}
+function go(v){V=v;if(v==="laporan"){LAP=null;LAP_NOTE="";render();muatLaporan()}else render();window.scrollTo(0,0)}
 function sumCart(){return CART.reduce((n,x)=>n+x.price*x.qty,0)}
 function todaySales(){return S.sales.filter(s=>s.date===today())}
 function inRange(d,m){const t=today();if(m==="Harian")return d===t;if(m==="Bulanan")return d.slice(0,7)===t.slice(0,7);const diff=(new Date(t+"T00:00")-new Date(d+"T00:00"))/864e5;return diff>=0&&diff<7}
@@ -203,10 +203,31 @@ ${PAY==="Tunai"?`<label class="muted">Uang diterima</label><input id="paid" type
 function struk(){const s=LAST;if(!s)return beranda();
   return `<h2>Struk transaksi</h2><div class="receipt" style="margin:12px 0"><div style="text-align:center"><strong>ARISTA</strong><br>Coffee &amp; Roastery</div><hr>No. ${s.id.slice(0,8)}<br>${s.date} ${s.time}<br>Kasir: ${s.cashier}<hr>${s.items.map(x=>`${x.name} x${x.qty} &nbsp; ${rp(x.price*x.qty)}`).join("<br>")}<hr>Total ${rp(s.total)}<br>${s.method}${s.method==="Tunai"?`<br>Bayar ${rp(s.paid)} · Kembali ${rp(s.change)}`:""}</div>
 <button class="btn" onclick="window.print()">Cetak struk</button><button class="btn ghost" style="margin-top:8px" onclick="selesai()">Selesai</button>`}
-function laporan(){const list=S.sales.filter(s=>inRange(s.date,RANGE));const omzet=list.reduce((n,s)=>n+s.total,0);
+let LAP=null,LAP_NOTE="",LAP_REQ=0;
+function rentangTanggal(m){const t=today();if(m==="Harian")return[t,t];if(m==="Bulanan")return[t.slice(0,8)+"01",t];const d=new Date(t+"T00:00");d.setDate(d.getDate()-6);return[d.toLocaleDateString("sv-SE"),t]}
+async function muatLaporan(){
+  const req=++LAP_REQ;const[dari,sampai]=rentangTanggal(RANGE);
+  if(!SUPABASE_URL||!navigator.onLine){LAP=null;LAP_NOTE="Offline: menampilkan data di perangkat ini saja.";render();return}
+  try{
+    const tok=await tokenBaru();if(!tok)throw new Error("sesi");
+    const url=SUPABASE_URL+"/rest/v1/sales?select=id,sale_date,sale_time,items,total,method,paid,change_amount,cashier_name&sale_date=gte."+dari+"&sale_date=lte."+sampai+"&order=sale_date.desc,created_at.desc&limit=1000";
+    const r=await fetch(url,{headers:{apikey:SUPABASE_ANON_KEY,Authorization:"Bearer "+tok}});
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    const rows=await r.json();if(req!==LAP_REQ)return;
+    const cloud=rows.map(x=>({id:x.id,date:x.sale_date,time:x.sale_time,items:x.items||[],total:Number(x.total)||0,method:x.method,paid:Number(x.paid)||0,change:Number(x.change_amount)||0,cashier:x.cashier_name}));
+    const ids=new Set(cloud.map(x=>x.id));
+    const pending=S.outbox.filter(x=>!ids.has(x.id)&&x.date>=dari&&x.date<=sampai);
+    LAP=[...pending,...cloud];LAP_NOTE="";
+  }catch(e){if(req!==LAP_REQ)return;LAP=null;LAP_NOTE="Tidak bisa memuat dari cloud. Menampilkan data di perangkat ini."}
+  render();
+}
+function laporan(){
+  const list=LAP||S.sales.filter(s=>inRange(s.date,RANGE));
+  const omzet=list.reduce((n,s)=>n+s.total,0);
   let cost=0,unknown=false;for(const s of list)for(const x of s.items){if(x.cost==null)unknown=true;else cost+=x.cost*x.qty}
   const margin=unknown?"–":rp(omzet-cost);
-  return `<h2>Laporan</h2><div class="tabs" style="margin:10px 0">${["Harian","Mingguan","Bulanan"].map(m=>`<button class="tab ${m===RANGE?"on":""}" onclick="RANGE='${m}';render()">${m}</button>`).join("")}</div>
+  return `<h2>Laporan</h2><div class="tabs" style="margin:10px 0">${["Harian","Mingguan","Bulanan"].map(m=>`<button class="tab ${m===RANGE?"on":""}" onclick="RANGE='${m}';LAP=null;render();muatLaporan()">${m}</button>`).join("")}</div>
+${LAP_NOTE?`<div class="muted" style="margin-bottom:8px;color:var(--warn)">${LAP_NOTE}</div>`:""}
 <div class="grid"><div class="card"><div class="muted">Total omzet</div><h3>${rp(omzet)}</h3></div><div class="card"><div class="muted">Transaksi</div><h3>${list.length}</h3></div></div>
 ${S.session.role==="Pemilik"?`<div class="card" style="margin-top:10px"><div class="muted">Margin kotor</div><h3>${margin}</h3><div class="muted">${unknown?"Isi harga modal di Kelola agar margin terhitung.":""}</div></div>`:""}
 <h3 style="margin:18px 0 8px">Transaksi</h3>${list.slice(0,20).map(saleRow).join("")||'<div class="muted">Belum ada transaksi pada periode ini.</div>'}`}
