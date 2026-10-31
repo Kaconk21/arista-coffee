@@ -124,8 +124,21 @@ function pulihkanBackup(file){
   };
   fr.readAsText(file);
 }
+const UUID_RE=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+async function uuidDari(teks){const b=new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(teks))).slice(0,16);b[6]=(b[6]&0x0f)|0x50;b[8]=(b[8]&0x3f)|0x80;const h=[...b].map(x=>x.toString(16).padStart(2,"0")).join("");return h.slice(0,8)+"-"+h.slice(8,12)+"-"+h.slice(12,16)+"-"+h.slice(16,20)+"-"+h.slice(20)}
+async function kirimRiwayatLama(){
+  const lama=S.sales.filter(s=>!UUID_RE.test(String(s.id)));
+  if(!lama.length)return toast("Tidak ada riwayat lama yang perlu dikirim.");
+  if(!SUPABASE_URL||!navigator.onLine)return toast("Perlu internet untuk mengirim riwayat lama.");
+  try{
+    const tok=await tokenBaru();if(!tok)return toast("Sesi habis. Keluar lalu masuk lagi saat online.");
+    const rows=[];for(const s of lama){rows.push(toRow({...s,id:await uuidDari("arista-lama:"+s.id)}))}
+    const r=await fetch(SUPABASE_URL+"/rest/v1/sales",{method:"POST",headers:{apikey:SUPABASE_ANON_KEY,Authorization:"Bearer "+tok,"Content-Type":"application/json",Prefer:"resolution=ignore-duplicates,return=minimal"},body:JSON.stringify(rows)});
+    toast(r.ok?"Riwayat lama terkirim ke cloud ("+lama.length+" transaksi).":"Gagal mengirim riwayat lama ("+r.status+").");
+  }catch(e){toast("Gagal mengirim riwayat lama. Coba lagi.")}
+}
 function backupCard(){const ada=localStorage.getItem(BACKUP_KEY);
-  return `<div class="card" style="margin:12px 0"><h3 style="margin-bottom:6px">Backup dan pemulihan</h3><div class="muted" style="margin-bottom:10px">${ada?"Backup terakhir: "+new Date(Number(ada)).toLocaleString("id-ID"):"Belum pernah diunduh."} Simpan file backup di tempat aman.</div><button class="btn" onclick="unduhBackup()">Unduh backup JSON</button><label class="btn ghost" style="display:block;text-align:center;margin-top:8px;cursor:pointer">Pulihkan backup<input type="file" accept=".json,application/json" onchange="pulihkanBackup(this.files[0]);this.value=''" style="display:none"></label></div>`}
+  return `<div class="card" style="margin:12px 0"><h3 style="margin-bottom:6px">Backup dan pemulihan</h3><div class="muted" style="margin-bottom:10px">${ada?"Backup terakhir: "+new Date(Number(ada)).toLocaleString("id-ID"):"Belum pernah diunduh."} Simpan file backup di tempat aman.</div><button class="btn" onclick="unduhBackup()">Unduh backup JSON</button><button class="btn ghost" style="margin-top:8px" onclick="kirimRiwayatLama()">Kirim riwayat lama ke cloud</button><label class="btn ghost" style="display:block;text-align:center;margin-top:8px;cursor:pointer">Pulihkan backup<input type="file" accept=".json,application/json" onchange="pulihkanBackup(this.files[0]);this.value=''" style="display:none"></label></div>`}
 function toast(m){const t=$("toast");t.textContent=m;t.classList.add("show");clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove("show"),2200)}
 function go(v){V=v;if(v==="laporan"){LAP=null;LAP_NOTE="";render();muatLaporan()}else if(v==="beranda"){BER=null;BER_NOTE="";render();muatBeranda()}else if(v==="kelola"){PENGGUNA=null;PENGGUNA_ERR="";render();muatPengguna()}else render();window.scrollTo(0,0)}
 function sumCart(){return CART.reduce((n,x)=>n+x.price*x.qty,0)}
