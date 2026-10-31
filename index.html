@@ -127,7 +127,7 @@ function pulihkanBackup(file){
 function backupCard(){const ada=localStorage.getItem(BACKUP_KEY);
   return `<div class="card" style="margin:12px 0"><h3 style="margin-bottom:6px">Backup dan pemulihan</h3><div class="muted" style="margin-bottom:10px">${ada?"Backup terakhir: "+new Date(Number(ada)).toLocaleString("id-ID"):"Belum pernah diunduh."} Simpan file backup di tempat aman.</div><button class="btn" onclick="unduhBackup()">Unduh backup JSON</button><label class="btn ghost" style="display:block;text-align:center;margin-top:8px;cursor:pointer">Pulihkan backup<input type="file" accept=".json,application/json" onchange="pulihkanBackup(this.files[0]);this.value=''" style="display:none"></label></div>`}
 function toast(m){const t=$("toast");t.textContent=m;t.classList.add("show");clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove("show"),2200)}
-function go(v){V=v;if(v==="laporan"){LAP=null;LAP_NOTE="";render();muatLaporan()}else if(v==="beranda"){BER=null;BER_NOTE="";render();muatBeranda()}else render();window.scrollTo(0,0)}
+function go(v){V=v;if(v==="laporan"){LAP=null;LAP_NOTE="";render();muatLaporan()}else if(v==="beranda"){BER=null;BER_NOTE="";render();muatBeranda()}else if(v==="kelola"){PENGGUNA=null;PENGGUNA_ERR="";render();muatPengguna()}else render();window.scrollTo(0,0)}
 function sumCart(){return CART.reduce((n,x)=>n+x.price*x.qty,0)}
 function todaySales(){return S.sales.filter(s=>s.date===today())}
 function inRange(d,m){const t=today();if(m==="Harian")return d===t;if(m==="Bulanan")return d.slice(0,7)===t.slice(0,7);const diff=(new Date(t+"T00:00")-new Date(d+"T00:00"))/864e5;return diff>=0&&diff<7}
@@ -326,9 +326,40 @@ function editCard(){
   const ed=EDIT_ID&&S.products.find(p=>p.id===EDIT_ID);if(!ed)return "";
   return `<div class="card" style="margin:12px 0;border-color:var(--gold)"><h3 style="margin-bottom:8px">Edit menu</h3><input id="ed_nm" value="${esc(ed.name)}" placeholder="Nama menu"><div class="grid" style="margin-top:8px"><input id="ed_ct" value="${esc(ed.cat)}" placeholder="Kategori"><input id="ed_pr" type="number" value="${esc(ed.price)}" placeholder="Harga"></div><div class="grid" style="margin-top:8px"><input id="ed_cs" type="number" value="${esc(ed.cost)}" placeholder="Harga modal (opsional)"><button class="btn ghost" onclick="batalEdit()">Batal</button></div><button class="btn" style="margin-top:10px" onclick="simpanEdit()">Simpan perubahan</button></div>`;
 }
+let PENGGUNA=null,PENGGUNA_ERR="",PENGGUNA_REQ=0;
+async function panggilKelola(body){
+  if(!navigator.onLine)throw new Error("Perlu internet untuk mengelola pengguna.");
+  const tok=await tokenBaru();if(!tok)throw new Error("Sesi habis. Keluar lalu masuk lagi saat online.");
+  const r=await fetch(SUPABASE_URL+"/functions/v1/kelola-kasir",{method:"POST",headers:{apikey:SUPABASE_ANON_KEY,Authorization:"Bearer "+tok,"Content-Type":"application/json"},body:JSON.stringify(body)});
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(d.error||"Gagal ("+r.status+")");
+  return d;
+}
+async function muatPengguna(){
+  const req=++PENGGUNA_REQ;
+  try{const d=await panggilKelola({aksi:"daftar"});if(req!==PENGGUNA_REQ)return;PENGGUNA=d;PENGGUNA_ERR=""}
+  catch(e){if(req!==PENGGUNA_REQ)return;PENGGUNA=null;PENGGUNA_ERR=e.message}
+  if(V==="kelola")render();
+}
+async function tambahKasir(){
+  const nama=$("pn_nama").value.trim(),email=$("pn_email").value.trim(),password=$("pn_pw").value;
+  try{await panggilKelola({aksi:"tambah",nama,email,password});toast("Kasir ditambahkan");PENGGUNA=null;render();muatPengguna()}
+  catch(e){$("pn_err").textContent=e.message}
+}
+async function hapusKasir(id){
+  const u=(PENGGUNA||[]).find(x=>x.id===id);if(!u)return;
+  if(!confirm("Hapus akun "+u.nama+"? Kasir ini tidak bisa masuk lagi."))return;
+  try{await panggilKelola({aksi:"hapus",id});toast("Akun dihapus");PENGGUNA=null;render();muatPengguna()}
+  catch(e){toast(e.message)}
+}
+function penggunaCard(){
+  const isi=PENGGUNA?PENGGUNA.map(u=>`<div class="row" style="padding:10px 0;border-top:1px solid var(--line)"><div><strong>${esc(u.nama)}</strong> <span class="pill">${esc(u.peran)}</span><div class="muted">${esc(u.email)}</div></div>${u.peran==="Kasir"?`<button class="btn sm ghost" onclick="hapusKasir('${u.id}')">Hapus</button>`:""}</div>`).join(""):(PENGGUNA_ERR?`<div class="err">${esc(PENGGUNA_ERR)}</div>`:`<div class="muted">Memuat daftar pengguna...</div>`);
+  return `<div class="card" style="margin:12px 0"><h3 style="margin-bottom:6px">Pengguna</h3>${isi}
+<div style="margin-top:14px;border-top:1px solid var(--line);padding-top:12px"><div class="muted" style="margin-bottom:4px">Tambah kasir baru</div><input id="pn_nama" placeholder="Nama kasir"><input id="pn_email" type="email" placeholder="Email" style="margin-top:8px"><input id="pn_pw" type="password" placeholder="Kata sandi awal (min. 6 karakter)" style="margin-top:8px"><button class="btn" style="margin-top:10px" onclick="tambahKasir()">Tambah kasir</button><div id="pn_err" class="err"></div></div></div>`;
+}
 function kelola(){
   if(S.session.role!=="Pemilik")return '<div class="muted">Halaman ini hanya untuk Pemilik.</div>';
-  return `<h2>Kelola menu</h2>${backupCard()}${editCard()}<div class="card" style="margin:12px 0"><h3 style="margin-bottom:8px">Tambah menu</h3><input id="nm" placeholder="Nama menu"><div class="grid" style="margin-top:8px"><input id="ct" placeholder="Kategori: Kopi / Non Kopi / Makanan"><input id="pr" type="number" placeholder="Harga"></div><div class="grid" style="margin-top:8px"><input id="cs" type="number" placeholder="Harga modal (opsional)"><input id="sk" type="number" placeholder="Stok (hanya di perangkat ini)"></div><button class="btn" style="margin-top:10px" onclick="tambahMenu()">Simpan menu</button></div>
+  return `<h2>Kelola menu</h2>${backupCard()}${penggunaCard()}${editCard()}<div class="card" style="margin:12px 0"><h3 style="margin-bottom:8px">Tambah menu</h3><input id="nm" placeholder="Nama menu"><div class="grid" style="margin-top:8px"><input id="ct" placeholder="Kategori: Kopi / Non Kopi / Makanan"><input id="pr" type="number" placeholder="Harga"></div><div class="grid" style="margin-top:8px"><input id="cs" type="number" placeholder="Harga modal (opsional)"><input id="sk" type="number" placeholder="Stok (hanya di perangkat ini)"></div><button class="btn" style="margin-top:10px" onclick="tambahMenu()">Simpan menu</button></div>
 ${S.products.map(p=>`<div class="card row" style="margin-bottom:8px"><div><strong>${esc(p.name)}</strong><div class="muted">${esc(p.cat)} · ${rp(p.price)} · stok ${p.stock}</div></div><div class="row" style="gap:6px"><button class="btn sm ghost" onclick="bukaEdit('${p.id}')">Edit</button><button class="btn sm ghost" onclick="hapusMenu('${p.id}')">Hapus</button></div></div>`).join("")}`;
 }
 
