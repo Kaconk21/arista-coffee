@@ -101,7 +101,7 @@ function pulihkanBackup(file){
 function backupCard(){const ada=localStorage.getItem(BACKUP_KEY);
   return `<div class="card" style="margin:12px 0"><h3 style="margin-bottom:6px">Backup dan pemulihan</h3><div class="muted" style="margin-bottom:10px">${ada?"Backup terakhir: "+new Date(Number(ada)).toLocaleString("id-ID"):"Belum pernah diunduh."} Simpan file backup di tempat aman.</div><button class="btn" onclick="unduhBackup()">Unduh backup JSON</button><label class="btn ghost" style="display:block;text-align:center;margin-top:8px;cursor:pointer">Pulihkan backup<input type="file" accept=".json,application/json" onchange="pulihkanBackup(this.files[0]);this.value=''" style="display:none"></label></div>`}
 function toast(m){const t=$("toast");t.textContent=m;t.classList.add("show");clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove("show"),2200)}
-function go(v){V=v;if(v==="laporan"){LAP=null;LAP_NOTE="";render();muatLaporan()}else render();window.scrollTo(0,0)}
+function go(v){V=v;if(v==="laporan"){LAP=null;LAP_NOTE="";render();muatLaporan()}else if(v==="beranda"){BER=null;BER_NOTE="";render();muatBeranda()}else render();window.scrollTo(0,0)}
 function sumCart(){return CART.reduce((n,x)=>n+x.price*x.qty,0)}
 function todaySales(){return S.sales.filter(s=>s.date===today())}
 function inRange(d,m){const t=today();if(m==="Harian")return d===t;if(m==="Bulanan")return d.slice(0,7)===t.slice(0,7);const diff=(new Date(t+"T00:00")-new Date(d+"T00:00"))/864e5;return diff>=0&&diff<7}
@@ -221,12 +221,30 @@ function login_(){return `<div style="padding-top:56px;text-align:center"><h1 st
 <button class="btn" style="margin-top:12px" onclick="masukAkun()">Masuk</button>
 <div id="lerr" class="muted" style="margin-top:8px;color:var(--warn);min-height:18px"></div></div>
 <p class="muted" style="text-align:center;margin-top:14px">Login perlu internet. Setelah berhasil, kasir tetap bisa dipakai saat offline.</p>`}
-function beranda(){const t=todaySales();const omzet=t.reduce((n,s)=>n+s.total,0);
+let BER=null,BER_NOTE="",BER_REQ=0;
+function petaTransaksi(x){return{id:x.id,date:x.sale_date,time:x.sale_time,items:x.items||[],total:Number(x.total)||0,method:x.method,paid:Number(x.paid)||0,change:Number(x.change_amount)||0,cashier:x.cashier_name}}
+async function muatBeranda(){
+  const req=++BER_REQ;const hari=today();
+  if(!SUPABASE_URL||!navigator.onLine){BER=null;BER_NOTE=SUPABASE_URL?"Offline: menampilkan data di perangkat ini saja.":"";render();return}
+  try{
+    const tok=await tokenBaru();if(!tok)throw new Error("sesi");
+    const r=await fetch(SUPABASE_URL+"/rest/v1/sales?select=id,sale_date,sale_time,items,total,method,paid,change_amount,cashier_name&sale_date=eq."+hari+"&order=created_at.desc&limit=500",{headers:{apikey:SUPABASE_ANON_KEY,Authorization:"Bearer "+tok}});
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    const rows=await r.json();if(req!==BER_REQ)return;
+    const cloud=rows.map(petaTransaksi);
+    const ids=new Set(cloud.map(x=>x.id));
+    BER=[...S.outbox.filter(x=>!ids.has(x.id)&&x.date===hari),...cloud];BER_NOTE="";
+  }catch(e){if(req!==BER_REQ)return;BER=null;BER_NOTE="Tidak bisa memuat dari cloud. Menampilkan data di perangkat ini."}
+  render();
+}
+function beranda(){
+  const t=BER||todaySales();const omzet=t.reduce((n,s)=>n+s.total,0);
   const quick=[["Kasir","menu"],["Laporan","laporan"],...(S.session.role==="Pemilik"?[["Kelola","kelola"]]:[]),["Profil","profil"]];
   return `<h2>Selamat datang,<br>${S.session.name}</h2><div class="muted" style="margin:4px 0 14px">${S.session.role}</div>
+${BER_NOTE?`<div class="muted" style="margin-bottom:8px;color:var(--warn)">${BER_NOTE}</div>`:""}
 <div class="grid"><div class="card"><div class="muted">Total hari ini</div><h3>${rp(omzet)}</h3></div><div class="card"><div class="muted">Transaksi</div><h3>${t.length}</h3></div></div>
 <div class="grid" style="margin-top:12px">${quick.map(([l,v])=>`<button class="btn ghost" onclick="go('${v}')">${l}</button>`).join("")}</div>
-<h3 style="margin:18px 0 8px">Transaksi terbaru</h3>${S.sales.slice(0,3).map(saleRow).join("")||'<div class="muted">Belum ada transaksi.</div>'}`}
+<h3 style="margin:18px 0 8px">Transaksi terbaru</h3>${t.slice(0,3).map(saleRow).join("")||'<div class="muted">Belum ada transaksi.</div>'}`}
 function menu(){const cats=["Semua",...new Set(S.products.map(p=>p.cat))];const n=CART.reduce((a,x)=>a+x.qty,0);
   return `<h2>Menu</h2><div class="tabs" style="margin:10px 0">${cats.map(c=>`<button class="tab ${c===CAT?"on":""}" onclick="CAT='${c}';render()">${c}</button>`).join("")}</div>
 <div class="grid">${S.products.filter(p=>CAT==="Semua"||p.cat===CAT).map(p=>`<div class="card"><strong>${p.name}</strong><div class="muted">${rp(p.price)} · stok ${p.stock}</div><button class="btn sm" style="margin-top:8px" onclick="addCart('${p.id}')">+ Tambah</button></div>`).join("")}</div>
@@ -298,6 +316,6 @@ window.addEventListener("online",()=>{render();syncNow()});
 window.addEventListener("offline",render);
 if(migrasiLama())setTimeout(()=>toast("Menu dan transaksi dari versi lama sudah dipindahkan."),800);
 if(S.session&&S.session.role==="Pemilik"&&S.sales.length&&Date.now()-Number(localStorage.getItem(BACKUP_KEY)||0)>7*864e5)setTimeout(()=>toast("Belum ada backup dalam 7 hari. Unduh backup di Kelola."),2500);
-render();setInterval(syncNow,60000);syncNow();
+render();if(S.session&&V==="beranda")muatBeranda();setInterval(syncNow,60000);syncNow();
 if("serviceWorker" in navigator&&(location.protocol==="https:"||location.hostname==="localhost"))window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));
 </script></body></html>
