@@ -105,7 +105,36 @@ function go(v){V=v;render();window.scrollTo(0,0)}
 function sumCart(){return CART.reduce((n,x)=>n+x.price*x.qty,0)}
 function todaySales(){return S.sales.filter(s=>s.date===today())}
 function inRange(d,m){const t=today();if(m==="Harian")return d===t;if(m==="Bulanan")return d.slice(0,7)===t.slice(0,7);const diff=(new Date(t+"T00:00")-new Date(d+"T00:00"))/864e5;return diff>=0&&diff<7}
-function login(role){S.session={name:role==="Pemilik"?"Budi Santoso":"Rizky Pratama",role};save();go("beranda")}
+async function masukAkun(){
+  const email=$("em").value.trim(),pw=$("pw").value,err=m=>{$("lerr").textContent=m};
+  if(!email||!pw)return err("Isi email dan kata sandi.");
+  if(!SUPABASE_URL)return err("Server belum terhubung.");
+  let a;
+  try{
+    const r=await fetch(SUPABASE_URL+"/auth/v1/token?grant_type=password",{method:"POST",headers:{apikey:SUPABASE_ANON_KEY,"Content-Type":"application/json"},body:JSON.stringify({email,password:pw})});
+    if(!r.ok)return err("Email atau kata sandi salah.");
+    a=await r.json();
+  }catch(e){return err("Tidak bisa terhubung. Login pertama perlu internet.")}
+  try{await simpanSesi(a);go("beranda")}catch(e){err(e.message)}
+}
+async function simpanSesi(a){
+  const uid=a.user.id;
+  const r=await fetch(SUPABASE_URL+"/rest/v1/profiles?id=eq."+uid+"&select=nama,peran",{headers:{apikey:SUPABASE_ANON_KEY,Authorization:"Bearer "+a.access_token}});
+  const rows=r.ok?await r.json():[];
+  if(!rows.length)throw new Error("Akun ini belum punya profil peran.");
+  S.session={name:rows[0].nama,role:rows[0].peran,uid,email:a.user.email,token:a.access_token,refresh:a.refresh_token,exp:Date.now()+(a.expires_in||3600)*1000};
+  save();
+}
+async function tokenBaru(){
+  if(!S.session||!S.session.token)return null;
+  if(S.session.exp-Date.now()>60000)return S.session.token;
+  if(!navigator.onLine)return null;
+  const r=await fetch(SUPABASE_URL+"/auth/v1/token?grant_type=refresh_token",{method:"POST",headers:{apikey:SUPABASE_ANON_KEY,"Content-Type":"application/json"},body:JSON.stringify({refresh_token:S.session.refresh})});
+  if(!r.ok)return null;
+  const a=await r.json();
+  S.session.token=a.access_token;S.session.refresh=a.refresh_token;S.session.exp=Date.now()+(a.expires_in||3600)*1000;save();
+  return a.access_token;
+}
 function keluar(){if(!confirm("Keluar dari akun ini?"))return;S.session=null;CART=[];save();go("login")}
 function addCart(id){const p=S.products.find(x=>x.id===id);const inCart=CART.find(x=>x.id===id);const q=inCart?inCart.qty:0;if(q>=p.stock){toast("Stok "+p.name+" habis");return}if(inCart)inCart.qty++;else CART.push({id:p.id,name:p.name,price:p.price,cost:p.cost,qty:1});toast(p.name+" ditambahkan");render()}
 function chg(i,d){const x=CART[i];const p=S.products.find(y=>y.id===x.id);if(d>0&&x.qty>=p.stock){toast("Stok tidak cukup");return}x.qty+=d;if(x.qty<=0)CART.splice(i,1);render()}
@@ -134,22 +163,26 @@ async function syncNow(){
   if(!SUPABASE_URL||syncing||!navigator.onLine||!S.outbox.length)return;
   syncing=true;
   try{
+    const tok=await tokenBaru();
+    if(!tok)throw new Error("sesi");
     while(S.outbox.length){
       const sale=S.outbox[0];
-      const res=await fetch(SUPABASE_URL+"/rest/v1/sales",{method:"POST",headers:{apikey:SUPABASE_ANON_KEY,"Content-Type":"application/json",Prefer:"resolution=ignore-duplicates,return=minimal"},body:JSON.stringify(toRow(sale))});
+      const res=await fetch(SUPABASE_URL+"/rest/v1/sales",{method:"POST",headers:{apikey:SUPABASE_ANON_KEY,Authorization:"Bearer "+tok,"Content-Type":"application/json",Prefer:"resolution=ignore-duplicates,return=minimal"},body:JSON.stringify(toRow(sale))});
       if(!res.ok)throw new Error("HTTP "+res.status);
       S.outbox.shift();save();
     }
-  }catch(e){toast("Sinkron gagal. Transaksi tetap aman dan akan dicoba lagi.")}
+  }catch(e){toast(e.message==="sesi"?"Sesi habis. Keluar lalu masuk lagi saat online.":"Sinkron gagal. Transaksi tetap aman dan akan dicoba lagi.")}
   finally{syncing=false;render()}
 }
 function saleRow(s){return `<div class="card row" style="margin-bottom:8px"><div><strong>${s.id.slice(0,8)}</strong><div class="muted">${s.time} · ${s.method}</div></div><strong>${rp(s.total)}</strong></div>`}
 function statusBar(){const on=navigator.onLine;return `<div id="status" class="${on?"":"off"}">${on?"Online":"Offline: transaksi tetap aman di perangkat"} · ${S.outbox.length} menunggu sinkron${SUPABASE_URL?"":" · cloud belum dihubungkan"}</div>`}
 function login_(){return `<div style="padding-top:56px;text-align:center"><h1 style="font-size:30px">ARISTA</h1><div class="muted">Coffee &amp; Roastery</div></div>
-<div class="card" style="margin-top:28px"><h2>Masuk</h2><p class="muted">Prototipe: pilih peran untuk mencoba.</p>
-<button class="btn" onclick="login('Pemilik')">Masuk sebagai Pemilik</button><div style="height:10px"></div>
-<button class="btn ghost" onclick="login('Kasir')">Masuk sebagai Kasir</button></div>
-<p class="muted" style="text-align:center;margin-top:14px">Login perlu internet sekali. Setelah itu sesi tersimpan dan kasir bisa dipakai offline.</p>`}
+<div class="card" style="margin-top:28px"><h2>Masuk</h2>
+<input id="em" type="email" placeholder="Email" autocomplete="username" style="margin:12px 0 8px">
+<input id="pw" type="password" placeholder="Kata sandi" autocomplete="current-password">
+<button class="btn" style="margin-top:12px" onclick="masukAkun()">Masuk</button>
+<div id="lerr" class="muted" style="margin-top:8px;color:var(--warn);min-height:18px"></div></div>
+<p class="muted" style="text-align:center;margin-top:14px">Login perlu internet. Setelah berhasil, kasir tetap bisa dipakai saat offline.</p>`}
 function beranda(){const t=todaySales();const omzet=t.reduce((n,s)=>n+s.total,0);
   const quick=[["Kasir","menu"],["Laporan","laporan"],...(S.session.role==="Pemilik"?[["Kelola","kelola"]]:[]),["Profil","profil"]];
   return `<h2>Selamat datang,<br>${S.session.name}</h2><div class="muted" style="margin:4px 0 14px">${S.session.role}</div>

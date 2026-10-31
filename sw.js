@@ -1,5 +1,5 @@
 // Versi cache: naikkan setiap kali aset berubah.
-const CACHE_NAME = "arista-pos-v3";
+const CACHE_NAME = "arista-pos-v4";
 const ROOT = self.location.href;
 const PRECACHE_URLS = ["./", "./index.html", "./config.js", "./manifest.json", "./icon/icon-192.png", "./icon/icon-512.png"]
   .map(p => new URL(p, ROOT).href);
