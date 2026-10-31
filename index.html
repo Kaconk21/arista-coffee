@@ -52,7 +52,7 @@ function seed(){return{session:null,products:[
 {id:"p4",name:"Cappuccino",cat:"Kopi",price:25000,cost:null,stock:50},
 {id:"p5",name:"Caramel Latte",cat:"Kopi",price:28000,cost:null,stock:50},
 {id:"p6",name:"Matcha Latte",cat:"Non Kopi",price:26000,cost:null,stock:50}],
-sales:[],outbox:[]}}
+sales:[],outbox:[],menuDirty:[],menuPull:"",menuSeeded:false}}
 function load(){
   let raw=null;try{raw=localStorage.getItem(KEY)}catch(e){}
   if(raw===null)return seed();
@@ -115,7 +115,7 @@ async function masukAkun(){
     if(!r.ok)return err("Email atau kata sandi salah.");
     a=await r.json();
   }catch(e){return err("Tidak bisa terhubung. Login pertama perlu internet.")}
-  try{await simpanSesi(a);go("beranda")}catch(e){err(e.message)}
+  try{await simpanSesi(a);go("beranda");syncNow()}catch(e){err(e.message)}
 }
 async function simpanSesi(a){
   const uid=a.user.id;
@@ -153,18 +153,50 @@ function tambahMenu(){
   const nm=$("nm").value.trim(),pr=Number($("pr").value),cs=$("cs").value,sk=Number($("sk").value)||0;
   if(!nm){toast("Nama menu wajib diisi");return}
   if(!(pr>0)){toast("Harga harus lebih dari 0");return}
-  S.products.push({id:"p"+Date.now(),name:nm,cat:$("ct").value.trim()||"Lainnya",price:pr,cost:cs===""?null:Number(cs),stock:sk});
-  save();toast("Menu tersimpan");render();
+  const nid="p"+Date.now();S.menuDirty.push(nid);S.products.push({id:nid,name:nm,cat:$("ct").value.trim()||"Lainnya",price:pr,cost:cs===""?null:Number(cs),stock:sk});
+  save();toast("Menu tersimpan");render();syncNow();
 }
-function hapusMenu(id){if(!confirm("Hapus menu ini?"))return;S.products=S.products.filter(p=>p.id!==id);save();render()}
+function hapusMenu(id){if(!confirm("Hapus menu ini?"))return;S.products=S.products.filter(p=>p.id!==id);S.menuDirty.push(id);save();render();syncNow()}
 let syncing=false;
 function toRow(s){return{id:s.id,sale_date:s.date,sale_time:s.time,items:s.items,total:s.total,method:s.method,paid:s.paid,change_amount:s.change,cashier_name:s.cashier}}
+async function syncMenu(tok){
+  const H={apikey:SUPABASE_ANON_KEY,Authorization:"Bearer "+tok};
+  if(S.session&&S.session.role==="Pemilik"){
+    if(!S.menuSeeded){
+      const c=await fetch(SUPABASE_URL+"/rest/v1/products?select=id&limit=1",{headers:H}).then(r=>r.json());
+      if(Array.isArray(c)&&c.length===0)S.menuDirty=S.products.map(p=>p.id);
+      S.menuSeeded=true;save();
+    }
+    const dirty=[...new Set(S.menuDirty)];
+    if(dirty.length){
+      const rows=dirty.map(id=>{const p=S.products.find(x=>x.id===id);return p?{id,name:p.name,cat:p.cat,price:p.price,cost:p.cost,deleted:false}:{id,name:"-",cat:"-",price:0,cost:null,deleted:true}});
+      const r=await fetch(SUPABASE_URL+"/rest/v1/products?on_conflict=id",{method:"POST",headers:{...H,"Content-Type":"application/json",Prefer:"resolution=merge-duplicates,return=minimal"},body:JSON.stringify(rows)});
+      if(!r.ok)throw new Error("menu HTTP "+r.status);
+      S.menuDirty=S.menuDirty.filter(id=>!dirty.includes(id));save();
+    }
+  }
+  const since=S.menuPull?"&updated_at=gt."+encodeURIComponent(S.menuPull):"";
+  const r=await fetch(SUPABASE_URL+"/rest/v1/products?select=id,name,cat,price,cost,deleted,updated_at&order=updated_at.asc"+since,{headers:H});
+  if(!r.ok)throw new Error("menu pull HTTP "+r.status);
+  for(const x of await r.json()){
+    if(S.menuDirty.includes(x.id))continue;
+    if(x.deleted)S.products=S.products.filter(p=>p.id!==x.id);
+    else{
+      const p=S.products.find(q=>q.id===x.id);
+      if(p){p.name=x.name;p.cat=x.cat;p.price=Number(x.price);p.cost=x.cost==null?null:Number(x.cost)}
+      else S.products.push({id:x.id,name:x.name,cat:x.cat,price:Number(x.price),cost:x.cost==null?null:Number(x.cost),stock:99});
+    }
+    S.menuPull=x.updated_at;
+  }
+  save();
+}
 async function syncNow(){
-  if(!SUPABASE_URL||syncing||!navigator.onLine||!S.outbox.length)return;
+  if(!SUPABASE_URL||syncing||!navigator.onLine)return;
   syncing=true;
   try{
     const tok=await tokenBaru();
     if(!tok)throw new Error("sesi");
+    try{await syncMenu(tok)}catch(e){toast("Menu belum tersinkron. Dicoba lagi nanti.")}
     while(S.outbox.length){
       const sale=S.outbox[0];
       const res=await fetch(SUPABASE_URL+"/rest/v1/sales",{method:"POST",headers:{apikey:SUPABASE_ANON_KEY,Authorization:"Bearer "+tok,"Content-Type":"application/json",Prefer:"resolution=ignore-duplicates,return=minimal"},body:JSON.stringify(toRow(sale))});
