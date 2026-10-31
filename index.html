@@ -237,7 +237,7 @@ function saleRow(s){return `<div class="card row" style="margin-bottom:8px"><div
 function statusBar(){const on=navigator.onLine;return `<div id="status" class="${on?"":"off"}">${on?"Online":"Offline: transaksi tetap aman di perangkat"} · ${S.outbox.length} menunggu sinkron${SUPABASE_URL?"":" · cloud belum dihubungkan"}</div>`}
 function login_(){return `<div class="auth-logo">${ICON.cup}<h1>ARISTA</h1><div class="muted">Coffee &amp; Roastery</div></div>
 <div class="card" style="margin-top:26px"><h2>Masuk</h2>
-<label class="field">${ICON.mail}<input id="em" type="email" placeholder="Email atau nomor telepon" autocomplete="username"></label>
+<label class="field">${ICON.mail}<input id="em" type="email" placeholder="Email" autocomplete="username"></label>
 <label class="field">${ICON.lock}<input id="pw" type="password" placeholder="Kata sandi" autocomplete="current-password"><button type="button" class="eye" onclick="togglePw()" aria-label="Lihat kata sandi">${ICON.eye}</button></label>
 <button class="btn" style="margin-top:16px" onclick="masukAkun()">Masuk</button>
 <div id="lerr" class="err"></div>
@@ -357,12 +357,21 @@ function penggunaCard(){
   return `<div class="card" style="margin:12px 0"><h3 style="margin-bottom:6px">Pengguna</h3>${isi}
 <div style="margin-top:14px;border-top:1px solid var(--line);padding-top:12px"><div class="muted" style="margin-bottom:4px">Tambah kasir baru</div><input id="pn_nama" placeholder="Nama kasir"><input id="pn_email" type="email" placeholder="Email" style="margin-top:8px"><input id="pn_pw" type="password" placeholder="Kata sandi awal (min. 6 karakter)" style="margin-top:8px"><button class="btn" style="margin-top:10px" onclick="tambahKasir()">Tambah kasir</button><div id="pn_err" class="err"></div></div></div>`;
 }
+let KELOLA_TAB="Menu";
+function setTabKelola(t){KELOLA_TAB=t;render()}
+function tambahCard(){return `<div class="card" style="margin:12px 0"><h3 style="margin-bottom:8px">Tambah menu</h3><input id="nm" placeholder="Nama menu"><div class="grid" style="margin-top:8px"><input id="ct" placeholder="Kategori: Kopi / Non Kopi / Makanan"><input id="pr" type="number" placeholder="Harga"></div><div class="grid" style="margin-top:8px"><input id="cs" type="number" placeholder="Harga modal (opsional)"><input id="sk" type="number" placeholder="Stok (hanya di perangkat ini)"></div><button class="btn" style="margin-top:10px" onclick="tambahMenu()">Simpan menu</button></div>`}
+function tabMenu(){return editCard()+tambahCard()+S.products.map(p=>`<div class="card row" style="margin-bottom:8px"><div><strong>${esc(p.name)}</strong><div class="muted">${esc(p.cat)} · ${rp(p.price)} · stok ${p.stock}</div></div><div class="row" style="gap:6px"><button class="btn sm ghost" onclick="bukaEdit('${p.id}')">Edit</button><button class="btn sm ghost" onclick="hapusMenu('${p.id}')">Hapus</button></div></div>`).join("")}
+function tabKategori(){const cats={};S.products.forEach(p=>{cats[p.cat]=(cats[p.cat]||0)+1});const rows=Object.keys(cats).sort().map(c=>`<div class="card row" style="margin-bottom:8px"><strong>${esc(c)}</strong><span class="pill">${cats[c]} menu</span></div>`).join("");return (rows||'<div class="muted">Belum ada kategori.</div>')+'<div class="muted" style="margin-top:10px">Kategori diatur lewat kolom Kategori saat menambah atau mengedit menu.</div>'}
+function bukaEditDariTab(id){KELOLA_TAB="Menu";bukaEdit(id)}
+function tabHarga(){return S.products.map(p=>{const m=p.cost==null||!(p.price>0)?"–":Math.round((p.price-p.cost)/p.price*100)+"%";return `<div class="card row" style="margin-bottom:8px"><div><strong>${esc(p.name)}</strong><div class="muted">Harga ${rp(p.price)} · Modal ${p.cost==null?"belum diisi":rp(p.cost)} · Margin ${m}</div></div><button class="btn sm ghost" onclick="bukaEditDariTab('${p.id}')">Ubah</button></div>`}).join("")||'<div class="muted">Belum ada menu.</div>'}
+function ubahStok(id,d){const p=S.products.find(x=>x.id===id);if(!p)return;p.stock=Math.max(0,(Number(p.stock)||0)+d);save();render()}
+function tabStok(){return '<div class="muted" style="margin-bottom:10px">Stok dihitung per perangkat dan tidak ikut sinkron ke perangkat lain.</div>'+S.products.map(p=>`<div class="card row" style="margin-bottom:8px"><div><strong>${esc(p.name)}</strong><div class="muted">Stok di perangkat ini: ${p.stock}</div></div><div class="row" style="gap:6px"><button class="btn sm ghost" onclick="ubahStok('${p.id}',-1)">−</button><button class="btn sm ghost" onclick="ubahStok('${p.id}',1)">+</button></div></div>`).join("")||'<div class="muted">Belum ada menu.</div>'}
 function kelola(){
   if(S.session.role!=="Pemilik")return '<div class="muted">Halaman ini hanya untuk Pemilik.</div>';
-  return `<h2>Kelola menu</h2>${backupCard()}${penggunaCard()}${editCard()}<div class="card" style="margin:12px 0"><h3 style="margin-bottom:8px">Tambah menu</h3><input id="nm" placeholder="Nama menu"><div class="grid" style="margin-top:8px"><input id="ct" placeholder="Kategori: Kopi / Non Kopi / Makanan"><input id="pr" type="number" placeholder="Harga"></div><div class="grid" style="margin-top:8px"><input id="cs" type="number" placeholder="Harga modal (opsional)"><input id="sk" type="number" placeholder="Stok (hanya di perangkat ini)"></div><button class="btn" style="margin-top:10px" onclick="tambahMenu()">Simpan menu</button></div>
-${S.products.map(p=>`<div class="card row" style="margin-bottom:8px"><div><strong>${esc(p.name)}</strong><div class="muted">${esc(p.cat)} · ${rp(p.price)} · stok ${p.stock}</div></div><div class="row" style="gap:6px"><button class="btn sm ghost" onclick="bukaEdit('${p.id}')">Edit</button><button class="btn sm ghost" onclick="hapusMenu('${p.id}')">Hapus</button></div></div>`).join("")}`;
+  const isi={Menu:tabMenu,Kategori:tabKategori,Harga:tabHarga,Stok:tabStok}[KELOLA_TAB]||tabMenu;
+  const tabs=["Menu","Kategori","Harga","Stok"].map(t=>`<button class="tab ${t===KELOLA_TAB?"on":""}" onclick="setTabKelola('${t}')">${t}</button>`).join("");
+  return `<h2>Kelola menu</h2>${backupCard()}${penggunaCard()}<div class="tabs" style="margin:12px 0">${tabs}</div>${isi()}`;
 }
-
 function profil(){return `<h2>Profil</h2><div class="card" style="margin:12px 0"><strong>${S.session.name}</strong><div class="muted">${S.session.role}</div></div>
 <div class="card"><div class="row"><span>Status</span><span>${navigator.onLine?"Online":"Offline"}</span></div><div class="row" style="margin-top:6px"><span>Menunggu sinkron</span><span>${S.outbox.length}</span></div><div class="muted" style="margin-top:8px">${SUPABASE_URL?"Terhubung ke cloud.":"Cloud belum dihubungkan. Data tersimpan di perangkat ini."}</div></div>
 <button class="btn ghost" style="margin-top:14px" onclick="keluar()">Keluar dari akun</button>`}
