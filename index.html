@@ -217,12 +217,12 @@ function addCart(id){const p=S.products.find(x=>x.id===id);const inCart=CART.fin
 function chg(i,d){const x=CART[i];const p=S.products.find(y=>y.id===x.id);if(d>0&&x.qty>=stokTersedia(p)){toast("Stok tidak cukup");return}x.qty+=d;if(x.qty<=0)CART.splice(i,1);render()}
 function kembali(){const paid=Number($("paid").value)||0;$("kembali").textContent=rp(Math.max(0,paid-sumCart()))}
 function bayarProses(){
-  const tot=sumCart();if(!CART.length)return;
+  const sub=sumCart(),diskon=hitungDiskon(sub),tot=sub-diskon;if(!CART.length)return;
   const paid=PAY==="Tunai"?(Number($("paid").value)||0):tot;
   if(paid<tot){toast("Uang diterima belum mencukupi");return}
   for(const x of CART){const p=S.products.find(y=>y.id===x.id);if(stokTersedia(p)<x.qty){toast("Stok "+x.name+" tidak cukup");return}}
-  const sale={id:newId(),date:today(),time:new Date().toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"}),items:CART.map(x=>({...x})),total:tot,method:PAY,paid,change:Math.max(0,paid-tot),cashier:S.session.name,customer:(CUSTOMER||"").trim()||"Umum"};
-  S.sales.unshift(sale);S.outbox.push(sale);if(EDIT_PESANAN){S.pesanan=S.pesanan.filter(x=>x.id!==EDIT_PESANAN);EDIT_PESANAN=null}CART=[];CUSTOMER="";save();LAST=sale;go("struk");toast("Transaksi tersimpan di perangkat");syncNow();
+  const sale={id:newId(),date:today(),time:new Date().toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"}),items:CART.map(x=>({...x})),subtotal:sub,diskon,total:tot,method:PAY,paid,change:Math.max(0,paid-tot),cashier:S.session.name,customer:(CUSTOMER||"").trim()||"Umum"};
+  S.sales.unshift(sale);S.outbox.push(sale);if(EDIT_PESANAN){S.pesanan=S.pesanan.filter(x=>x.id!==EDIT_PESANAN);EDIT_PESANAN=null}CART=[];CUSTOMER="";DISKON={tipe:"rp",nilai:0};save();LAST=sale;go("struk");toast("Transaksi tersimpan di perangkat");syncNow();
 }
 function selesai(){CART=[];go("menu")}
 function simpanPesanan(){
@@ -254,7 +254,7 @@ function detailView(){const s=DETAIL;if(!s)return beranda();
   const kembali=s.method==="Tunai"?`<div class="row" style="margin-top:6px"><span class="muted">Bayar</span><span>${rp(s.paid)}</span></div><div class="row" style="margin-top:6px"><span class="muted">Kembalian</span><span>${rp(s.change)}</span></div>`:"";
   return `<button class="link" style="margin:0 0 8px" onclick="kembaliDariDetail()">← Kembali</button><h2>Detail transaksi</h2>
 <div class="card" style="margin:12px 0"><div class="row"><span class="muted">No. transaksi</span><span>${esc(s.id)}</span></div><div class="row" style="margin-top:6px"><span class="muted">Tanggal</span><span>${esc(s.date||"")} ${esc(s.time||"")}</span></div><div class="row" style="margin-top:6px"><span class="muted">Customer</span><span>${esc(s.customer||"Umum")}</span></div><div class="row" style="margin-top:6px"><span class="muted">Kasir</span><span>${esc(s.cashier||"-")}</span></div></div>
-<div class="card"><h3 style="margin-bottom:6px">Item</h3>${baris}<div class="row" style="border-top:1px solid var(--line);margin-top:8px;padding-top:8px"><strong>Total</strong><strong>${rp(s.total)}</strong></div></div>
+<div class="card"><h3 style="margin-bottom:6px">Item</h3>${baris}${s.diskon?`<div class="row" style="margin-top:8px"><span class="muted">Diskon</span><span>-${rp(s.diskon)}</span></div>`:""}<div class="row" style="border-top:1px solid var(--line);margin-top:8px;padding-top:8px"><strong>Total</strong><strong>${rp(s.total)}</strong></div></div>
 <div class="card" style="margin-top:12px"><div class="row"><span class="muted">Metode</span><span>${esc(s.method||"-")}</span></div>${kembali}</div>
 ${s.batal?`<div class="card" style="border-color:var(--warn);margin-top:12px"><strong style="color:var(--warn)">DIBATALKAN</strong><div class="muted">${esc(s.alasan_batal||"")}</div></div>`:""}<button class="btn ghost" style="margin-top:14px" onclick="lihatStrukDetail()">Lihat struk</button>${S.session.role==="Pemilik"&&!s.batal?`<button class="btn ghost" style="margin-top:8px;border-color:var(--warn);color:var(--warn)" onclick="batalkanTransaksi()">Batalkan transaksi</button>`:""}`;
 }
@@ -268,7 +268,7 @@ function tambahMenu(){
 }
 async function hapusMenu(id){if(!await tanyaGeser("Hapus menu","Menu ini akan dihapus dari daftar.",{ya:"Hapus"}))return;S.products=S.products.filter(p=>p.id!==id);if(EDIT_ID===id)EDIT_ID=null;S.menuDirty.push(id);save();render();syncNow()}
 let syncing=false,syncPerlu=false;
-function toRow(s){return{id:s.id,sale_date:s.date,sale_time:s.time,items:s.items,total:s.total,method:s.method,paid:s.paid,change_amount:s.change,cashier_name:s.cashier,customer:s.customer||"Umum"}}
+function toRow(s){return{id:s.id,sale_date:s.date,sale_time:s.time,items:s.items,total:s.total,method:s.method,paid:s.paid,change_amount:s.change,cashier_name:s.cashier,customer:s.customer||"Umum",diskon:s.diskon||0}}
 async function syncMenu(tok){
   const H={apikey:SUPABASE_ANON_KEY,Authorization:"Bearer "+tok};
   if(S.session&&S.session.role==="Pemilik"){
@@ -330,13 +330,13 @@ function login_(){return `<div class="auth-logo">${ICON.cup}<h1>ARISTA</h1><div 
 <div class="center"><button class="link" onclick="lupaKataSandi()">Lupa kata sandi?</button></div></div>
 <p class="muted center" style="margin-top:14px">Login perlu internet. Setelah berhasil, kasir tetap bisa dipakai saat offline.</p>`}
 let BER=null,BER_NOTE="",BER_REQ=0;
-function petaTransaksi(x){return{id:x.id,date:x.sale_date,time:x.sale_time,items:x.items||[],total:Number(x.total)||0,method:x.method,paid:Number(x.paid)||0,change:Number(x.change_amount)||0,cashier:x.cashier_name,customer:x.customer,batal:!!x.batal,alasan_batal:x.alasan_batal}}
+function petaTransaksi(x){return{id:x.id,date:x.sale_date,time:x.sale_time,items:x.items||[],total:Number(x.total)||0,method:x.method,paid:Number(x.paid)||0,change:Number(x.change_amount)||0,cashier:x.cashier_name,customer:x.customer,batal:!!x.batal,alasan_batal:x.alasan_batal,diskon:Number(x.diskon)||0,subtotal:Number(x.total)+(Number(x.diskon)||0)}}
 async function muatBeranda(){
   const req=++BER_REQ;const hari=today();
   if(!SUPABASE_URL||!navigator.onLine){BER=null;BER_NOTE=SUPABASE_URL?"Offline: menampilkan data di perangkat ini saja.":"";render();return}
   try{
     const tok=await tokenBaru();if(!tok)throw new Error("sesi");
-    const r=await fetch(SUPABASE_URL+"/rest/v1/sales?select=id,sale_date,sale_time,items,total,method,paid,change_amount,cashier_name,customer,batal,alasan_batal&sale_date=eq."+hari+"&order=created_at.desc&limit=500",{headers:{apikey:SUPABASE_ANON_KEY,Authorization:"Bearer "+tok}});
+    const r=await fetch(SUPABASE_URL+"/rest/v1/sales?select=id,sale_date,sale_time,items,total,method,paid,change_amount,cashier_name,customer,batal,alasan_batal,diskon&sale_date=eq."+hari+"&order=created_at.desc&limit=500",{headers:{apikey:SUPABASE_ANON_KEY,Authorization:"Bearer "+tok}});
     if(!r.ok)throw new Error("HTTP "+r.status);
     const rows=await r.json();if(req!==BER_REQ)return;
     const cloud=rows.map(petaTransaksi);
@@ -353,20 +353,24 @@ ${BER_NOTE?`<div class="muted" style="margin-bottom:8px;color:var(--warn)">${BER
 <div class="grid"><div class="card"><div class="muted">Total hari ini</div><h3>${rp(omzet)}</h3></div><div class="card"><div class="muted">Transaksi</div><h3>${t.length}</h3></div></div>
 <div class="grid" style="margin-top:12px"><button class="btn ghost" style="grid-column:1/-1" onclick="go('tertunda')">ORDERAN${S.pesanan.length?` <span class="badge">${S.pesanan.length}</span>`:""}</button>${quick.map(([l,v])=>`<button class="btn ghost" onclick="go('${v}')">${l}</button>`).join("")}</div>
 <h3 style="margin:18px 0 8px">Transaksi terbaru</h3>${semua.slice(0,3).map(saleRow).join("")||'<div class="muted">Belum ada transaksi.</div>'}`}
-let CUSTOMER="",DETAIL=null,PREV_V="beranda",EDIT_PESANAN=null,LAP_TAB="Penjualan",EXP=null,EXP_REQ=0;
+let DISKON={tipe:"rp",nilai:0},CUSTOMER="",DETAIL=null,PREV_V="beranda",EDIT_PESANAN=null,LAP_TAB="Penjualan",EXP=null,EXP_REQ=0;
 function menu(){const cats=["Semua",...new Set(S.products.map(p=>p.cat))];const n=CART.reduce((a,x)=>a+x.qty,0);
   return `<h2>Menu</h2><div class="tabs" style="margin:10px 0">${cats.map(c=>`<button class="tab ${c===CAT?"on":""}" onclick="CAT='${c}';render()">${c}</button>`).join("")}</div>
 ${S.pesanan.length?`<button class="btn ghost" style="margin-bottom:10px" onclick="go('tertunda')">ORDERAN (${S.pesanan.length})</button>`:""}<div class="grid">${S.products.filter(p=>CAT==="Semua"||p.cat===CAT).map(p=>`<div class="card"><strong>${p.name}</strong><div class="muted">${rp(p.price)} · stok ${stokTersedia(p)}</div><button class="btn sm" style="margin-top:8px" onclick="addCart('${p.id}')">+ Tambah</button></div>`).join("")}</div>
 <div class="cartbar-wrap"><button class="cartbar" onclick="go('kasir')"><span>Lihat keranjang (${n})</span><b>${rp(sumCart())}</b></button></div>`}
 function kasir(){const tot=sumCart();
   return `<h2>Keranjang</h2><input id="cust" placeholder="Nama customer (kosong = Umum)" value="${esc(CUSTOMER)}" oninput="CUSTOMER=this.value" style="margin:8px 0 12px">${CART.length?CART.map((x,i)=>`<div class="card row" style="margin:8px 0"><div><strong>${x.name}</strong><div class="muted">${rp(x.price)}</div></div><div class="row"><button class="btn sm ghost" onclick="chg(${i},-1)">−</button><span>${x.qty}</span><button class="btn sm ghost" onclick="chg(${i},1)">+</button></div></div>`).join("")+`<div class="row" style="margin:14px 0"><span>Total</span><h3>${rp(tot)}</h3></div><button class="btn" onclick="go('bayar')">Bayar</button><button class="btn ghost" style="margin-top:8px" onclick="simpanPesanan()">${EDIT_PESANAN?"Simpan perubahan pesanan":"Simpan ke ORDERAN"}</button>`:'<div class="muted">Keranjang kosong.</div><button class="btn ghost" style="margin-top:12px" onclick="go(\'menu\')">Pilih menu</button>'}`}
-function bayar(){const tot=sumCart();
-  return `<h2>Pembayaran</h2><div class="card" style="margin:12px 0;text-align:center"><div class="muted">Total</div><h1>${rp(tot)}</h1></div>
+function hitungDiskon(sub){const n=Number(DISKON.nilai)||0;let d=DISKON.tipe==="persen"?Math.round(sub*Math.min(100,Math.max(0,n))/100):Math.max(0,Math.round(n));return Math.min(sub,d)}
+function ubahDiskon(){DISKON={tipe:$("dskTipe").value,nilai:Number($("dskNilai").value)||0};const sub=sumCart(),d=hitungDiskon(sub);$("bTotal").textContent=rp(sub-d);$("bDiskon").textContent="-"+rp(d);kembali()}
+function kembali(){const el=$("kembali");if(!el)return;const paid=Number(($("paid")||{}).value)||0;const sub=sumCart();el.textContent=rp(Math.max(0,paid-(sub-hitungDiskon(sub))))}
+function bayar(){const sub=sumCart(),d=hitungDiskon(sub),tot=sub-d;
+  return `<h2>Pembayaran</h2><div class="card" style="margin:12px 0;text-align:center"><div class="muted">Total</div><h1 id="bTotal">${rp(tot)}</h1></div>
+<div class="card" style="margin-bottom:12px"><div class="row"><span class="muted">Subtotal</span><span>${rp(sub)}</span></div><div class="row" style="margin-top:10px;gap:8px"><span class="muted">Diskon</span><div class="row" style="gap:6px"><select id="dskTipe" onchange="ubahDiskon()" style="width:auto;padding:8px 10px"><option value="rp" ${DISKON.tipe==="rp"?"selected":""}>Rp</option><option value="persen" ${DISKON.tipe==="persen"?"selected":""}>%</option></select><input id="dskNilai" type="number" inputmode="numeric" value="${DISKON.nilai||""}" placeholder="0" oninput="ubahDiskon()" style="width:110px;padding:8px 10px"></div></div><div class="row" style="margin-top:10px"><span class="muted">Potongan</span><strong id="bDiskon">-${rp(d)}</strong></div></div>
 <div class="tabs">${["Tunai","QRIS","Debit/Kredit","Transfer"].map(m=>`<button class="tab ${m===PAY?"on":""}" onclick="PAY='${m}';render()">${m}</button>`).join("")}</div>
 ${PAY==="Tunai"?`<label class="muted">Uang diterima</label><input id="paid" type="number" inputmode="numeric" oninput="kembali()" style="margin:6px 0 10px"><div class="row"><span>Kembalian</span><strong id="kembali">${rp(0)}</strong></div>`:`<p class="muted" style="margin-top:12px">Pembayaran ${PAY} dicatat manual.</p>`}
 <button class="btn" style="margin-top:16px" onclick="bayarProses()">Proses Pembayaran</button><button class="btn ghost" style="margin-top:8px" onclick="go('kasir')">Batal</button>`}
 function struk(){const s=LAST;if(!s)return beranda();
-  return `<h2>Struk transaksi</h2><div class="receipt" style="margin:12px 0"><div style="text-align:center"><strong>ARISTA</strong><br>Coffee &amp; Roastery</div><hr>No. ${s.id.slice(0,8)}<br>${s.date} ${s.time}<br>Kasir: ${s.cashier}<br>Customer: ${esc(s.customer||"Umum")}<hr>${s.items.map(x=>`${x.name} x${x.qty} &nbsp; ${rp(x.price*x.qty)}`).join("<br>")}<hr>Total ${rp(s.total)}<br>${s.method}${s.method==="Tunai"?`<br>Bayar ${rp(s.paid)} · Kembali ${rp(s.change)}`:""}</div>
+  return `<h2>Struk transaksi</h2><div class="receipt" style="margin:12px 0"><div style="text-align:center"><strong>ARISTA</strong><br>Coffee &amp; Roastery</div><hr>No. ${s.id.slice(0,8)}<br>${s.date} ${s.time}<br>Kasir: ${s.cashier}<br>Customer: ${esc(s.customer||"Umum")}<hr>${s.items.map(x=>`${x.name} x${x.qty} &nbsp; ${rp(x.price*x.qty)}`).join("<br>")}<hr>${s.diskon?`Subtotal ${rp(s.subtotal)}<br>Diskon -${rp(s.diskon)}<br>`:""}Total ${rp(s.total)}<br>${s.method}${s.method==="Tunai"?`<br>Bayar ${rp(s.paid)} · Kembali ${rp(s.change)}`:""}</div>
 <button class="btn" onclick="window.print()">Cetak struk</button><button class="btn ghost" style="margin-top:8px" onclick="selesai()">Selesai</button>`}
 let LAP=null,LAP_NOTE="",LAP_REQ=0;
 function rentangTanggal(m){const t=today();if(m==="Harian")return[t,t];if(m==="Bulanan")return[t.slice(0,8)+"01",t];const d=new Date(t+"T00:00");d.setDate(d.getDate()-6);return[d.toLocaleDateString("sv-SE"),t]}
@@ -375,11 +379,11 @@ async function muatLaporan(){
   if(!SUPABASE_URL||!navigator.onLine){LAP=null;LAP_NOTE="Offline: menampilkan data di perangkat ini saja.";render();return}
   try{
     const tok=await tokenBaru();if(!tok)throw new Error("sesi");
-    const url=SUPABASE_URL+"/rest/v1/sales?select=id,sale_date,sale_time,items,total,method,paid,change_amount,cashier_name,customer,batal,alasan_batal&sale_date=gte."+dari+"&sale_date=lte."+sampai+"&order=sale_date.desc,created_at.desc&limit=1000";
+    const url=SUPABASE_URL+"/rest/v1/sales?select=id,sale_date,sale_time,items,total,method,paid,change_amount,cashier_name,customer,batal,alasan_batal,diskon&sale_date=gte."+dari+"&sale_date=lte."+sampai+"&order=sale_date.desc,created_at.desc&limit=1000";
     const r=await fetch(url,{headers:{apikey:SUPABASE_ANON_KEY,Authorization:"Bearer "+tok}});
     if(!r.ok)throw new Error("HTTP "+r.status);
     const rows=await r.json();if(req!==LAP_REQ)return;
-    const cloud=rows.map(x=>({id:x.id,date:x.sale_date,time:x.sale_time,items:x.items||[],total:Number(x.total)||0,method:x.method,paid:Number(x.paid)||0,change:Number(x.change_amount)||0,cashier:x.cashier_name,customer:x.customer,batal:!!x.batal,alasan_batal:x.alasan_batal}));
+    const cloud=rows.map(x=>({id:x.id,date:x.sale_date,time:x.sale_time,items:x.items||[],total:Number(x.total)||0,method:x.method,paid:Number(x.paid)||0,change:Number(x.change_amount)||0,cashier:x.cashier_name,customer:x.customer,batal:!!x.batal,alasan_batal:x.alasan_batal,diskon:Number(x.diskon)||0,subtotal:Number(x.total)+(Number(x.diskon)||0)}));
     const ids=new Set(cloud.map(x=>x.id));
     const pending=S.outbox.filter(x=>!ids.has(x.id)&&x.date>=dari&&x.date<=sampai);
     LAP=[...pending,...cloud];LAP_NOTE="";if(S.session&&S.session.role==="Pemilik")muatPengeluaran();
@@ -486,7 +490,7 @@ function eksporCsv(jenis){
   let baris,nama;
   if(jenis==="penjualan"){
     const semua=LAP||S.sales.filter(s=>inRange(s.date,RANGE));
-    baris=[["Tanggal","Jam","Customer","Kasir","Metode","Item","Total","Bayar","Kembalian","Status","Alasan batal"]].concat(semua.map(s=>[s.date,s.time,s.customer||"Umum",s.cashier||"",s.method,(s.items||[]).map(i=>i.name+" x"+i.qty).join(" | "),s.total,s.paid,s.change,s.batal?"Dibatalkan":"Aktif",s.alasan_batal||""]));
+    baris=[["Tanggal","Jam","Customer","Kasir","Metode","Item","Diskon","Total","Bayar","Kembalian","Status","Alasan batal"]].concat(semua.map(s=>[s.date,s.time,s.customer||"Umum",s.cashier||"",s.method,(s.items||[]).map(i=>i.name+" x"+i.qty).join(" | "),s.diskon||0,s.total,s.paid,s.change,s.batal?"Dibatalkan":"Aktif",s.alasan_batal||""]));
     nama="penjualan";
   }else{
     baris=[["Tanggal","Nama","Kategori","Jumlah","Harga satuan","Total","Catatan"]].concat((EXP||[]).map(x=>[x.tanggal,x.nama,x.kategori||"",x.qty,x.harga,x.total,x.catatan||""]));
