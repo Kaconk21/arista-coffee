@@ -95,6 +95,7 @@ nav button.on svg{filter:drop-shadow(0 0 6px rgba(197,161,106,.45))}
 .undo-toast .bar{position:absolute;left:0;bottom:0;height:3px;background:var(--gold);width:100%}
 .undo-toast.jalan .bar{animation:habis5 5s linear forwards}
 @keyframes habis5{from{width:100%}to{width:0}}
+.batal-chip{color:var(--warn)}
 </style></head>
 <body>
 <div id="app"></div>
@@ -255,7 +256,7 @@ function detailView(){const s=DETAIL;if(!s)return beranda();
 <div class="card" style="margin:12px 0"><div class="row"><span class="muted">No. transaksi</span><span>${esc(s.id)}</span></div><div class="row" style="margin-top:6px"><span class="muted">Tanggal</span><span>${esc(s.date||"")} ${esc(s.time||"")}</span></div><div class="row" style="margin-top:6px"><span class="muted">Customer</span><span>${esc(s.customer||"Umum")}</span></div><div class="row" style="margin-top:6px"><span class="muted">Kasir</span><span>${esc(s.cashier||"-")}</span></div></div>
 <div class="card"><h3 style="margin-bottom:6px">Item</h3>${baris}<div class="row" style="border-top:1px solid var(--line);margin-top:8px;padding-top:8px"><strong>Total</strong><strong>${rp(s.total)}</strong></div></div>
 <div class="card" style="margin-top:12px"><div class="row"><span class="muted">Metode</span><span>${esc(s.method||"-")}</span></div>${kembali}</div>
-<button class="btn ghost" style="margin-top:14px" onclick="lihatStrukDetail()">Lihat struk</button>`;
+${s.batal?`<div class="card" style="border-color:var(--warn);margin-top:12px"><strong style="color:var(--warn)">DIBATALKAN</strong><div class="muted">${esc(s.alasan_batal||"")}</div></div>`:""}<button class="btn ghost" style="margin-top:14px" onclick="lihatStrukDetail()">Lihat struk</button>${S.session.role==="Pemilik"&&!s.batal?`<button class="btn ghost" style="margin-top:8px;border-color:var(--warn);color:var(--warn)" onclick="batalkanTransaksi()">Batalkan transaksi</button>`:""}`;
 }
 function tambahMenu(){
   const nm=$("nm").value.trim(),pr=Number($("pr").value),cs=$("cs").value,sk=Number($("sk").value)||0,ct=$("ct").value.trim()||"Lainnya";
@@ -318,7 +319,7 @@ async function syncNow(){
   }catch(e){toast(e.message==="sesi"?"Sesi habis. Keluar lalu masuk lagi saat online.":"Sinkron gagal. Transaksi tetap aman dan akan dicoba lagi.")}
   finally{syncing=false;render();if(syncPerlu){syncPerlu=false;syncNow()}}
 }
-function saleRow(s){return `<div class="card row" style="margin-bottom:8px;cursor:pointer" onclick="bukaDetail('${s.id}')"><div><strong>${esc(s.customer||"Umum")}</strong><div class="muted">${s.time||""} · ${esc(s.method||"")}</div></div><strong>${rp(s.total)}</strong></div>`}
+function saleRow(s){return `<div class="card row" style="margin-bottom:8px;cursor:pointer;${s.batal?"opacity:.6":""}" onclick="bukaDetail('${s.id}')"><div><strong>${esc(s.customer||"Umum")}</strong><div class="muted">${s.time||""} · ${esc(s.method||"")}${s.batal?' · <span class="batal-chip">dibatalkan</span>':""}</div></div><strong>${rp(s.total)}</strong></div>`}
 function statusBar(){const on=navigator.onLine;return `<div id="status" class="${on?"":"off"}">${on?"Online":"Offline: transaksi tetap aman di perangkat"} · ${S.outbox.length} menunggu sinkron${SUPABASE_URL?"":" · cloud belum dihubungkan"}</div>`}
 function login_(){return `<div class="auth-logo">${ICON.cup}<h1>ARISTA</h1><div class="muted">Coffee &amp; Roastery</div></div>
 <div class="card" style="margin-top:26px"><h2>Masuk</h2>
@@ -329,13 +330,13 @@ function login_(){return `<div class="auth-logo">${ICON.cup}<h1>ARISTA</h1><div 
 <div class="center"><button class="link" onclick="lupaKataSandi()">Lupa kata sandi?</button></div></div>
 <p class="muted center" style="margin-top:14px">Login perlu internet. Setelah berhasil, kasir tetap bisa dipakai saat offline.</p>`}
 let BER=null,BER_NOTE="",BER_REQ=0;
-function petaTransaksi(x){return{id:x.id,date:x.sale_date,time:x.sale_time,items:x.items||[],total:Number(x.total)||0,method:x.method,paid:Number(x.paid)||0,change:Number(x.change_amount)||0,cashier:x.cashier_name,customer:x.customer}}
+function petaTransaksi(x){return{id:x.id,date:x.sale_date,time:x.sale_time,items:x.items||[],total:Number(x.total)||0,method:x.method,paid:Number(x.paid)||0,change:Number(x.change_amount)||0,cashier:x.cashier_name,customer:x.customer,batal:!!x.batal,alasan_batal:x.alasan_batal}}
 async function muatBeranda(){
   const req=++BER_REQ;const hari=today();
   if(!SUPABASE_URL||!navigator.onLine){BER=null;BER_NOTE=SUPABASE_URL?"Offline: menampilkan data di perangkat ini saja.":"";render();return}
   try{
     const tok=await tokenBaru();if(!tok)throw new Error("sesi");
-    const r=await fetch(SUPABASE_URL+"/rest/v1/sales?select=id,sale_date,sale_time,items,total,method,paid,change_amount,cashier_name,customer&sale_date=eq."+hari+"&order=created_at.desc&limit=500",{headers:{apikey:SUPABASE_ANON_KEY,Authorization:"Bearer "+tok}});
+    const r=await fetch(SUPABASE_URL+"/rest/v1/sales?select=id,sale_date,sale_time,items,total,method,paid,change_amount,cashier_name,customer,batal,alasan_batal&sale_date=eq."+hari+"&order=created_at.desc&limit=500",{headers:{apikey:SUPABASE_ANON_KEY,Authorization:"Bearer "+tok}});
     if(!r.ok)throw new Error("HTTP "+r.status);
     const rows=await r.json();if(req!==BER_REQ)return;
     const cloud=rows.map(petaTransaksi);
@@ -345,14 +346,14 @@ async function muatBeranda(){
   render();
 }
 function beranda(){
-  const t=BER||todaySales();const omzet=t.reduce((n,s)=>n+s.total,0);
+  const semua=BER||todaySales();const t=semua.filter(x=>!x.batal);const omzet=t.reduce((n,s)=>n+s.total,0);
   const quick=[["Kasir","menu"],["Laporan","laporan"],...(S.session.role==="Pemilik"?[["Kelola","kelola"]]:[]),["Profil","profil"]];
   return `<div class="row" style="margin-bottom:12px"><div><div class="muted">Selamat datang</div><h2>${S.session.name}</h2><span class="pill" style="margin-top:6px">${S.session.role}</span></div><div class="avatar">${(S.session.name||"?")[0]}</div></div>
 ${BER_NOTE?`<div class="muted" style="margin-bottom:8px;color:var(--warn)">${BER_NOTE}</div>`:""}
 <div class="grid"><div class="card"><div class="muted">Total hari ini</div><h3>${rp(omzet)}</h3></div><div class="card"><div class="muted">Transaksi</div><h3>${t.length}</h3></div></div>
 <div class="grid" style="margin-top:12px"><button class="btn ghost" style="grid-column:1/-1" onclick="go('tertunda')">ORDERAN${S.pesanan.length?` <span class="badge">${S.pesanan.length}</span>`:""}</button>${quick.map(([l,v])=>`<button class="btn ghost" onclick="go('${v}')">${l}</button>`).join("")}</div>
-<h3 style="margin:18px 0 8px">Transaksi terbaru</h3>${t.slice(0,3).map(saleRow).join("")||'<div class="muted">Belum ada transaksi.</div>'}`}
-let CUSTOMER="",DETAIL=null,PREV_V="beranda",EDIT_PESANAN=null;
+<h3 style="margin:18px 0 8px">Transaksi terbaru</h3>${semua.slice(0,3).map(saleRow).join("")||'<div class="muted">Belum ada transaksi.</div>'}`}
+let CUSTOMER="",DETAIL=null,PREV_V="beranda",EDIT_PESANAN=null,LAP_TAB="Penjualan",EXP=null,EXP_REQ=0;
 function menu(){const cats=["Semua",...new Set(S.products.map(p=>p.cat))];const n=CART.reduce((a,x)=>a+x.qty,0);
   return `<h2>Menu</h2><div class="tabs" style="margin:10px 0">${cats.map(c=>`<button class="tab ${c===CAT?"on":""}" onclick="CAT='${c}';render()">${c}</button>`).join("")}</div>
 ${S.pesanan.length?`<button class="btn ghost" style="margin-bottom:10px" onclick="go('tertunda')">ORDERAN (${S.pesanan.length})</button>`:""}<div class="grid">${S.products.filter(p=>CAT==="Semua"||p.cat===CAT).map(p=>`<div class="card"><strong>${p.name}</strong><div class="muted">${rp(p.price)} · stok ${stokTersedia(p)}</div><button class="btn sm" style="margin-top:8px" onclick="addCart('${p.id}')">+ Tambah</button></div>`).join("")}</div>
@@ -374,29 +375,128 @@ async function muatLaporan(){
   if(!SUPABASE_URL||!navigator.onLine){LAP=null;LAP_NOTE="Offline: menampilkan data di perangkat ini saja.";render();return}
   try{
     const tok=await tokenBaru();if(!tok)throw new Error("sesi");
-    const url=SUPABASE_URL+"/rest/v1/sales?select=id,sale_date,sale_time,items,total,method,paid,change_amount,cashier_name,customer&sale_date=gte."+dari+"&sale_date=lte."+sampai+"&order=sale_date.desc,created_at.desc&limit=1000";
+    const url=SUPABASE_URL+"/rest/v1/sales?select=id,sale_date,sale_time,items,total,method,paid,change_amount,cashier_name,customer,batal,alasan_batal&sale_date=gte."+dari+"&sale_date=lte."+sampai+"&order=sale_date.desc,created_at.desc&limit=1000";
     const r=await fetch(url,{headers:{apikey:SUPABASE_ANON_KEY,Authorization:"Bearer "+tok}});
     if(!r.ok)throw new Error("HTTP "+r.status);
     const rows=await r.json();if(req!==LAP_REQ)return;
-    const cloud=rows.map(x=>({id:x.id,date:x.sale_date,time:x.sale_time,items:x.items||[],total:Number(x.total)||0,method:x.method,paid:Number(x.paid)||0,change:Number(x.change_amount)||0,cashier:x.cashier_name,customer:x.customer}));
+    const cloud=rows.map(x=>({id:x.id,date:x.sale_date,time:x.sale_time,items:x.items||[],total:Number(x.total)||0,method:x.method,paid:Number(x.paid)||0,change:Number(x.change_amount)||0,cashier:x.cashier_name,customer:x.customer,batal:!!x.batal,alasan_batal:x.alasan_batal}));
     const ids=new Set(cloud.map(x=>x.id));
     const pending=S.outbox.filter(x=>!ids.has(x.id)&&x.date>=dari&&x.date<=sampai);
-    LAP=[...pending,...cloud];LAP_NOTE="";
+    LAP=[...pending,...cloud];LAP_NOTE="";if(S.session&&S.session.role==="Pemilik")muatPengeluaran();
   }catch(e){if(req!==LAP_REQ)return;LAP=null;LAP_NOTE="Tidak bisa memuat dari cloud. Menampilkan data di perangkat ini."}
   render();
 }
+
+let EDIT_ID=null;
+
+const esc=v=>String(v==null?"":v).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");
+
 function laporan(){
-  const list=LAP||S.sales.filter(s=>inRange(s.date,RANGE));
+  const pemilik=S.session.role==="Pemilik";
+  const semua=LAP||S.sales.filter(s=>inRange(s.date,RANGE));
+  const list=semua.filter(s=>!s.batal);
   const omzet=list.reduce((n,s)=>n+s.total,0);
   let cost=0,unknown=false;for(const s of list)for(const x of s.items){if(x.cost==null)unknown=true;else cost+=x.cost*x.qty}
-  const margin=unknown?"–":rp(omzet-cost);
-  return `<h2>Laporan</h2><div class="tabs" style="margin:10px 0">${["Harian","Mingguan","Bulanan"].map(m=>`<button class="tab ${m===RANGE?"on":""}" onclick="RANGE='${m}';LAP=null;render();muatLaporan()">${m}</button>`).join("")}</div>
-${LAP_NOTE?`<div class="muted" style="margin-bottom:8px;color:var(--warn)">${LAP_NOTE}</div>`:""}
+  const margin=unknown?null:omzet-cost;
+  const tabUtama=pemilik?`<div class="tabs" style="margin:10px 0">${["Penjualan","Pengeluaran"].map(t=>`<button class="tab ${t===LAP_TAB?"on":""}" onclick="setLapTab('${t}')">${t}</button>`).join("")}</div>`:"";
+  const tabRange=`<div class="tabs" style="margin:6px 0 12px">${["Harian","Mingguan","Bulanan"].map(m=>`<button class="tab ${m===RANGE?"on":""}" onclick="RANGE='${m}';LAP=null;render();muatLaporan()">${m}</button>`).join("")}</div>`;
+  const note=LAP_NOTE?`<div class="muted" style="margin-bottom:8px;color:var(--warn)">${LAP_NOTE}</div>`:"";
+  if(pemilik&&LAP_TAB==="Pengeluaran")return `<h2>Laporan</h2>${tabUtama}${tabRange}${note}${pengeluaranView()}`;
+  const totalKeluar=(EXP||[]).reduce((n,x)=>n+x.total,0);
+  return `<h2>Laporan</h2>${tabUtama}${tabRange}${note}
 <div class="grid"><div class="card"><div class="muted">Total omzet</div><h3>${rp(omzet)}</h3></div><div class="card"><div class="muted">Transaksi</div><h3>${list.length}</h3></div></div>
-${S.session.role==="Pemilik"?`<div class="card" style="margin-top:10px"><div class="muted">Margin kotor</div><h3>${margin}</h3><div class="muted">${unknown?"Isi harga modal di Kelola agar margin terhitung.":""}</div></div>`:""}
-<h3 style="margin:18px 0 8px">Transaksi</h3>${list.slice(0,20).map(saleRow).join("")||'<div class="muted">Belum ada transaksi pada periode ini.</div>'}`}
-let EDIT_ID=null;
-const esc=v=>String(v==null?"":v).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");
+${pemilik?`<div class="card" style="margin-top:10px"><div class="muted">Margin kotor</div><h3>${margin==null?"–":rp(margin)}</h3><div class="muted">${unknown?"Isi harga modal di Kelola agar margin terhitung.":""}</div></div>`:""}
+${pemilik&&margin!=null?`<div class="card" style="margin-top:10px"><div class="muted">Laba bersih (margin dikurangi pengeluaran)</div><h3>${rp(margin-totalKeluar)}</h3></div>`:""}
+<div class="row" style="margin:14px 0 6px"><h3>Transaksi</h3>${pemilik?`<button class="link" onclick="eksporCsv('penjualan')">Ekspor CSV</button>`:""}</div>
+${semua.slice(0,20).map(saleRow).join("")||'<div class="muted">Belum ada transaksi pada periode ini.</div>'}`;
+}
+function setLapTab(t){LAP_TAB=t;render();if(t==="Pengeluaran")muatPengeluaran()}
+function pengeluaranView(){
+  const daftar=EXP||[];const total=daftar.reduce((n,x)=>n+x.total,0);
+  const form=`<div class="card" style="margin:10px 0"><h3 style="margin-bottom:8px">Tambah pengeluaran</h3><input id="xNama" placeholder="Nama (mis. Susu UHT)"><div class="grid" style="margin-top:8px"><input id="xKat" placeholder="Kategori (Bahan / Operasional / Gaji)"><input id="xTgl" type="date" value="${today()}"></div><div class="grid" style="margin-top:8px"><input id="xQty" type="number" placeholder="Jumlah"><input id="xHarga" type="number" placeholder="Harga satuan"></div><input id="xCatatan" placeholder="Catatan (opsional)" style="margin-top:8px"><button class="btn" style="margin-top:10px" onclick="simpanPengeluaran()">Simpan pengeluaran</button><div id="xErr" class="err"></div></div>`;
+  const rows=daftar.map(x=>`<div class="card row" style="margin-bottom:8px"><div><strong>${esc(x.nama)}</strong><div class="muted">${esc(x.tanggal)} · ${esc(x.kategori||"-")} · ${x.qty} × ${rp(x.harga)}</div></div><div class="row" style="gap:6px"><strong>${rp(x.total)}</strong><button class="btn sm ghost" onclick="hapusPengeluaran('${x.id}')">Hapus</button></div></div>`).join("");
+  return `${form}<div class="card"><div class="row"><span class="muted">Total pengeluaran periode ini</span><strong>${rp(total)}</strong></div></div><div style="margin-top:12px">${rows||'<div class="muted">Belum ada pengeluaran pada periode ini.</div>'}</div><button class="link" style="margin-top:12px" onclick="eksporCsv('pengeluaran')">Ekspor pengeluaran (CSV)</button>`;
+}
+async function muatPengeluaran(){
+  const req=++EXP_REQ;const[dari,sampai]=rentangTanggal(RANGE);
+  try{
+    const tok=await tokenBaru();if(!tok)throw new Error("sesi");
+    const r=await fetch(SUPABASE_URL+"/rest/v1/expenses?select=id,tanggal,nama,kategori,qty,harga,total,catatan&tanggal=gte."+dari+"&tanggal=lte."+sampai+"&order=tanggal.desc,created_at.desc&limit=500",{headers:{apikey:SUPABASE_ANON_KEY,Authorization:"Bearer "+tok}});
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    const rows=await r.json();if(req!==EXP_REQ)return;
+    EXP=rows.map(x=>({...x,qty:Number(x.qty)||0,harga:Number(x.harga)||0,total:Number(x.total)||0}));
+  }catch(e){if(req!==EXP_REQ)return;EXP=[]}
+  if(V==="laporan")render();
+}
+async function simpanPengeluaran(){
+  const err=m=>{const el=$("xErr");if(el)el.textContent=m};
+  const nama=$("xNama").value.trim(),kat=$("xKat").value.trim()||"Lainnya",tgl=$("xTgl").value||today(),qty=Number($("xQty").value),harga=Number($("xHarga").value),catatan=$("xCatatan").value.trim();
+  if(!nama)return err("Nama pengeluaran wajib diisi.");
+  if(!(qty>0))return err("Jumlah harus lebih dari 0.");
+  if(!(harga>=0))return err("Harga tidak valid.");
+  if(!navigator.onLine||!SUPABASE_URL)return err("Perlu internet untuk menyimpan pengeluaran.");
+  try{
+    const tok=await tokenBaru();if(!tok)throw new Error("sesi");
+    const r=await fetch(SUPABASE_URL+"/rest/v1/expenses",{method:"POST",headers:{apikey:SUPABASE_ANON_KEY,Authorization:"Bearer "+tok,"Content-Type":"application/json",Prefer:"return=minimal"},body:JSON.stringify({tanggal:tgl,nama,kategori:kat,qty,harga,total:Math.round(qty*harga),catatan:catatan||null})});
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    toast("Pengeluaran disimpan");muatPengeluaran();
+  }catch(e){err("Gagal menyimpan. Coba lagi.")}
+}
+async function hapusPengeluaran(id){
+  const x=(EXP||[]).find(y=>y.id===id);if(!x)return;
+  if(!(await tanyaSheet("Hapus pengeluaran",'"'+x.nama+'" akan dihapus dari laporan.',{ya:"Hapus",bahaya:true})))return;
+  try{
+    const tok=await tokenBaru();if(!tok)throw new Error("sesi");
+    const r=await fetch(SUPABASE_URL+"/rest/v1/expenses?id=eq."+id,{method:"DELETE",headers:{apikey:SUPABASE_ANON_KEY,Authorization:"Bearer "+tok}});
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    toast("Pengeluaran dihapus");muatPengeluaran();
+  }catch(e){toast("Gagal menghapus. Coba lagi.")}
+}
+function tanyaInput(judul,pesan,{ya="Simpan",placeholder=""}={}){
+  return new Promise(res=>{
+    const bg=document.createElement("div");bg.className="modal-bg sheetbg";
+    bg.innerHTML=`<div class="sheet2" role="dialog" aria-modal="true"><div class="handle2"></div><h3>${esc(judul)}</h3><p>${esc(pesan)}</p><input id="tiAlasan" placeholder="${esc(placeholder)}" style="margin-top:12px"><button class="btn bahaya" data-v="1" style="margin-top:12px">${esc(ya)}</button><button class="btn ghost" data-v="0" style="margin-top:10px">Batal</button></div>`;
+    const kunci=e=>{if(e.key==="Escape")tutup(null)};
+    const tutup=v=>{document.removeEventListener("keydown",kunci);bg.classList.remove("buka");setTimeout(()=>bg.remove(),250);res(v)};
+    bg.addEventListener("click",e=>{const v=e.target.getAttribute&&e.target.getAttribute("data-v");if(v==="1")tutup(($("tiAlasan").value||"").trim()||"Dibatalkan Pemilik");else if(v==="0"||e.target===bg)tutup(null)});
+    document.addEventListener("keydown",kunci);
+    document.body.appendChild(bg);requestAnimationFrame(()=>bg.classList.add("buka"));
+    setTimeout(()=>{const i=document.getElementById("tiAlasan");if(i)i.focus()},300);
+  });
+}
+async function batalkanTransaksi(){
+  const s=DETAIL;if(!s||S.session.role!=="Pemilik"||s.batal)return;
+  if(S.outbox.some(x=>x.id===s.id))return toast("Transaksi ini belum terkirim. Tunggu sinkron dulu.");
+  const alasan=await tanyaInput("Batalkan transaksi","Stok menu akan dikembalikan. Tulis alasannya.",{ya:"Batalkan",placeholder:"Contoh: salah input menu"});
+  if(alasan===null)return;
+  try{
+    const tok=await tokenBaru();if(!tok)throw new Error("sesi");
+    const r=await fetch(SUPABASE_URL+"/rest/v1/rpc/batalkan_penjualan",{method:"POST",headers:{apikey:SUPABASE_ANON_KEY,Authorization:"Bearer "+tok,"Content-Type":"application/json"},body:JSON.stringify({p_id:s.id,p_alasan:alasan})});
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    const ok=await r.json();
+    if(!ok){toast("Transaksi ini sudah dibatalkan sebelumnya.");return}
+    for(const lst of [LAP,BER,S.sales]){if(!lst)continue;const x=lst.find(y=>y.id===s.id);if(x){x.batal=true;x.alasan_batal=alasan}}
+    s.batal=true;s.alasan_batal=alasan;
+    S.menuPull="";await syncMenu(tok).catch(()=>{});
+    save();toast("Transaksi dibatalkan. Stok dikembalikan.");render();
+  }catch(e){toast("Gagal membatalkan transaksi. Coba lagi saat online.")}
+}
+function eksporCsv(jenis){
+  const kutip=v=>{const t=String(v==null?"":v);return /[";\n]/.test(t)?'"'+t.replace(/"/g,'""')+'"':t};
+  let baris,nama;
+  if(jenis==="penjualan"){
+    const semua=LAP||S.sales.filter(s=>inRange(s.date,RANGE));
+    baris=[["Tanggal","Jam","Customer","Kasir","Metode","Item","Total","Bayar","Kembalian","Status","Alasan batal"]].concat(semua.map(s=>[s.date,s.time,s.customer||"Umum",s.cashier||"",s.method,(s.items||[]).map(i=>i.name+" x"+i.qty).join(" | "),s.total,s.paid,s.change,s.batal?"Dibatalkan":"Aktif",s.alasan_batal||""]));
+    nama="penjualan";
+  }else{
+    baris=[["Tanggal","Nama","Kategori","Jumlah","Harga satuan","Total","Catatan"]].concat((EXP||[]).map(x=>[x.tanggal,x.nama,x.kategori||"",x.qty,x.harga,x.total,x.catatan||""]));
+    nama="pengeluaran";
+  }
+  const isi="\uFEFF"+baris.map(r=>r.map(kutip).join(";")).join("\n");
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([isi],{type:"text/csv;charset=utf-8"}));a.download="arista-"+nama+"-"+RANGE.toLowerCase()+"-"+today()+".csv";document.body.appendChild(a);a.click();a.remove();
+  toast("File CSV diunduh");
+}
+
 function bukaEdit(id){EDIT_ID=id;render();window.scrollTo(0,0)}
 function batalEdit(){EDIT_ID=null;render()}
 function simpanEdit(){
