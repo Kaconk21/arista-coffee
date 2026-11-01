@@ -235,12 +235,11 @@ function simpanPesanan(){
   CART=[];CUSTOMER="";EDIT_PESANAN=null;save();toast("Pesanan "+nama+" "+tadi);go("tertunda");
 }
 async function bukaPesanan(id){const p=S.pesanan.find(x=>x.id===id);if(!p)return;if(CART.length&&EDIT_PESANAN!==id&&!await tanyaSheet("Ganti keranjang","Keranjang saat ini akan diganti dengan pesanan ini.",{ya:"Lanjutkan"}))return;CART=p.items.map(x=>({...x}));CUSTOMER=p.customer;EDIT_PESANAN=id;go("kasir")}
-function hapusPesanan(id){
-  const i=S.pesanan.findIndex(x=>x.id===id);if(i<0)return;
-  const p=S.pesanan[i];
-  S.pesanan.splice(i,1);if(EDIT_PESANAN===id){EDIT_PESANAN=null;CART=[];CUSTOMER=""}
-  save();render();
-  toastUndo("Pesanan "+p.customer+" dihapus",()=>{S.pesanan.splice(Math.min(i,S.pesanan.length),0,p);save();render();toast("Pesanan dikembalikan")});
+async function hapusPesanan(id){
+  const p=S.pesanan.find(x=>x.id===id);if(!p)return;
+  if(!(await tanyaSheet("Hapus pesanan","Pesanan "+p.customer+" akan dihapus dari daftar.",{ya:"Hapus",bahaya:true})))return;
+  S.pesanan=S.pesanan.filter(x=>x.id!==id);if(EDIT_PESANAN===id){EDIT_PESANAN=null;CART=[];CUSTOMER=""}
+  save();render();toast("Pesanan dihapus");
 }
 function tertundaView(){
   const daftar=(S.pesanan||[]).map(p=>`<div class="card" style="margin-bottom:8px"><div class="row"><div><strong>${esc(p.customer)}</strong><div class="muted">${p.items.length} jenis · ${p.items.map(i=>esc(i.name)+" x"+i.qty).join(", ")}</div></div><strong>${rp(p.total)}</strong></div><div class="row" style="margin-top:10px;gap:8px"><button class="btn sm" onclick="bukaPesanan('${p.id}')">Buka & bayar</button><button class="btn sm ghost" onclick="hapusPesanan('${p.id}')">Hapus</button></div></div>`).join("");
