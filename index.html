@@ -60,6 +60,7 @@ nav button svg{width:22px;height:22px}
 nav button.on svg{filter:drop-shadow(0 0 6px rgba(197,161,106,.45))}
 .cartbar-wrap{position:fixed;left:0;right:0;bottom:calc(74px + env(safe-area-inset-bottom));display:flex;justify-content:center;pointer-events:none;z-index:5}
 .cartbar{pointer-events:auto;width:calc(100% - 32px);max-width:398px;background:var(--gold);color:#1b1712;border:0;border-radius:14px;padding:13px 16px;font-weight:600;font-size:15px;font-family:inherit;display:flex;justify-content:space-between;align-items:center;box-shadow:0 8px 22px rgba(197,161,106,.3);cursor:pointer}
+.badge{display:inline-block;min-width:24px;padding:0 8px;border-radius:999px;background:var(--gold);color:#1b1712;font-size:13px;font-weight:700;line-height:24px;text-align:center}
 </style></head>
 <body>
 <div id="app"></div>
@@ -310,7 +311,7 @@ function beranda(){
   return `<div class="row" style="margin-bottom:12px"><div><div class="muted">Selamat datang</div><h2>${S.session.name}</h2><span class="pill" style="margin-top:6px">${S.session.role}</span></div><div class="avatar">${(S.session.name||"?")[0]}</div></div>
 ${BER_NOTE?`<div class="muted" style="margin-bottom:8px;color:var(--warn)">${BER_NOTE}</div>`:""}
 <div class="grid"><div class="card"><div class="muted">Total hari ini</div><h3>${rp(omzet)}</h3></div><div class="card"><div class="muted">Transaksi</div><h3>${t.length}</h3></div></div>
-<div class="grid" style="margin-top:12px">${quick.map(([l,v])=>`<button class="btn ghost" onclick="go('${v}')">${l}</button>`).join("")}</div>
+${S.pesanan.length?`<button class="card" style="width:100%;text-align:left;margin-top:12px;border-color:var(--gold);color:var(--cream);font-family:inherit;font-size:15px;cursor:pointer" onclick="go('tertunda')"><div class="row"><div><strong>Pesanan tertunda</strong><div class="muted">Ketuk untuk membuka dan bayar</div></div><span class="badge">${S.pesanan.length}</span></div></button>`:""}<div class="grid" style="margin-top:12px">${quick.map(([l,v])=>`<button class="btn ghost" onclick="go('${v}')">${l}</button>`).join("")}</div>
 <h3 style="margin:18px 0 8px">Transaksi terbaru</h3>${t.slice(0,3).map(saleRow).join("")||'<div class="muted">Belum ada transaksi.</div>'}`}
 let CUSTOMER="",DETAIL=null,PREV_V="beranda",EDIT_PESANAN=null;
 function menu(){const cats=["Semua",...new Set(S.products.map(p=>p.cat))];const n=CART.reduce((a,x)=>a+x.qty,0);
