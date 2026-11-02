@@ -116,7 +116,7 @@ function seed(){return{session:null,products:[
 {id:"p4",name:"Cappuccino",cat:"Kopi",price:25000,cost:null,stock:50},
 {id:"p5",name:"Caramel Latte",cat:"Kopi",price:28000,cost:null,stock:50},
 {id:"p6",name:"Matcha Latte",cat:"Non Kopi",price:26000,cost:null,stock:50}],
-sales:[],outbox:[],menuDirty:[],menuPull:"",menuSeeded:false,pesanan:[]}}
+sales:[],outbox:[],menuDirty:[],menuPull:"",menuSeeded:false,pesanan:[],shift:null,shiftRiwayat:[]}}
 function load(){
   let raw=null;try{raw=localStorage.getItem(KEY)}catch(e){}
   if(raw===null)return seed();
@@ -221,7 +221,7 @@ function bayarProses(){
   const paid=PAY==="Tunai"?(Number($("paid").value)||0):tot;
   if(paid<tot){toast("Uang diterima belum mencukupi");return}
   for(const x of CART){const p=S.products.find(y=>y.id===x.id);if(stokTersedia(p)<x.qty){toast("Stok "+x.name+" tidak cukup");return}}
-  const sale={id:newId(),date:today(),time:new Date().toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"}),items:CART.map(x=>({...x})),subtotal:sub,diskon,total:tot,method:PAY,paid,change:Math.max(0,paid-tot),cashier:S.session.name,customer:(CUSTOMER||"").trim()||"Umum"};
+  const sale={id:newId(),date:today(),time:new Date().toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"}),items:CART.map(x=>({...x})),subtotal:sub,diskon,total:tot,method:PAY,paid,change:Math.max(0,paid-tot),cashier:S.session.name,customer:(CUSTOMER||"").trim()||"Umum",ts:Date.now()};
   S.sales.unshift(sale);S.outbox.push(sale);if(EDIT_PESANAN){S.pesanan=S.pesanan.filter(x=>x.id!==EDIT_PESANAN);EDIT_PESANAN=null}CART=[];CUSTOMER="";DISKON={tipe:"rp",nilai:0};save();LAST=sale;go("struk");toast("Transaksi tersimpan di perangkat");syncNow();
 }
 function selesai(){CART=[];go("menu")}
@@ -351,7 +351,7 @@ function beranda(){
   return `<div class="row" style="margin-bottom:12px"><div><div class="muted">Selamat datang</div><h2>${S.session.name}</h2><span class="pill" style="margin-top:6px">${S.session.role}</span></div><div class="avatar">${(S.session.name||"?")[0]}</div></div>
 ${BER_NOTE?`<div class="muted" style="margin-bottom:8px;color:var(--warn)">${BER_NOTE}</div>`:""}
 <div class="grid"><div class="card"><div class="muted">Total hari ini</div><h3>${rp(omzet)}</h3></div><div class="card"><div class="muted">Transaksi</div><h3>${t.length}</h3></div></div>
-<div class="grid" style="margin-top:12px"><button class="btn ghost" style="grid-column:1/-1" onclick="go('tertunda')">ORDERAN${S.pesanan.length?` <span class="badge">${S.pesanan.length}</span>`:""}</button>${quick.map(([l,v])=>`<button class="btn ghost" onclick="go('${v}')">${l}</button>`).join("")}</div>
+${shiftCard()}<div class="grid" style="margin-top:12px"><button class="btn ghost" style="grid-column:1/-1" onclick="go('tertunda')">ORDERAN${S.pesanan.length?` <span class="badge">${S.pesanan.length}</span>`:""}</button>${quick.map(([l,v])=>`<button class="btn ghost" onclick="go('${v}')">${l}</button>`).join("")}</div>
 <h3 style="margin:18px 0 8px">Transaksi terbaru</h3>${semua.slice(0,3).map(saleRow).join("")||'<div class="muted">Belum ada transaksi.</div>'}`}
 let DISKON={tipe:"rp",nilai:0},CUSTOMER="",DETAIL=null,PREV_V="beranda",EDIT_PESANAN=null,LAP_TAB="Penjualan",EXP=null,EXP_REQ=0;
 function menu(){const cats=["Semua",...new Set(S.products.map(p=>p.cat))];const n=CART.reduce((a,x)=>a+x.qty,0);
@@ -566,7 +566,7 @@ function kelola(){
 function profil(){return `<h2>Profil</h2><div class="card" style="margin:12px 0"><strong>${S.session.name}</strong><div class="muted">${S.session.role}</div></div>
 <div class="card"><div class="row"><span>Status</span><span>${navigator.onLine?"Online":"Offline"}</span></div><div class="row" style="margin-top:6px"><span>Menunggu sinkron</span><span>${S.outbox.length}</span></div><div class="muted" style="margin-top:8px">${SUPABASE_URL?"Terhubung ke cloud.":"Cloud belum dihubungkan. Data tersimpan di perangkat ini."}</div></div>
 <button class="btn ghost" style="margin-top:14px" onclick="keluar()">Keluar dari akun</button>`}
-const VIEWS={login:login_,lupa:lupa_,pulih:pulih_,detail:detailView,tertunda:tertundaView,beranda,menu,kasir,bayar,struk,laporan,kelola,profil};
+const VIEWS={login:login_,lupa:lupa_,pulih:pulih_,detail:detailView,tertunda:tertundaView,shift:shiftView,beranda,menu,kasir,bayar,struk,laporan,kelola,profil};
 function navHtml(){const items=S.session.role==="Pemilik"?[["beranda","Beranda","home"],["menu","Kasir","cart"],["laporan","Laporan","chart"],["kelola","Kelola","gear"],["profil","Profil","user"]]:[["beranda","Beranda","home"],["menu","Kasir","cart"],["laporan","Laporan","chart"],["profil","Profil","user"]];
   const active=v=>V===v||(v==="menu"&&["kasir","bayar","struk"].includes(V));
   return items.map(([v,l,ic])=>`<button class="${active(v)?"on":""}" onclick="go('${v}')">${ICON[ic]}<span>${l}</span></button>`).join("")}
@@ -658,6 +658,32 @@ function toastUndo(pesan,onUndo){
   el.classList.remove("buka","jalan");void el.offsetWidth;el.classList.add("buka","jalan");
   el.querySelector("button").onclick=()=>{clearTimeout(undoTimer);el.classList.remove("buka","jalan");onUndo()};
   clearTimeout(undoTimer);undoTimer=setTimeout(()=>el.classList.remove("buka","jalan"),5000);
+}
+function penjualanSejak(t){return S.sales.filter(x=>!x.batal&&(x.ts||0)>=t)}
+function ringkasShift(sh){const list=penjualanSejak(sh.buka);const tunai=list.filter(x=>x.method==="Tunai").reduce((n,x)=>n+x.total,0);const semua=list.reduce((n,x)=>n+x.total,0);return{tunai,semua,jumlah:list.length,kasSeharusnya:sh.saldoAwal+tunai}}
+function selisihLabel(v){return v===0?"Pas":(v>0?"Lebih "+rp(v):"Kurang "+rp(-v))}
+function jam(t){return new Date(t).toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"})}
+function shiftCard(){const sh=S.shift;return sh?`<button class="card" style="width:100%;text-align:left;margin-top:12px;border-color:var(--gold);color:var(--cream);font-family:inherit;font-size:15px;cursor:pointer" onclick="go('shift')"><div class="row"><div><strong>Kasir sedang buka</strong><div class="muted">Sejak ${jam(sh.buka)} · ketuk untuk tutup kasir</div></div><span class="pill">Buka</span></div></button>`:`<button class="card" style="width:100%;text-align:left;margin-top:12px;font-family:inherit;font-size:15px;cursor:pointer;color:var(--cream)" onclick="go('shift')"><div class="row"><div><strong>Kasir belum dibuka</strong><div class="muted">Ketuk untuk membuka kasir dan isi uang awal</div></div><span class="muted">›</span></div></button>`}
+function shiftView(){
+  const sh=S.shift;
+  const aktif=!sh?`<div class="card"><h3>Kasir belum dibuka</h3><p class="muted">Isi uang awal di laci, lalu buka kasir.</p><label class="muted">Uang awal di laci</label><input id="saldoAwal" type="number" inputmode="numeric" placeholder="Contoh: 200000" style="margin:8px 0 12px"><button class="btn" onclick="bukaShift()">Buka kasir</button></div>`:(()=>{const r=ringkasShift(sh);return `<div class="card"><div class="row"><h3>Kasir sedang buka</h3><span class="pill">Buka</span></div><div class="muted" style="margin-top:6px">Sejak ${jam(sh.buka)} · ${esc(sh.kasir)}</div><div class="row" style="margin-top:12px"><span class="muted">Uang awal</span><span>${rp(sh.saldoAwal)}</span></div><div class="row" style="margin-top:6px"><span class="muted">Penjualan tunai</span><span>${rp(r.tunai)}</span></div><div class="row" style="margin-top:6px"><span class="muted">Semua penjualan (${r.jumlah} transaksi)</span><span>${rp(r.semua)}</span></div><div class="row" style="margin-top:10px;border-top:1px solid var(--line);padding-top:10px"><strong>Kas seharusnya di laci</strong><strong>${rp(r.kasSeharusnya)}</strong></div><label class="muted" style="display:block;margin-top:16px">Uang yang dihitung sekarang</label><input id="saldoAkhir" type="number" inputmode="numeric" placeholder="Contoh: 218000" style="margin:8px 0 12px"><button class="btn" onclick="tutupShift()">Tutup kasir</button></div>`})();
+  const daftar=(S.shiftRiwayat||[]).map(x=>`<div class="card" style="margin-bottom:8px"><div class="row"><div><strong>${esc(x.kasir)}</strong><div class="muted">${new Date(x.buka).toLocaleDateString("id-ID")} · ${jam(x.buka)} – ${jam(x.tutup)}</div></div><strong>${selisihLabel(x.selisih)}</strong></div><div class="muted" style="margin-top:6px">Seharusnya ${rp(x.kasSeharusnya)} · dihitung ${rp(x.saldoAkhir)}</div></div>`).join("");
+  return `<button class="link" onclick="go('beranda')">← Kembali</button><h2>Kasir</h2>${aktif}<h3 style="margin:18px 0 8px">Riwayat tutup kasir</h3>${daftar||'<div class="muted">Belum ada riwayat di HP ini.</div>'}`;
+}
+function bukaShift(){
+  const v=$("saldoAwal").value;
+  if(v==="")return toast("Isi uang awal di laci");
+  const n=Math.round(Number(v));if(!(n>=0))return toast("Uang awal tidak valid");
+  S.shift={id:newId(),buka:Date.now(),saldoAwal:n,kasir:S.session.name};save();toast("Kasir dibuka");render();
+}
+function tutupShift(){
+  const sh=S.shift;if(!sh)return;
+  const v=$("saldoAkhir").value;
+  if(v==="")return toast("Isi jumlah uang yang dihitung");
+  const akhir=Math.round(Number(v));if(!(akhir>=0))return toast("Jumlah tidak valid");
+  const r=ringkasShift(sh);
+  S.shiftRiwayat=[{id:sh.id,kasir:sh.kasir,buka:sh.buka,tutup:Date.now(),saldoAwal:sh.saldoAwal,tunai:r.tunai,semua:r.semua,jumlah:r.jumlah,kasSeharusnya:r.kasSeharusnya,saldoAkhir:akhir,selisih:akhir-r.kasSeharusnya}].concat(S.shiftRiwayat||[]).slice(0,30);
+  S.shift=null;save();toast("Kasir ditutup. "+selisihLabel(akhir-r.kasSeharusnya));render();
 }
 function render(){
   const logged=!!S.session&&!RECOVERY;
