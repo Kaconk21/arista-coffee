@@ -566,7 +566,7 @@ function kelola(){
 function profil(){return `<h2>Profil</h2><div class="card" style="margin:12px 0"><strong>${S.session.name}</strong><div class="muted">${S.session.role}</div></div>
 <div class="card"><div class="row"><span>Status</span><span>${navigator.onLine?"Online":"Offline"}</span></div><div class="row" style="margin-top:6px"><span>Menunggu sinkron</span><span>${S.outbox.length}</span></div><div class="muted" style="margin-top:8px">${SUPABASE_URL?"Terhubung ke cloud.":"Cloud belum dihubungkan. Data tersimpan di perangkat ini."}</div></div>
 <button class="btn ghost" style="margin-top:14px" onclick="keluar()">Keluar dari akun</button>`}
-const VIEWS={login:login_,lupa:lupa_,pulih:pulih_,detail:detailView,tertunda:tertundaView,shift:shiftView,beranda,menu,kasir,bayar,struk,laporan,kelola,profil};
+const VIEWS={login:login_,lupa:lupa_,pulih:pulih_,detail:detailView,tertunda:tertundaView,shift:shiftView,shiftDetail:shiftDetailView,beranda,menu,kasir,bayar,struk,laporan,kelola,profil};
 function navHtml(){const items=S.session.role==="Pemilik"?[["beranda","Beranda","home"],["menu","Kasir","cart"],["laporan","Laporan","chart"],["kelola","Kelola","gear"],["profil","Profil","user"]]:[["beranda","Beranda","home"],["menu","Kasir","cart"],["laporan","Laporan","chart"],["profil","Profil","user"]];
   const active=v=>V===v||(v==="menu"&&["kasir","bayar","struk"].includes(V));
   return items.map(([v,l,ic])=>`<button class="${active(v)?"on":""}" onclick="go('${v}')">${ICON[ic]}<span>${l}</span></button>`).join("")}
@@ -667,8 +667,22 @@ function shiftCard(){const sh=S.shift;return sh?`<button class="card" style="wid
 function shiftView(){
   const sh=S.shift;
   const aktif=!sh?`<div class="card"><h3>Kasir belum dibuka</h3><p class="muted">Isi uang awal di laci, lalu buka kasir.</p><label class="muted">Uang awal di laci</label><input id="saldoAwal" type="number" inputmode="numeric" placeholder="Contoh: 200000" style="margin:8px 0 12px"><button class="btn" onclick="bukaShift()">Buka kasir</button></div>`:(()=>{const r=ringkasShift(sh);return `<div class="card"><div class="row"><h3>Kasir sedang buka</h3><span class="pill">Buka</span></div><div class="muted" style="margin-top:6px">Sejak ${jam(sh.buka)} · ${esc(sh.kasir)}</div><div class="row" style="margin-top:12px"><span class="muted">Uang awal</span><span>${rp(sh.saldoAwal)}</span></div><div class="row" style="margin-top:6px"><span class="muted">Penjualan tunai</span><span>${rp(r.tunai)}</span></div><div class="row" style="margin-top:6px"><span class="muted">Semua penjualan (${r.jumlah} transaksi)</span><span>${rp(r.semua)}</span></div><div class="row" style="margin-top:10px;border-top:1px solid var(--line);padding-top:10px"><strong>Kas seharusnya di laci</strong><strong>${rp(r.kasSeharusnya)}</strong></div><label class="muted" style="display:block;margin-top:16px">Uang yang dihitung sekarang</label><input id="saldoAkhir" type="number" inputmode="numeric" placeholder="Contoh: 218000" style="margin:8px 0 12px"><button class="btn" onclick="tutupShift()">Tutup kasir</button></div>`})();
-  const daftar=(S.shiftRiwayat||[]).map(x=>`<div class="card" style="margin-bottom:8px"><div class="row"><div><strong>${esc(x.kasir)}</strong><div class="muted">${new Date(x.buka).toLocaleDateString("id-ID")} · ${jam(x.buka)} – ${jam(x.tutup)}</div></div><strong>${selisihLabel(x.selisih)}</strong></div><div class="muted" style="margin-top:6px">Seharusnya ${rp(x.kasSeharusnya)} · dihitung ${rp(x.saldoAkhir)}</div></div>`).join("");
+  const daftar=(S.shiftRiwayat||[]).map(x=>`<button class="card" style="width:100%;text-align:left;margin-bottom:8px;font-family:inherit;color:var(--cream);cursor:pointer" onclick="bukaRiwayatShift('${x.id}')"><div class="row"><div><strong>${esc(x.kasir)}</strong><div class="muted">${new Date(x.buka).toLocaleDateString("id-ID")} · ${jam(x.buka)} – ${jam(x.tutup)}</div></div><strong>${selisihLabel(x.selisih)}</strong></div><div class="muted" style="margin-top:6px">Seharusnya ${rp(x.kasSeharusnya)} · dihitung ${rp(x.saldoAkhir)}</div><div class="muted" style="margin-top:6px;color:var(--gold)">Ketuk untuk lihat ${x.transaksi?x.transaksi.length+" transaksi":"rincian"}</div></button>`).join("");
   return `<button class="link" onclick="go('beranda')">← Kembali</button><h2>Kasir</h2>${aktif}<h3 style="margin:18px 0 8px">Riwayat tutup kasir</h3>${daftar||'<div class="muted">Belum ada riwayat di HP ini.</div>'}`;
+}
+let SHIFT_DETAIL=null;
+function bukaRiwayatShift(id){SHIFT_DETAIL=(S.shiftRiwayat||[]).find(x=>x.id===id)||null;if(SHIFT_DETAIL)go("shiftDetail")}
+function shiftDetailView(){
+  const r=SHIFT_DETAIL;if(!r)return shiftView();
+  const tr=r.transaksi;
+  const baris=!tr?'<div class="muted">Rincian transaksi tidak tersimpan untuk tutup kasir ini.</div>':(tr.length?tr.map(x=>`<div class="card" style="margin-bottom:8px;${x.batal?"opacity:.6":""}"><div class="row"><div><strong>${esc(x.customer)}</strong><div class="muted">${esc(x.time)} · ${esc(x.method)}${x.batal?' · <span style="color:var(--warn)">dibatalkan</span>':""}</div><div class="muted" style="margin-top:4px">${(x.items||[]).map(i=>esc(i.name)+" x"+i.qty).join(", ")}</div></div><div style="text-align:right"><strong>${rp(x.total)}</strong>${x.diskon?`<div class="muted">diskon -${rp(x.diskon)}</div>`:""}</div></div></div>`).join(""):'<div class="muted">Tidak ada transaksi pada kasir ini.</div>');
+  const aktif=tr?tr.filter(x=>!x.batal):[];
+  const totalAktif=aktif.reduce((n,x)=>n+x.total,0);
+  return `<button class="link" onclick="go('shift')">← Riwayat kasir</button><h2>Tutup kasir</h2>
+<div class="card" style="margin:12px 0"><div class="row"><strong>${esc(r.kasir)}</strong><span class="muted">${new Date(r.buka).toLocaleDateString("id-ID")}</span></div><div class="muted" style="margin-top:4px">${jam(r.buka)} – ${jam(r.tutup)}</div>
+<div class="row" style="margin-top:12px"><span class="muted">Uang awal</span><span>${rp(r.saldoAwal)}</span></div><div class="row" style="margin-top:6px"><span class="muted">Penjualan tunai</span><span>${rp(r.tunai)}</span></div><div class="row" style="margin-top:6px"><span class="muted">Kas seharusnya</span><span>${rp(r.kasSeharusnya)}</span></div><div class="row" style="margin-top:6px"><span class="muted">Uang dihitung</span><span>${rp(r.saldoAkhir)}</span></div><div class="row" style="margin-top:10px;border-top:1px solid var(--line);padding-top:10px"><strong>Selisih</strong><strong>${selisihLabel(r.selisih)}</strong></div></div>
+<h3 style="margin:16px 0 8px">Transaksi${tr?" ("+tr.length+")":""}</h3>${baris}
+${tr?`<div class="row" style="margin-top:12px;border-top:1px solid var(--line);padding-top:10px"><span class="muted">Total semua transaksi aktif</span><strong>${rp(totalAktif)}</strong></div>`:""}`;
 }
 function bukaShift(){
   const v=$("saldoAwal").value;
@@ -682,14 +696,17 @@ function tutupShift(){
   if(v==="")return toast("Isi jumlah uang yang dihitung");
   const akhir=Math.round(Number(v));if(!(akhir>=0))return toast("Jumlah tidak valid");
   const r=ringkasShift(sh);
-  S.shiftRiwayat=[{id:sh.id,kasir:sh.kasir,buka:sh.buka,tutup:Date.now(),saldoAwal:sh.saldoAwal,tunai:r.tunai,semua:r.semua,jumlah:r.jumlah,kasSeharusnya:r.kasSeharusnya,saldoAkhir:akhir,selisih:akhir-r.kasSeharusnya}].concat(S.shiftRiwayat||[]).slice(0,30);
+  const transaksi=S.sales.filter(x=>(x.ts||0)>=sh.buka).map(x=>({id:x.id,customer:x.customer||"Umum",time:x.time||"",method:x.method||"",total:x.total,diskon:x.diskon||0,batal:!!x.batal,items:(x.items||[]).map(i=>({name:i.name,qty:i.qty,price:i.price}))}));
+  S.shiftRiwayat=[{id:sh.id,kasir:sh.kasir,buka:sh.buka,tutup:Date.now(),saldoAwal:sh.saldoAwal,tunai:r.tunai,semua:r.semua,jumlah:r.jumlah,kasSeharusnya:r.kasSeharusnya,saldoAkhir:akhir,selisih:akhir-r.kasSeharusnya,transaksi}].concat(S.shiftRiwayat||[]).slice(0,30);
   S.shift=null;save();toast("Kasir ditutup. "+selisihLabel(akhir-r.kasSeharusnya));render();
 }
 function render(){
   const logged=!!S.session&&!RECOVERY;
   if(!logged&&SPLASH){$("app").innerHTML=`<div class="splash">${ICON.cup}<h1>ARISTA</h1><div class="muted">Coffee &amp; Roastery</div><div class="muted" style="margin-top:14px;font-size:12px">Good Coffee · Better Moments</div></div>`;$("nav").classList.add("hidden");setTimeout(()=>{SPLASH=false;render()},1300);return}
   if(!logged&&!["login","lupa","pulih"].includes(V))V="login";
+  const simpanIsi={};document.querySelectorAll("#app input[id]").forEach(i=>{simpanIsi[i.id]=i.value});
   $("app").innerHTML=(logged?statusBar():"")+(VIEWS[V]||login_)();
+  Object.keys(simpanIsi).forEach(id=>{const el=document.getElementById(id);if(el&&el.value!==simpanIsi[id])el.value=simpanIsi[id]});
   $("nav").classList.toggle("hidden",!logged);
   $("nav").innerHTML=logged?navHtml():"";
 }
