@@ -386,7 +386,7 @@ async function muatLaporan(){
     const cloud=rows.map(x=>({id:x.id,date:x.sale_date,time:x.sale_time,items:x.items||[],total:Number(x.total)||0,method:x.method,paid:Number(x.paid)||0,change:Number(x.change_amount)||0,cashier:x.cashier_name,customer:x.customer,batal:!!x.batal,alasan_batal:x.alasan_batal,diskon:Number(x.diskon)||0,subtotal:Number(x.total)+(Number(x.diskon)||0)}));
     const ids=new Set(cloud.map(x=>x.id));
     const pending=S.outbox.filter(x=>!ids.has(x.id)&&x.date>=dari&&x.date<=sampai);
-    LAP=[...pending,...cloud];LAP_NOTE="";if(S.session&&S.session.role==="Pemilik")muatPengeluaran();
+    LAP=[...pending,...cloud];LAP_NOTE="";if(S.session&&S.session.role==="Pemilik"){muatPengeluaran();muatPiutang()}
   }catch(e){if(req!==LAP_REQ)return;LAP=null;LAP_NOTE="Tidak bisa memuat dari cloud. Menampilkan data di perangkat ini."}
   render();
 }
@@ -410,7 +410,7 @@ function laporan(){
   const totalKeluar=(EXP||[]).reduce((n,x)=>n+x.total,0);
   return `<h2>Laporan</h2>${tabUtama}${tabRange}${note}
 <div class="grid"><div class="card"><div class="muted">Total omzet</div><h3>${rp(omzet)}</h3></div><div class="card"><div class="muted">Transaksi</div><h3>${list.length}</h3></div></div>
-${pemilik?`<div class="card" style="margin-top:10px"><div class="muted">Margin kotor</div><h3>${margin==null?"–":rp(margin)}</h3><div class="muted">${unknown?"Isi harga modal di Kelola agar margin terhitung.":""}</div></div>`:""}
+${pemilik?piutangCard():""}${pemilik?`<div class="card" style="margin-top:10px"><div class="muted">Margin kotor</div><h3>${margin==null?"–":rp(margin)}</h3><div class="muted">${unknown?"Isi harga modal di Kelola agar margin terhitung.":""}</div></div>`:""}
 ${pemilik&&margin!=null?`<div class="card" style="margin-top:10px"><div class="muted">Laba bersih (margin dikurangi pengeluaran)</div><h3>${rp(margin-totalKeluar)}</h3></div>`:""}
 <div class="row" style="margin:14px 0 6px"><h3>Transaksi</h3>${pemilik?`<button class="link" onclick="eksporCsv('penjualan')">Ekspor CSV</button>`:""}</div>
 ${semua.slice(0,20).map(saleRow).join("")||'<div class="muted">Belum ada transaksi pada periode ini.</div>'}`;
@@ -432,6 +432,7 @@ async function muatPiutang(){
   }catch(e){if(req!==PIUT_REQ)return;PIUT=[];PIUT_BAYAR=[];LAP_NOTE="Piutang belum bisa dimuat. Periksa koneksi."}
   if(V==="laporan")render();
 }
+function piutangCard(){const total=PIUT?PIUT.reduce((n,x)=>n+x.sisa,0):null;return `<button class="card" style="width:100%;text-align:left;margin-top:10px;border-color:var(--gold);color:var(--cream);font-family:inherit;cursor:pointer" onclick="setLapTab('Piutang')"><div class="muted">Piutang belum lunas</div><h3>${total==null?"Memuat...":rp(total)}</h3><div class="muted">Ketuk untuk lihat per pelanggan</div></button>`}
 function piutangView(){
   if(PIUT===null)return '<div class="muted">Memuat piutang...</div>';
   const [dari,sampai]=rentangTanggal(RANGE);
