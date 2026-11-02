@@ -218,8 +218,8 @@ function chg(i,d){const x=CART[i];const p=S.products.find(y=>y.id===x.id);if(d>0
 function kembali(){const paid=Number($("paid").value)||0;$("kembali").textContent=rp(Math.max(0,paid-sumCart()))}
 function bayarProses(){
   const sub=sumCart(),diskon=hitungDiskon(sub),tot=sub-diskon;if(!CART.length)return;
-  const paid=PAY==="Tunai"?(Number($("paid").value)||0):tot;
-  if(paid<tot){toast("Uang diterima belum mencukupi");return}
+  const paid=PAY==="Piutang"?0:(PAY==="Tunai"?(Number($("paid").value)||0):tot);
+  if(PAY==="Piutang"){if(!(CUSTOMER||"").trim())return toast("Isi nama customer untuk piutang")}else if(paid<tot){toast("Uang diterima belum mencukupi");return}
   for(const x of CART){const p=S.products.find(y=>y.id===x.id);if(stokTersedia(p)<x.qty){toast("Stok "+x.name+" tidak cukup");return}}
   const sale={id:newId(),date:today(),time:new Date().toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"}),items:CART.map(x=>({...x})),subtotal:sub,diskon,total:tot,method:PAY,paid,change:Math.max(0,paid-tot),cashier:S.session.name,customer:(CUSTOMER||"").trim()||"Umum",ts:Date.now()};
   S.sales.unshift(sale);S.outbox.push(sale);if(EDIT_PESANAN){S.pesanan=S.pesanan.filter(x=>x.id!==EDIT_PESANAN);EDIT_PESANAN=null}CART=[];CUSTOMER="";DISKON={tipe:"rp",nilai:0};save();LAST=sale;go("struk");toast("Transaksi tersimpan di perangkat");syncNow();
@@ -353,7 +353,7 @@ ${BER_NOTE?`<div class="muted" style="margin-bottom:8px;color:var(--warn)">${BER
 <div class="grid"><div class="card"><div class="muted">Total hari ini</div><h3>${rp(omzet)}</h3></div><div class="card"><div class="muted">Transaksi</div><h3>${t.length}</h3></div></div>
 ${shiftCard()}<div class="grid" style="margin-top:12px"><button class="btn ghost" style="grid-column:1/-1" onclick="go('tertunda')">ORDERAN${S.pesanan.length?` <span class="badge">${S.pesanan.length}</span>`:""}</button>${quick.map(([l,v])=>`<button class="btn ghost" onclick="go('${v}')">${l}</button>`).join("")}</div>
 <h3 style="margin:18px 0 8px">Transaksi terbaru</h3>${semua.slice(0,3).map(saleRow).join("")||'<div class="muted">Belum ada transaksi.</div>'}`}
-let DISKON={tipe:"rp",nilai:0},CUSTOMER="",DETAIL=null,PREV_V="beranda",EDIT_PESANAN=null,LAP_TAB="Penjualan",EXP=null,EXP_REQ=0;
+let PIUT=null,PIUT_REQ=0,PIUT_CUST=null,PIUT_BAYAR=[],DISKON={tipe:"rp",nilai:0},CUSTOMER="",DETAIL=null,PREV_V="beranda",EDIT_PESANAN=null,LAP_TAB="Penjualan",EXP=null,EXP_REQ=0;
 function menu(){const cats=["Semua",...new Set(S.products.map(p=>p.cat))];const n=CART.reduce((a,x)=>a+x.qty,0);
   return `<h2>Menu</h2><div class="tabs" style="margin:10px 0">${cats.map(c=>`<button class="tab ${c===CAT?"on":""}" onclick="CAT='${c}';render()">${c}</button>`).join("")}</div>
 ${S.pesanan.length?`<button class="btn ghost" style="margin-bottom:10px" onclick="go('tertunda')">ORDERAN (${S.pesanan.length})</button>`:""}<div class="grid">${S.products.filter(p=>CAT==="Semua"||p.cat===CAT).map(p=>`<div class="card"><strong>${p.name}</strong><div class="muted">${rp(p.price)} · stok ${stokTersedia(p)}</div><button class="btn sm" style="margin-top:8px" onclick="addCart('${p.id}')">+ Tambah</button></div>`).join("")}</div>
@@ -366,8 +366,8 @@ function kembali(){const el=$("kembali");if(!el)return;const paid=Number(($("pai
 function bayar(){const sub=sumCart(),d=hitungDiskon(sub),tot=sub-d;
   return `<h2>Pembayaran</h2><div class="card" style="margin:12px 0;text-align:center"><div class="muted">Total</div><h1 id="bTotal">${rp(tot)}</h1></div>
 <div class="card" style="margin-bottom:12px"><div class="row"><span class="muted">Subtotal</span><span>${rp(sub)}</span></div><div class="row" style="margin-top:10px;gap:8px"><span class="muted">Diskon</span><div class="row" style="gap:6px"><select id="dskTipe" onchange="ubahDiskon()" style="width:auto;padding:8px 10px"><option value="rp" ${DISKON.tipe==="rp"?"selected":""}>Rp</option><option value="persen" ${DISKON.tipe==="persen"?"selected":""}>%</option></select><input id="dskNilai" type="number" inputmode="numeric" value="${DISKON.nilai||""}" placeholder="0" oninput="ubahDiskon()" style="width:110px;padding:8px 10px"></div></div><div class="row" style="margin-top:10px"><span class="muted">Potongan</span><strong id="bDiskon">-${rp(d)}</strong></div></div>
-<div class="tabs">${["Tunai","QRIS","Debit/Kredit","Transfer"].map(m=>`<button class="tab ${m===PAY?"on":""}" onclick="PAY='${m}';render()">${m}</button>`).join("")}</div>
-${PAY==="Tunai"?`<label class="muted">Uang diterima</label><input id="paid" type="number" inputmode="numeric" oninput="kembali()" style="margin:6px 0 10px"><div class="row"><span>Kembalian</span><strong id="kembali">${rp(0)}</strong></div>`:`<p class="muted" style="margin-top:12px">Pembayaran ${PAY} dicatat manual.</p>`}
+<div class="tabs">${["Tunai","QRIS","Debit/Kredit","Transfer","Piutang"].map(m=>`<button class="tab ${m===PAY?"on":""}" onclick="PAY='${m}';render()">${m}</button>`).join("")}</div>
+${PAY==="Tunai"?`<label class="muted">Uang diterima</label><input id="paid" type="number" inputmode="numeric" oninput="kembali()" style="margin:6px 0 10px"><div class="row"><span>Kembalian</span><strong id="kembali">${rp(0)}</strong></div>`:`${PAY==="Piutang"?`<p class="muted" style="margin-top:12px">Dicatat sebagai piutang untuk <strong>${esc((CUSTOMER||"").trim()||"(belum ada nama)")}</strong>. Pembayaran dilakukan nanti.</p>`:`<p class="muted" style="margin-top:12px">Pembayaran ${PAY} dicatat manual.</p>`}`}
 <button class="btn" style="margin-top:16px" onclick="bayarProses()">Proses Pembayaran</button><button class="btn ghost" style="margin-top:8px" onclick="go('kasir')">Batal</button>`}
 function struk(){const s=LAST;if(!s)return beranda();
   return `<h2>Struk transaksi</h2><div class="receipt" style="margin:12px 0"><div style="text-align:center"><strong>ARISTA</strong><br>Coffee &amp; Roastery</div><hr>No. ${s.id.slice(0,8)}<br>${s.date} ${s.time}<br>Kasir: ${s.cashier}<br>Customer: ${esc(s.customer||"Umum")}<hr>${s.items.map(x=>`${x.name} x${x.qty} &nbsp; ${rp(x.price*x.qty)}`).join("<br>")}<hr>${s.diskon?`Subtotal ${rp(s.subtotal)}<br>Diskon -${rp(s.diskon)}<br>`:""}Total ${rp(s.total)}<br>${s.method}${s.method==="Tunai"?`<br>Bayar ${rp(s.paid)} · Kembali ${rp(s.change)}`:""}</div>
@@ -402,10 +402,11 @@ function laporan(){
   const omzet=list.reduce((n,s)=>n+s.total,0);
   let cost=0,unknown=false;for(const s of list)for(const x of s.items){if(x.cost==null)unknown=true;else cost+=x.cost*x.qty}
   const margin=unknown?null:omzet-cost;
-  const tabUtama=pemilik?`<div class="tabs" style="margin:10px 0">${["Penjualan","Pengeluaran"].map(t=>`<button class="tab ${t===LAP_TAB?"on":""}" onclick="setLapTab('${t}')">${t}</button>`).join("")}</div>`:"";
+  const tabUtama=pemilik?`<div class="tabs" style="margin:10px 0">${["Penjualan","Pengeluaran","Piutang"].map(t=>`<button class="tab ${t===LAP_TAB?"on":""}" onclick="setLapTab('${t}')">${t}</button>`).join("")}</div>`:"";
   const tabRange=`<div class="tabs" style="margin:6px 0 12px">${["Harian","Mingguan","Bulanan"].map(m=>`<button class="tab ${m===RANGE?"on":""}" onclick="RANGE='${m}';LAP=null;render();muatLaporan()">${m}</button>`).join("")}</div>`;
   const note=LAP_NOTE?`<div class="muted" style="margin-bottom:8px;color:var(--warn)">${LAP_NOTE}</div>`:"";
   if(pemilik&&LAP_TAB==="Pengeluaran")return `<h2>Laporan</h2>${tabUtama}${tabRange}${note}${pengeluaranView()}`;
+  if(pemilik&&LAP_TAB==="Piutang")return `<h2>Laporan</h2>${tabUtama}${tabRange}${note}${piutangView()}`;
   const totalKeluar=(EXP||[]).reduce((n,x)=>n+x.total,0);
   return `<h2>Laporan</h2>${tabUtama}${tabRange}${note}
 <div class="grid"><div class="card"><div class="muted">Total omzet</div><h3>${rp(omzet)}</h3></div><div class="card"><div class="muted">Transaksi</div><h3>${list.length}</h3></div></div>
@@ -414,7 +415,66 @@ ${pemilik&&margin!=null?`<div class="card" style="margin-top:10px"><div class="m
 <div class="row" style="margin:14px 0 6px"><h3>Transaksi</h3>${pemilik?`<button class="link" onclick="eksporCsv('penjualan')">Ekspor CSV</button>`:""}</div>
 ${semua.slice(0,20).map(saleRow).join("")||'<div class="muted">Belum ada transaksi pada periode ini.</div>'}`;
 }
-function setLapTab(t){LAP_TAB=t;render();if(t==="Pengeluaran")muatPengeluaran()}
+async function muatPiutang(){
+  const req=++PIUT_REQ;
+  try{
+    const tok=await tokenBaru();if(!tok)throw new Error("sesi");
+    const H={apikey:SUPABASE_ANON_KEY,Authorization:"Bearer "+tok};
+    const [sr,pr]=await Promise.all([
+      fetch(SUPABASE_URL+"/rest/v1/sales?select=id,sale_date,sale_time,customer,items,total,batal&method=eq.Piutang&order=sale_date.asc,created_at.asc&limit=2000",{headers:H}),
+      fetch(SUPABASE_URL+"/rest/v1/pembayaran?select=sale_id,nominal,tanggal,metode&order=tanggal.asc&limit=5000",{headers:H})
+    ]);
+    if(!sr.ok||!pr.ok)throw new Error("HTTP");
+    const sales=(await sr.json()).filter(x=>!x.batal);const bayar=await pr.json();
+    if(req!==PIUT_REQ)return;
+    PIUT_BAYAR=bayar.map(x=>({...x,nominal:Number(x.nominal)||0}));
+    PIUT=sales.map(x=>{const dibayar=PIUT_BAYAR.filter(b=>b.sale_id===x.id).reduce((n,b)=>n+b.nominal,0);return {id:x.id,tanggal:x.sale_date,jam:x.sale_time||"",customer:x.customer||"Umum",items:x.items||[],total:Number(x.total)||0,dibayar,sisa:(Number(x.total)||0)-dibayar}}).filter(x=>x.sisa>0);
+  }catch(e){if(req!==PIUT_REQ)return;PIUT=[];PIUT_BAYAR=[];LAP_NOTE="Piutang belum bisa dimuat. Periksa koneksi."}
+  if(V==="laporan")render();
+}
+function piutangView(){
+  if(PIUT===null)return '<div class="muted">Memuat piutang...</div>';
+  const [dari,sampai]=rentangTanggal(RANGE);
+  const kasMasuk=PIUT_BAYAR.filter(b=>b.tanggal>=dari&&b.tanggal<=sampai);
+  const totalKas=kasMasuk.reduce((n,b)=>n+b.nominal,0);
+  const totalPiutang=PIUT.reduce((n,x)=>n+x.sisa,0);
+  if(PIUT_CUST){
+    const notas=PIUT.filter(x=>x.customer===PIUT_CUST);
+    const sisaCust=notas.reduce((n,x)=>n+x.sisa,0);
+    const daftar=notas.map(x=>`<div class="card" style="margin-bottom:8px"><div class="row"><div><strong>${esc(x.tanggal)}</strong><div class="muted">${(x.items||[]).map(i=>esc(i.name)+" x"+i.qty).join(", ")}</div></div><div style="text-align:right"><strong>${rp(x.sisa)}</strong><div class="muted">dari ${rp(x.total)}</div></div></div><button class="btn sm ghost" style="margin-top:10px" onclick="bayarNota('${x.id}')">Bayar nota ini</button></div>`).join("");
+    return `<button class="link" onclick="PIUT_CUST=null;render()">← Semua piutang</button><h2>${esc(PIUT_CUST)}</h2><div class="muted" style="margin:4px 0 12px">Sisa tagihan ${rp(sisaCust)}</div>
+<div class="card"><h3 style="margin-bottom:8px">Bayar</h3><div class="muted" style="margin-bottom:8px">Isi nominal. Untuk bayar sekaligus, pembayaran dibagi ke pesanan paling lama. Untuk nota ini, kosongkan nominal untuk melunasi nota ini.</div><input id="pbNominal" type="number" inputmode="numeric" placeholder="Nominal (Rp)"><select id="pbMetode" style="margin-top:8px"><option>Tunai</option><option>QRIS</option><option>Debit/Kredit</option><option>Transfer</option></select><button class="btn" style="margin-top:10px" onclick="bayarSekaligus()">Bayar sekaligus</button></div>
+<h3 style="margin:16px 0 8px">Nota belum lunas</h3>${daftar||'<div class="muted">Tidak ada nota belum lunas.</div>'}`;
+  }
+  const kelompok={};PIUT.forEach(x=>{kelompok[x.customer]=kelompok[x.customer]||{sisa:0,nota:0};kelompok[x.customer].sisa+=x.sisa;kelompok[x.customer].nota++});
+  const daftar=Object.keys(kelompok).sort().map(c=>`<button class="card" style="width:100%;text-align:left;margin-bottom:8px;font-family:inherit;color:var(--cream);cursor:pointer" onclick="PIUT_CUST='${esc(c).replace(/'/g,"")}';render()"><div class="row"><div><strong>${esc(c)}</strong><div class="muted">${kelompok[c].nota} nota belum lunas</div></div><strong>${rp(kelompok[c].sisa)}</strong></div></button>`).join("");
+  return `<div class="grid"><div class="card"><div class="muted">Total piutang</div><h3>${rp(totalPiutang)}</h3></div><div class="card"><div class="muted">Kas masuk piutang (periode)</div><h3>${rp(totalKas)}</h3></div></div>
+<h3 style="margin:16px 0 8px">Pelanggan</h3>${daftar||'<div class="muted">Tidak ada piutang.</div>'}`;
+}
+async function bayarSekaligus(){
+  const n=Number($("pbNominal").value);
+  if(!(n>0))return toast("Isi nominal pembayaran");
+  try{
+    const tok=await tokenBaru();if(!tok)throw new Error("sesi");
+    const r=await fetch(SUPABASE_URL+"/rest/v1/rpc/bayar_sekaligus",{method:"POST",headers:{apikey:SUPABASE_ANON_KEY,Authorization:"Bearer "+tok,"Content-Type":"application/json"},body:JSON.stringify({p_customer:PIUT_CUST,p_nominal:n,p_metode:$("pbMetode").value})});
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    const dibayar=await r.json();toast("Pembayaran "+rp(Number(dibayar))+" diterapkan");
+    PIUT=null;muatPiutang();
+  }catch(e){toast("Gagal menyimpan pembayaran. Coba lagi.")}
+}
+async function bayarNota(id){
+  const nota=(PIUT||[]).find(x=>x.id===id);if(!nota)return;
+  const isi=Number($("pbNominal").value)||0;
+  const nominal=isi>0?Math.min(isi,nota.sisa):nota.sisa;
+  if(!(await tanyaSheet("Bayar nota",rp(nominal)+" untuk nota "+nota.tanggal+". Lanjutkan?",{ya:"Bayar"})))return;
+  try{
+    const tok=await tokenBaru();if(!tok)throw new Error("sesi");
+    const r=await fetch(SUPABASE_URL+"/rest/v1/rpc/bayar_nota",{method:"POST",headers:{apikey:SUPABASE_ANON_KEY,Authorization:"Bearer "+tok,"Content-Type":"application/json"},body:JSON.stringify({p_sale:id,p_nominal:nominal,p_metode:$("pbMetode").value})});
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    toast("Pembayaran nota dicatat");PIUT=null;muatPiutang();
+  }catch(e){toast("Gagal menyimpan pembayaran. Coba lagi.")}
+}
+function setLapTab(t){LAP_TAB=t;render();if(t==="Pengeluaran")muatPengeluaran();if(t==="Piutang")muatPiutang()}
 function pengeluaranView(){
   const daftar=EXP||[];const total=daftar.reduce((n,x)=>n+x.total,0);
   const form=`<div class="card" style="margin:10px 0"><h3 style="margin-bottom:8px">Tambah pengeluaran</h3><input id="xNama" placeholder="Nama (mis. Susu UHT)"><div class="grid" style="margin-top:8px"><input id="xKat" placeholder="Kategori (Bahan / Operasional / Gaji)"><input id="xTgl" type="date" value="${today()}"></div><div class="grid" style="margin-top:8px"><input id="xQty" type="number" placeholder="Jumlah"><input id="xHarga" type="number" placeholder="Harga satuan"></div><input id="xCatatan" placeholder="Catatan (opsional)" style="margin-top:8px"><button class="btn" style="margin-top:10px" onclick="simpanPengeluaran()">Simpan pengeluaran</button><div id="xErr" class="err"></div></div>`;
