@@ -170,7 +170,6 @@ async function unduhLaporanRapi(){
     belanja=(await r.json()).reduce((n,x)=>n+(Number(x.total)||0),0);
   }catch(err){catatanBelanja="Belanja tidak bisa diambil karena tidak ada koneksi. Unduh lagi saat online agar total bersih lengkap."}
   const bersih=total-qris-belanja;
-  const batalArr=S.sales.filter(x=>x.batal);const batalTotal=batalArr.reduce((n,x)=>n+(Number(x.total)||0),0);
   const trRows=[...S.sales].filter(x=>!x.batal).sort((a,b)=>(b.ts||0)-(a.ts||0)).map(x=>`<tr><td>${e2(x.date)}</td><td>${e2(x.time)}</td><td>${e2(x.customer||"Umum")}</td><td>${e2(x.cashier)}</td><td>${e2(x.method)}</td><td class="r">${rp2(x.total)}</td></tr>`).join("");
   const html=`<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Laporan ARISTA ${today()}</title><style>body{font-family:Arial,Helvetica,sans-serif;color:#2b211a;margin:16px;font-size:14px}h1{font-size:20px;margin:0}h2{font-size:16px;margin:22px 0 8px;border-bottom:2px solid #b5583a;padding-bottom:4px}.info{color:#7a6b5d;margin-top:4px}table{width:100%;border-collapse:collapse;font-size:13px}th{background:#f3e2d8;text-align:left;padding:7px 6px}td{padding:6px;border-bottom:1px solid #e6dccd;vertical-align:top}.r{text-align:right;white-space:nowrap}.batal td{color:#9a8f80;text-decoration:line-through}.hitung{margin-top:12px;border:1px solid #e6dccd;border-radius:12px;overflow:hidden}.hitung div{display:flex;justify-content:space-between;padding:9px 14px;border-bottom:1px solid #e6dccd}.hitung div:last-child{border-bottom:0;background:#f3e2d8;font-weight:700;font-size:16px}.catat{color:#7a6b5d;font-size:12px;margin-top:8px}@media print{body{margin:8mm}}.kasir-banner{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 14px;border-radius:14px;margin:8px 0 12px;font-size:.875rem}
 .kasir-banner.buka{background:#efe6d8;color:#2b211a;border-left:4px solid var(--gold)}
@@ -181,7 +180,7 @@ async function unduhLaporanRapi(){
 <h2>Ringkasan</h2>
 <div class="hitung"><div><span>Total penjualan</span><span>${rp2(total)}</span></div><div><span>Dikurangi QRIS</span><span>− ${rp2(qris)}</span></div><div><span>Dikurangi belanja</span><span>− ${rp2(belanja)}</span></div><div><span>Total bersih</span><span>${rp2(bersih)}</span></div></div>
 ${catatanBelanja?`<div class="catat">${e2(catatanBelanja)}</div>`:""}
-${piutang>0?`<div class="catat">Termasuk piutang ${rp2(piutang)} yang belum dibayar.</div>`:""}${batalArr.length?`<div class="catat">${batalArr.length} transaksi dibatalkan (${rp2(batalTotal)}) tidak dihitung.</div>`:""}
+${piutang>0?`<div class="catat">Termasuk piutang ${rp2(piutang)} yang belum dibayar.</div>`:""}
 <h2>Transaksi</h2><table><tr><th>Tanggal</th><th>Jam</th><th>Customer</th><th>Kasir</th><th>Metode</th><th class="r">Total</th></tr>${trRows||'<tr><td colspan="6">Belum ada transaksi.</td></tr>'}</table>
 </body></html>`;
   const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([html],{type:"text/html;charset=utf-8"}));a.download="arista-laporan-"+today()+".html";document.body.appendChild(a);a.click();a.remove();
