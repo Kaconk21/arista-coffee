@@ -96,6 +96,20 @@ nav button.on svg{filter:drop-shadow(0 0 6px rgba(181,88,58,.45))}
 .undo-toast.jalan .bar{animation:habis5 5s linear forwards}
 @keyframes habis5{from{width:100%}to{width:0}}
 .batal-chip{color:var(--warn)}
+.seg{display:flex;background:#efe6d8;border-radius:16px;padding:4px;gap:4px;margin:10px 0}
+.seg button{flex:1 1 0;min-width:0;border:0;background:transparent;border-radius:12px;padding:10px 4px;font:inherit;font-size:.875rem;font-weight:600;color:var(--muted);cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.seg button.on{background:#ffffff;color:var(--gold);box-shadow:0 2px 8px rgba(90,60,30,.14)}
+.chips{display:flex;gap:8px;overflow-x:auto;margin:10px -16px;padding:4px 16px 8px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto;border:1px solid #d9cdbb;background:#ffffff;color:var(--muted);border-radius:999px;padding:9px 16px;font:inherit;font-size:.875rem;font-weight:600;cursor:pointer;white-space:nowrap}
+.chip.on{background:var(--gold);border-color:var(--gold);color:#ffffff}
+.chip-n{display:inline-block;margin-left:4px;padding:0 6px;border-radius:999px;background:rgba(122,107,93,.14);font-size:.75rem;line-height:1.5;font-weight:700}
+.chip.on .chip-n{background:rgba(255,255,255,.25)}
+.menu-grid{gap:8px}
+.menu-kartu{padding:12px 12px 10px}
+.menu-nama{display:block;font-size:.9375rem;line-height:1.25}
+.menu-harga{font-size:.8125rem;margin-top:2px}
+.menu-tambah{margin-top:6px;padding:7px 10px;font-size:.8125rem}
 </style></head>
 <body>
 <div id="app"></div>
@@ -355,8 +369,9 @@ ${shiftCard()}<div class="grid" style="margin-top:12px"><button class="btn ghost
 <h3 style="margin:18px 0 8px">Transaksi terbaru</h3>${semua.slice(0,3).map(saleRow).join("")||'<div class="muted">Belum ada transaksi.</div>'}`}
 let PIUT=null,PIUT_REQ=0,PIUT_CUST=null,PIUT_BAYAR=[],DISKON={tipe:"rp",nilai:0},CUSTOMER="",DETAIL=null,PREV_V="beranda",EDIT_PESANAN=null,LAP_TAB="Penjualan",EXP=null,EXP_REQ=0;
 function menu(){const cats=["Semua",...new Set(S.products.map(p=>p.cat))];const n=CART.reduce((a,x)=>a+x.qty,0);
-  return `<h2>Menu</h2><div class="tabs" style="margin:10px 0">${cats.map(c=>`<button class="tab ${c===CAT?"on":""}" onclick="CAT='${c}';render()">${c}</button>`).join("")}</div>
-${S.pesanan.length?`<button class="btn ghost" style="margin-bottom:10px" onclick="go('tertunda')">ORDERAN (${S.pesanan.length})</button>`:""}<div class="grid">${S.products.filter(p=>CAT==="Semua"||p.cat===CAT).map(p=>`<div class="card"><strong>${p.name}</strong><div class="muted">${rp(p.price)} · stok ${stokTersedia(p)}</div><button class="btn sm" style="margin-top:8px" onclick="addCart('${p.id}')">+ Tambah</button></div>`).join("")}</div>
+  const jumlahKat=c=>c==="Semua"?S.products.length:S.products.filter(p=>p.cat===c).length;
+  return `<h2>Menu</h2><div class="chips">${cats.map(c=>`<button class="chip ${c===CAT?"on":""}" onclick="CAT='${c}';render()">${c} <span class="chip-n">${jumlahKat(c)}</span></button>`).join("")}</div>
+${S.pesanan.length?`<button class="btn ghost" style="margin-bottom:10px" onclick="go('tertunda')">ORDERAN (${S.pesanan.length})</button>`:""}<div class="grid menu-grid">${S.products.filter(p=>CAT==="Semua"||p.cat===CAT).map(p=>`<div class="card menu-kartu"><strong class="menu-nama">${p.name}</strong><div class="muted menu-harga">${rp(p.price)} · stok ${stokTersedia(p)}</div><button class="btn sm menu-tambah" onclick="addCart('${p.id}')">+ Tambah</button></div>`).join("")}</div>
 <div class="cartbar-wrap"><button class="cartbar" onclick="go('kasir')"><span>Lihat keranjang (${n})</span><b>${rp(sumCart())}</b></button></div>`}
 function kasir(){const tot=sumCart();
   return `<h2>Keranjang</h2><input id="cust" placeholder="Nama customer (kosong = Umum)" value="${esc(CUSTOMER)}" oninput="CUSTOMER=this.value" style="margin:8px 0 12px">${CART.length?CART.map((x,i)=>`<div class="card row" style="margin:8px 0"><div><strong>${x.name}</strong><div class="muted">${rp(x.price)}</div></div><div class="row"><button class="btn sm ghost" onclick="chg(${i},-1)">−</button><span>${x.qty}</span><button class="btn sm ghost" onclick="chg(${i},1)">+</button></div></div>`).join("")+`<div class="row" style="margin:14px 0"><span>Total</span><h3>${rp(tot)}</h3></div><button class="btn" onclick="go('bayar')">Bayar</button><button class="btn ghost" style="margin-top:8px" onclick="simpanPesanan()">${EDIT_PESANAN?"Simpan perubahan pesanan":"Simpan ke ORDERAN"}</button>`:'<div class="muted">Keranjang kosong.</div><button class="btn ghost" style="margin-top:12px" onclick="go(\'menu\')">Pilih menu</button>'}`}
@@ -402,8 +417,8 @@ function laporan(){
   const omzet=list.reduce((n,s)=>n+s.total,0);
   let cost=0,unknown=false;for(const s of list)for(const x of s.items){if(x.cost==null)unknown=true;else cost+=x.cost*x.qty}
   const margin=unknown?null:omzet-cost;
-  const tabUtama=pemilik?`<div class="tabs" style="margin:10px 0">${["Penjualan","Pengeluaran","Piutang"].map(t=>`<button class="tab ${t===LAP_TAB?"on":""}" onclick="setLapTab('${t}')">${t}</button>`).join("")}</div>`:"";
-  const tabRange=`<div class="tabs" style="margin:6px 0 12px">${["Harian","Mingguan","Bulanan"].map(m=>`<button class="tab ${m===RANGE?"on":""}" onclick="RANGE='${m}';LAP=null;render();muatLaporan()">${m}</button>`).join("")}</div>`;
+  const tabUtama=pemilik?`<div class="seg">${["Penjualan","Pengeluaran","Piutang"].map(t=>`<button class="${t===LAP_TAB?"on":""}" onclick="setLapTab('${t}')">${t}</button>`).join("")}</div>`:"";
+  const tabRange=`<div class="seg" style="margin-top:0">${["Harian","Mingguan","Bulanan"].map(m=>`<button class="${m===RANGE?"on":""}" onclick="RANGE='${m}';LAP=null;render();muatLaporan()">${m}</button>`).join("")}</div>`;
   const note=LAP_NOTE?`<div class="muted" style="margin-bottom:8px;color:var(--warn)">${LAP_NOTE}</div>`:"";
   if(pemilik&&LAP_TAB==="Pengeluaran")return `<h2>Laporan</h2>${tabUtama}${tabRange}${note}${pengeluaranView()}`;
   if(pemilik&&LAP_TAB==="Piutang")return `<h2>Laporan</h2>${tabUtama}${tabRange}${note}${piutangView()}`;
