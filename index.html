@@ -463,7 +463,7 @@ function laporan(){
 <div class="grid"><div class="card"><div class="muted">Total omzet</div><h3>${rp(omzet)}</h3></div><div class="card"><div class="muted">Transaksi</div><h3>${list.length}</h3></div></div>
 ${pemilik?piutangCard():""}${pemilik?`<div class="card" style="margin-top:10px"><div class="muted">Margin kotor</div><h3>${margin==null?"–":rp(margin)}</h3><div class="muted">${unknown?"Isi harga modal di Kelola agar margin terhitung.":""}</div></div>`:""}
 ${pemilik&&margin!=null?`<div class="card" style="margin-top:10px"><div class="muted">Laba bersih (margin dikurangi pengeluaran)</div><h3>${rp(margin-totalKeluar)}</h3></div>`:""}
-<div class="row" style="margin:14px 0 6px"><h3>Transaksi</h3>${pemilik?`<button class="link" onclick="eksporCsv('penjualan')">Ekspor CSV</button>`:""}</div>
+<div class="row" style="margin:14px 0 6px"><h3>Transaksi</h3>${pemilik?`<div style="display:flex;gap:16px"><button class="link" onclick="eksporCsv('penjualan')">Ekspor CSV</button><button class="link" onclick="eksporHtml()">Ekspor HTML</button></div>`:""}</div>
 ${list.slice(0,20).map(saleRow).join("")||'<div class="muted">Belum ada transaksi pada periode ini.</div>'}${semua.some(x=>x.batal)?`<button class="link" style="margin-top:8px" onclick="PREV_BATAL='laporan';go('batal')">Lihat yang dibatalkan (${semua.filter(x=>x.batal).length})</button>`:""}`;
 }
 async function muatPiutang(){
@@ -596,6 +596,26 @@ async function batalkanTransaksi(){
     S.menuPull="";await syncMenu(tok).catch(()=>{});
     save();toast("Transaksi dibatalkan. Stok dikembalikan.");render();
   }catch(e){toast("Gagal membatalkan transaksi. Coba lagi saat online.")}
+}
+async function eksporHtml(){
+  const e2=v=>esc(v==null?"":String(v));
+  const rp2=v=>"Rp "+Math.round(Number(v)||0).toLocaleString("id-ID");
+  const semua=LAP||S.sales.filter(s=>inRange(s.date,RANGE));
+  const list=semua.filter(s=>!s.batal);
+  const total=list.reduce((n,x)=>n+(Number(x.total)||0),0);
+  const qris=list.filter(x=>x.method==="QRIS").reduce((n,x)=>n+(Number(x.total)||0),0);
+  const belanja=(EXP||[]).reduce((n,x)=>n+(Number(x.total)||0),0);
+  const bersih=total-qris-belanja;
+  const [dari,sampai]=rentangTanggal(RANGE);
+  const trRows=[...list].sort((a,b)=>(b.ts||0)-(a.ts||0)).map(x=>`<tr><td>${e2(x.date)}</td><td>${e2(x.time)}</td><td>${e2(x.customer||"Umum")}</td><td>${e2(x.cashier)}</td><td>${e2(x.method)}</td><td class="r">${rp2(x.total)}</td></tr>`).join("");
+  const html=`<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Laporan ARISTA ${e2(RANGE)} ${e2(sampai)}</title><style>body{font-family:Arial,Helvetica,sans-serif;color:#2b211a;margin:16px;font-size:14px}h1{font-size:20px;margin:0}h2{font-size:16px;margin:22px 0 8px;border-bottom:2px solid #b5583a;padding-bottom:4px}.info{color:#7a6b5d;margin-top:4px}table{width:100%;border-collapse:collapse;font-size:13px}th{background:#f3e2d8;text-align:left;padding:7px 6px}td{padding:6px;border-bottom:1px solid #e6dccd;vertical-align:top}.r{text-align:right;white-space:nowrap}.hitung{margin-top:12px;border:1px solid #e6dccd;border-radius:12px;overflow:hidden}.hitung div{display:flex;justify-content:space-between;padding:9px 14px;border-bottom:1px solid #e6dccd}.hitung div:last-child{border-bottom:0;background:#f3e2d8;font-weight:700;font-size:16px}@media print{body{margin:8mm}}</style></head><body>
+<h1>ARISTA Coffee · Laporan ${e2(RANGE)}</h1><div class="info">Periode ${e2(dari)} sampai ${e2(sampai)} · Dibuat ${new Date().toLocaleString("id-ID")}</div>
+<h2>Ringkasan</h2>
+<div class="hitung"><div><span>Total penjualan</span><span>${rp2(total)}</span></div><div><span>Dikurangi QRIS</span><span>− ${rp2(qris)}</span></div><div><span>Dikurangi belanja</span><span>− ${rp2(belanja)}</span></div><div><span>Total bersih</span><span>${rp2(bersih)}</span></div></div>
+<h2>Transaksi</h2><table><tr><th>Tanggal</th><th>Jam</th><th>Customer</th><th>Kasir</th><th>Metode</th><th class="r">Total</th></tr>${trRows||'<tr><td colspan="6">Belum ada transaksi pada periode ini.</td></tr>'}</table>
+</body></html>`;
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([html],{type:"text/html;charset=utf-8"}));a.download="arista-laporan-"+RANGE.toLowerCase()+"-"+today()+".html";document.body.appendChild(a);a.click();a.remove();
+  toast("Ekspor HTML diunduh. Buka di Chrome atau cetak.");
 }
 function eksporCsv(jenis){
   const kutip=v=>{const t=String(v==null?"":v);return /[";\n]/.test(t)?'"'+t.replace(/"/g,'""')+'"':t};
