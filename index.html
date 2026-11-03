@@ -170,7 +170,8 @@ async function unduhLaporanRapi(){
     belanja=(await r.json()).reduce((n,x)=>n+(Number(x.total)||0),0);
   }catch(err){catatanBelanja="Belanja tidak bisa diambil karena tidak ada koneksi. Unduh lagi saat online agar total bersih lengkap."}
   const bersih=total-qris-belanja;
-  const trRows=[...S.sales].sort((a,b)=>(b.ts||0)-(a.ts||0)).map(x=>`<tr class="${x.batal?"batal":""}"><td>${e2(x.date)}</td><td>${e2(x.time)}</td><td>${e2(x.customer||"Umum")}</td><td>${e2(x.cashier)}</td><td>${e2(x.method)}</td><td class="r">${rp2(x.total)}</td><td>${x.batal?"Dibatalkan":"Aktif"}</td></tr>`).join("");
+  const batalArr=S.sales.filter(x=>x.batal);const batalTotal=batalArr.reduce((n,x)=>n+(Number(x.total)||0),0);
+  const trRows=[...S.sales].filter(x=>!x.batal).sort((a,b)=>(b.ts||0)-(a.ts||0)).map(x=>`<tr><td>${e2(x.date)}</td><td>${e2(x.time)}</td><td>${e2(x.customer||"Umum")}</td><td>${e2(x.cashier)}</td><td>${e2(x.method)}</td><td class="r">${rp2(x.total)}</td></tr>`).join("");
   const html=`<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Laporan ARISTA ${today()}</title><style>body{font-family:Arial,Helvetica,sans-serif;color:#2b211a;margin:16px;font-size:14px}h1{font-size:20px;margin:0}h2{font-size:16px;margin:22px 0 8px;border-bottom:2px solid #b5583a;padding-bottom:4px}.info{color:#7a6b5d;margin-top:4px}table{width:100%;border-collapse:collapse;font-size:13px}th{background:#f3e2d8;text-align:left;padding:7px 6px}td{padding:6px;border-bottom:1px solid #e6dccd;vertical-align:top}.r{text-align:right;white-space:nowrap}.batal td{color:#9a8f80;text-decoration:line-through}.hitung{margin-top:12px;border:1px solid #e6dccd;border-radius:12px;overflow:hidden}.hitung div{display:flex;justify-content:space-between;padding:9px 14px;border-bottom:1px solid #e6dccd}.hitung div:last-child{border-bottom:0;background:#f3e2d8;font-weight:700;font-size:16px}.catat{color:#7a6b5d;font-size:12px;margin-top:8px}@media print{body{margin:8mm}}.kasir-banner{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 14px;border-radius:14px;margin:8px 0 12px;font-size:.875rem}
 .kasir-banner.buka{background:#efe6d8;color:#2b211a;border-left:4px solid var(--gold)}
 .kasir-banner.tutup{background:#f3e2d8;color:#8a3b25}
@@ -180,8 +181,8 @@ async function unduhLaporanRapi(){
 <h2>Ringkasan</h2>
 <div class="hitung"><div><span>Total penjualan</span><span>${rp2(total)}</span></div><div><span>Dikurangi QRIS</span><span>− ${rp2(qris)}</span></div><div><span>Dikurangi belanja</span><span>− ${rp2(belanja)}</span></div><div><span>Total bersih</span><span>${rp2(bersih)}</span></div></div>
 ${catatanBelanja?`<div class="catat">${e2(catatanBelanja)}</div>`:""}
-${piutang>0?`<div class="catat">Termasuk piutang ${rp2(piutang)} yang belum dibayar.</div>`:""}
-<h2>Transaksi</h2><table><tr><th>Tanggal</th><th>Jam</th><th>Customer</th><th>Kasir</th><th>Metode</th><th class="r">Total</th><th>Status</th></tr>${trRows||'<tr><td colspan="7">Belum ada transaksi.</td></tr>'}</table>
+${piutang>0?`<div class="catat">Termasuk piutang ${rp2(piutang)} yang belum dibayar.</div>`:""}${batalArr.length?`<div class="catat">${batalArr.length} transaksi dibatalkan (${rp2(batalTotal)}) tidak dihitung.</div>`:""}
+<h2>Transaksi</h2><table><tr><th>Tanggal</th><th>Jam</th><th>Customer</th><th>Kasir</th><th>Metode</th><th class="r">Total</th></tr>${trRows||'<tr><td colspan="6">Belum ada transaksi.</td></tr>'}</table>
 </body></html>`;
   const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([html],{type:"text/html;charset=utf-8"}));a.download="arista-laporan-"+today()+".html";document.body.appendChild(a);a.click();a.remove();
   toast("Laporan rapi diunduh. Buka di Chrome atau cetak.");
@@ -390,6 +391,11 @@ async function muatBeranda(){
   }catch(e){if(req!==BER_REQ)return;BER=null;BER_NOTE="Tidak bisa memuat dari cloud. Menampilkan data di perangkat ini."}
   render();
 }
+function batalView(){
+  const semua=(LAP||S.sales.filter(s=>inRange(s.date,RANGE))).filter(x=>x.batal);
+  return `<button class="link" onclick="go('${PREV_BATAL||'laporan'}')">← Kembali</button><h2>Transaksi dibatalkan</h2><div class="muted" style="margin:4px 0 12px">Transaksi ini tidak dihitung dalam total.</div>${semua.map(saleRow).join("")||'<div class="muted">Tidak ada transaksi dibatalkan.</div>'}`;
+}
+let PREV_BATAL="laporan";
 function beranda(){
   const semua=BER||todaySales();const t=semua.filter(x=>!x.batal);const omzet=t.reduce((n,s)=>n+s.total,0);
   const quick=[["Kasir","menu"],["Laporan","laporan"],...(S.session.role==="Pemilik"?[["Kelola","kelola"]]:[]),["Profil","profil"]];
@@ -397,7 +403,7 @@ function beranda(){
 ${BER_NOTE?`<div class="muted" style="margin-bottom:8px;color:var(--warn)">${BER_NOTE}</div>`:""}
 <div class="grid"><div class="card"><div class="muted">Total hari ini</div><h3>${rp(omzet)}</h3></div><div class="card"><div class="muted">Transaksi</div><h3>${t.length}</h3></div></div>
 ${shiftCard()}<div class="grid" style="margin-top:12px"><button class="btn ghost" style="grid-column:1/-1" onclick="go('tertunda')">ORDERAN${S.pesanan.length?` <span class="badge">${S.pesanan.length}</span>`:""}</button>${quick.map(([l,v])=>`<button class="btn ghost" onclick="go('${v}')">${l}</button>`).join("")}</div>
-<h3 style="margin:18px 0 8px">Transaksi terbaru</h3>${semua.slice(0,3).map(saleRow).join("")||'<div class="muted">Belum ada transaksi.</div>'}`}
+<h3 style="margin:18px 0 8px">Transaksi terbaru</h3>${t.slice(0,3).map(saleRow).join("")||'<div class="muted">Belum ada transaksi.</div>'}${semua.some(x=>x.batal)?`<button class="link" style="margin-top:8px" onclick="PREV_BATAL='beranda';go('batal')">Lihat yang dibatalkan (${semua.filter(x=>x.batal).length})</button>`:""}`}
 let PIUT=null,PIUT_REQ=0,PIUT_CUST=null,PIUT_BAYAR=[],DISKON={tipe:"rp",nilai:0},CUSTOMER="",DETAIL=null,PREV_V="beranda",EDIT_PESANAN=null,LAP_TAB="Penjualan",EXP=null,EXP_REQ=0;
 function menu(){const cats=["Semua",...new Set(S.products.map(p=>p.cat))];const n=CART.reduce((a,x)=>a+x.qty,0);
   const jumlahKat=c=>c==="Semua"?S.products.length:S.products.filter(p=>p.cat===c).length;
@@ -459,7 +465,7 @@ function laporan(){
 ${pemilik?piutangCard():""}${pemilik?`<div class="card" style="margin-top:10px"><div class="muted">Margin kotor</div><h3>${margin==null?"–":rp(margin)}</h3><div class="muted">${unknown?"Isi harga modal di Kelola agar margin terhitung.":""}</div></div>`:""}
 ${pemilik&&margin!=null?`<div class="card" style="margin-top:10px"><div class="muted">Laba bersih (margin dikurangi pengeluaran)</div><h3>${rp(margin-totalKeluar)}</h3></div>`:""}
 <div class="row" style="margin:14px 0 6px"><h3>Transaksi</h3>${pemilik?`<button class="link" onclick="eksporCsv('penjualan')">Ekspor CSV</button>`:""}</div>
-${semua.slice(0,20).map(saleRow).join("")||'<div class="muted">Belum ada transaksi pada periode ini.</div>'}`;
+${list.slice(0,20).map(saleRow).join("")||'<div class="muted">Belum ada transaksi pada periode ini.</div>'}${semua.some(x=>x.batal)?`<button class="link" style="margin-top:8px" onclick="PREV_BATAL='laporan';go('batal')">Lihat yang dibatalkan (${semua.filter(x=>x.batal).length})</button>`:""}`;
 }
 async function muatPiutang(){
   const req=++PIUT_REQ;
@@ -673,7 +679,7 @@ function kelola(){
 function profil(){return `<h2>Profil</h2><div class="card" style="margin:12px 0"><strong>${S.session.name}</strong><div class="muted">${S.session.role}</div></div>
 <div class="card"><div class="row"><span>Status</span><span>${navigator.onLine?"Online":"Offline"}</span></div><div class="row" style="margin-top:6px"><span>Menunggu sinkron</span><span>${S.outbox.length}</span></div><div class="muted" style="margin-top:8px">${SUPABASE_URL?"Terhubung ke cloud.":"Cloud belum dihubungkan. Data tersimpan di perangkat ini."}</div></div>
 <button class="btn ghost" style="margin-top:14px" onclick="keluar()">Keluar dari akun</button>`}
-const VIEWS={login:login_,lupa:lupa_,pulih:pulih_,detail:detailView,tertunda:tertundaView,shift:shiftView,shiftDetail:shiftDetailView,beranda,menu,kasir,bayar,struk,laporan,kelola,profil};
+const VIEWS={login:login_,lupa:lupa_,pulih:pulih_,detail:detailView,tertunda:tertundaView,shift:shiftView,shiftDetail:shiftDetailView,batal:batalView,beranda,menu,kasir,bayar,struk,laporan,kelola,profil};
 function navHtml(){const items=S.session.role==="Pemilik"?[["beranda","Beranda","home"],["menu","Kasir","cart"],["laporan","Laporan","chart"],["kelola","Kelola","gear"],["profil","Profil","user"]]:[["beranda","Beranda","home"],["menu","Kasir","cart"],["laporan","Laporan","chart"],["profil","Profil","user"]];
   const active=v=>V===v||(v==="menu"&&["kasir","bayar","struk"].includes(V));
   return items.map(([v,l,ic])=>`<button class="${active(v)?"on":""}" onclick="go('${v}')">${ICON[ic]}<span>${l}</span></button>`).join("")}
