@@ -365,7 +365,7 @@ async function syncNow(){
   finally{syncing=false;render();if(syncPerlu){syncPerlu=false;syncNow()}}
 }
 function saleRow(s){return `<div class="card row" style="margin-bottom:8px;cursor:pointer;${s.batal?"opacity:.6":""}" onclick="bukaDetail('${s.id}')"><div><strong>${esc(s.customer||"Umum")}</strong><div class="muted">${s.time||""} · ${esc(s.method||"")}${s.batal?' · <span class="batal-chip">dibatalkan</span>':""}</div></div><strong>${rp(s.total)}</strong></div>`}
-function statusBar(){const on=navigator.onLine;return `<div id="status" class="${on?"":"off"}">${on?"Online":"Offline: transaksi tetap aman di perangkat"} · ${S.outbox.length} menunggu sinkron${SUPABASE_URL?"":" · cloud belum dihubungkan"}</div>`}
+function statusBar(){return ""}
 function login_(){return `<div class="auth-logo">${ICON.cup}<h1>ARISTA</h1><div class="muted">Coffee &amp; Roastery</div></div>
 <div class="card" style="margin-top:26px"><h2>Masuk</h2>
 <label class="field">${ICON.mail}<input id="em" type="email" placeholder="Email" autocomplete="username"></label>
