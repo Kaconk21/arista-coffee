@@ -155,15 +155,28 @@ function migrasiLama(){
   if(!raw)return false;
   try{const o=JSON.parse(raw);if(!Array.isArray(o.products)||!Array.isArray(o.sales))return false;const c=convertOld(o);if(c.products.length)S.products=c.products;S.sales=c.sales;localStorage.setItem(MIG_KEY,new Date().toISOString());save();return true}catch(e){return false}
 }
-function unduhLaporanRapi(){
+async function unduhLaporanRapi(){
   const e2=v=>esc(v==null?"":String(v));
   const rp2=v=>"Rp "+Math.round(Number(v)||0).toLocaleString("id-ID");
   const aktif=S.sales.filter(x=>!x.batal);
   const total=aktif.reduce((n,x)=>n+(Number(x.total)||0),0);
+  const qris=aktif.filter(x=>x.method==="QRIS").reduce((n,x)=>n+(Number(x.total)||0),0);
+  const piutang=aktif.filter(x=>x.method==="Piutang").reduce((n,x)=>n+(Number(x.total)||0),0);
+  let belanja=0,catatanBelanja="";
+  try{
+    const tok=await tokenBaru();if(!tok)throw new Error("sesi");
+    const r=await fetch(SUPABASE_URL+"/rest/v1/expenses?select=total&limit=10000",{headers:{apikey:SUPABASE_ANON_KEY,Authorization:"Bearer "+tok}});
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    belanja=(await r.json()).reduce((n,x)=>n+(Number(x.total)||0),0);
+  }catch(err){catatanBelanja="Belanja tidak bisa diambil karena tidak ada koneksi. Unduh lagi saat online agar total bersih lengkap."}
+  const bersih=total-qris-belanja;
   const trRows=[...S.sales].sort((a,b)=>(b.ts||0)-(a.ts||0)).map(x=>`<tr class="${x.batal?"batal":""}"><td>${e2(x.date)}</td><td>${e2(x.time)}</td><td>${e2(x.customer||"Umum")}</td><td>${e2(x.cashier)}</td><td>${e2(x.method)}</td><td class="r">${rp2(x.total)}</td><td>${x.batal?"Dibatalkan":"Aktif"}</td></tr>`).join("");
-  const html=`<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Laporan ARISTA ${today()}</title><style>body{font-family:Arial,Helvetica,sans-serif;color:#2b211a;margin:16px;font-size:14px}h1{font-size:20px;margin:0}h2{font-size:16px;margin:22px 0 8px;border-bottom:2px solid #b5583a;padding-bottom:4px}.info{color:#7a6b5d;margin-top:4px}table{width:100%;border-collapse:collapse;font-size:13px}th{background:#f3e2d8;text-align:left;padding:7px 6px}td{padding:6px;border-bottom:1px solid #e6dccd;vertical-align:top}.r{text-align:right;white-space:nowrap}.batal td{color:#9a8f80;text-decoration:line-through}.ring{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}.kotak{border:1px solid #e6dccd;border-radius:10px;padding:10px 14px}.kotak b{display:block;font-size:17px;margin-top:2px}@media print{body{margin:8mm}}</style></head><body>
+  const html=`<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Laporan ARISTA ${today()}</title><style>body{font-family:Arial,Helvetica,sans-serif;color:#2b211a;margin:16px;font-size:14px}h1{font-size:20px;margin:0}h2{font-size:16px;margin:22px 0 8px;border-bottom:2px solid #b5583a;padding-bottom:4px}.info{color:#7a6b5d;margin-top:4px}table{width:100%;border-collapse:collapse;font-size:13px}th{background:#f3e2d8;text-align:left;padding:7px 6px}td{padding:6px;border-bottom:1px solid #e6dccd;vertical-align:top}.r{text-align:right;white-space:nowrap}.batal td{color:#9a8f80;text-decoration:line-through}.hitung{margin-top:12px;border:1px solid #e6dccd;border-radius:12px;overflow:hidden}.hitung div{display:flex;justify-content:space-between;padding:9px 14px;border-bottom:1px solid #e6dccd}.hitung div:last-child{border-bottom:0;background:#f3e2d8;font-weight:700;font-size:16px}.catat{color:#7a6b5d;font-size:12px;margin-top:8px}@media print{body{margin:8mm}}</style></head><body>
 <h1>ARISTA Coffee · Laporan</h1><div class="info">Dibuat ${new Date().toLocaleString("id-ID")} · Data dari tanggal ${today()}</div>
-<div class="ring"><div class="kotak">Total transaksi aktif<b>${rp2(total)}</b></div><div class="kotak">Jumlah transaksi aktif<b>${aktif.length}</b></div></div>
+<h2>Ringkasan</h2>
+<div class="hitung"><div><span>Total penjualan</span><span>${rp2(total)}</span></div><div><span>Dikurangi QRIS</span><span>− ${rp2(qris)}</span></div><div><span>Dikurangi belanja</span><span>− ${rp2(belanja)}</span></div><div><span>Total bersih</span><span>${rp2(bersih)}</span></div></div>
+${catatanBelanja?`<div class="catat">${e2(catatanBelanja)}</div>`:""}
+${piutang>0?`<div class="catat">Termasuk piutang ${rp2(piutang)} yang belum dibayar.</div>`:""}
 <h2>Transaksi</h2><table><tr><th>Tanggal</th><th>Jam</th><th>Customer</th><th>Kasir</th><th>Metode</th><th class="r">Total</th><th>Status</th></tr>${trRows||'<tr><td colspan="7">Belum ada transaksi.</td></tr>'}</table>
 </body></html>`;
   const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([html],{type:"text/html;charset=utf-8"}));a.download="arista-laporan-"+today()+".html";document.body.appendChild(a);a.click();a.remove();
