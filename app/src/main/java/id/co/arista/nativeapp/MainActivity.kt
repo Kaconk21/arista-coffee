@@ -6,6 +6,8 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -28,6 +30,7 @@ import androidx.compose.material.icons.filled.Coffee
 import androidx.compose.material.icons.filled.PointOfSale
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -81,6 +84,29 @@ private fun AristaApp() {
     val localDb = remember(context) { Room.databaseBuilder(context.applicationContext, AristaDatabase::class.java, "arista-local.db").build() }
     val localDao = remember(localDb) { localDb.localDao() }
     val scope = rememberCoroutineScope()
+    val createBackupLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+        if (uri != null && backupContent.isNotBlank()) {
+            try {
+                context.contentResolver.openOutputStream(uri)?.use { it.write(backupContent.toByteArray(Charsets.UTF_8)) }
+                error = "Backup berhasil disimpan."
+            } catch (e: Exception) { error = "Gagal menyimpan backup: ${e.message ?: "kesalahan file"}" }
+        }
+    }
+    val restoreBackupLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            try {
+                val raw = context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
+                    ?: throw IllegalStateException("File tidak dapat dibaca.")
+                val parsed = org.json.JSONObject(raw)
+                if (parsed.optString("app") != "arista-native" || parsed.optInt("version") != 1 ||
+                    !parsed.has("pendingOrders") || !parsed.has("syncOutbox") || !parsed.has("shifts")) {
+                    throw IllegalArgumentException("Format backup ARISTA tidak sesuai.")
+                }
+                pendingRestore = parsed
+                error = ""
+            } catch (e: Exception) { error = e.message ?: "File backup tidak valid." }
+        }
+    }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var recoveryBusy by remember { mutableStateOf(false) }
@@ -138,6 +164,8 @@ private fun AristaApp() {
     var staffEmail by remember { mutableStateOf("") }
     var staffPassword by remember { mutableStateOf("") }
     var manageTab by remember { mutableStateOf("Menu") }
+    var backupContent by remember { mutableStateOf("") }
+    var pendingRestore by remember { mutableStateOf<org.json.JSONObject?>(null) }
 
     Surface(modifier = Modifier.fillMaxSize(), color = Cream) {
         if (session == null || profile == null) {
@@ -905,6 +933,39 @@ Text("Transaksi terbaru", color = Ink, fontWeight = FontWeight.SemiBold)
                         if (error.isNotBlank()) Text(error, color = Color(0xFFB3261E), fontSize = 12.sp)
                     } else if (profile?.peran.equals("Pemilik", ignoreCase = true) && selectedTab == 3) {
                         val owner = true
+                        Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                            Column(Modifier.padding(12.dp)) {
+                                Text("Backup dan pemulihan", color = Ink, fontWeight = FontWeight.SemiBold)
+                                Text("Simpan data lokal aplikasi. Snapshot menu dan transaksi disertakan sebagai arsip; pemulihan tidak mengubah data cloud.", color = Muted, fontSize = 11.sp)
+                                Spacer(Modifier.height(8.dp))
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Button(enabled = !managementBusy, onClick = {
+                                        managementBusy = true
+                                        scope.launch {
+                                            try {
+                                                val pending = localDao.getPendingOrders()
+                                                val outbox = localDao.getOutbox()
+                                                val shifts = localDao.getShifts()
+                                                val root = org.json.JSONObject()
+                                                    .put("app", "arista-native")
+                                                    .put("version", 1)
+                                                    .put("createdAt", java.time.Instant.now().toString())
+                                                    .put("productsSnapshot", org.json.JSONArray().apply { products.forEach { p -> put(org.json.JSONObject().put("id", p.id).put("name", p.name).put("category", p.category).put("price", p.price).put("cost", p.cost).put("stock", p.stock)) } })
+                                                    .put("salesSnapshot", org.json.JSONArray(reportSales.toString()))
+                                                    .put("pendingOrders", org.json.JSONArray().apply { pending.forEach { p -> put(org.json.JSONObject().put("id", p.id).put("customer", p.customer).put("itemsJson", p.itemsJson).put("total", p.total).put("updatedAt", p.updatedAt)) } })
+                                                    .put("syncOutbox", org.json.JSONArray().apply { outbox.forEach { q -> put(org.json.JSONObject().put("id", q.id).put("payloadJson", q.payloadJson).put("createdAt", q.createdAt).put("retryCount", q.retryCount).put("lastError", q.lastError)) } })
+                                                    .put("shifts", org.json.JSONArray().apply { shifts.forEach { sh -> put(org.json.JSONObject().put("id", sh.id).put("startedAt", sh.startedAt).put("openingCash", sh.openingCash).put("endedAt", sh.endedAt ?: org.json.JSONObject.NULL).put("closingCash", sh.closingCash ?: org.json.JSONObject.NULL).put("difference", sh.difference ?: org.json.JSONObject.NULL)) } })
+                                                backupContent = root.toString(2)
+                                                createBackupLauncher.launch("arista-backup-${java.time.LocalDate.now()}.json")
+                                                error = ""
+                                            } catch (e: Exception) { error = e.message ?: "Backup gagal dibuat." }
+                                            finally { managementBusy = false }
+                                        }
+                                    }, colors = ButtonDefaults.buttonColors(containerColor = Terracotta)) { Text("Unduh backup") }
+                                    OutlinedButton(enabled = !managementBusy, onClick = { restoreBackupLauncher.launch(arrayOf("application/json", "text/json")) }) { Text("Pulihkan backup") }
+                                }
+                            }
+                        }
                         if (owner) {
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                                 listOf("Menu", "Kategori", "Harga", "Akun kasir").forEach { tab ->
@@ -1076,6 +1137,47 @@ Text("Transaksi terbaru", color = Ink, fontWeight = FontWeight.SemiBold)
                 }
             }
         }
+    }
+    pendingRestore?.let { backup ->
+        AlertDialog(
+            onDismissRequest = { pendingRestore = null },
+            title = { Text("Pulihkan backup lokal?") },
+            text = { Text("Data order tertunda, antrean sinkronisasi, dan riwayat shift di perangkat ini akan diganti dengan isi backup. Menu dan transaksi di cloud tidak diubah.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    val data = pendingRestore ?: return@TextButton
+                    pendingRestore = null
+                    scope.launch {
+                        try {
+                            localDao.clearPendingOrders()
+                            localDao.clearOutbox()
+                            localDao.clearShifts()
+                            val pending = data.getJSONArray("pendingOrders")
+                            for (i in 0 until pending.length()) {
+                                val o = pending.getJSONObject(i)
+                                localDao.savePendingOrder(PendingOrderEntity(o.getString("id"), o.optString("customer"), o.getString("itemsJson"), o.optDouble("total"), o.optLong("updatedAt")))
+                            }
+                            val queue = data.getJSONArray("syncOutbox")
+                            for (i in 0 until queue.length()) {
+                                val o = queue.getJSONObject(i)
+                                localDao.enqueue(SyncOutboxEntity(o.getString("id"), o.getString("payloadJson"), o.optLong("createdAt"), o.optInt("retryCount"), if (o.isNull("lastError")) null else o.optString("lastError")))
+                            }
+                            val shifts = data.getJSONArray("shifts")
+                            for (i in 0 until shifts.length()) {
+                                val o = shifts.getJSONObject(i)
+                                localDao.saveShift(ShiftEntity(o.getString("id"), o.optLong("startedAt"), o.optDouble("openingCash"), if (o.isNull("endedAt")) null else o.optLong("endedAt"), if (o.isNull("closingCash")) null else o.optDouble("closingCash"), if (o.isNull("difference")) null else o.optDouble("difference")))
+                            }
+                            pendingOrders = localDao.getPendingOrders()
+                            shiftHistory = localDao.getShifts()
+                            activeShift = shiftHistory.firstOrNull { it.endedAt == null }
+                            queuedSalesCount = localDao.getOutbox().size
+                            error = "Backup lokal berhasil dipulihkan."
+                        } catch (e: Exception) { error = e.message ?: "Pemulihan backup gagal." }
+                    }
+                }) { Text("Pulihkan") }
+            },
+            dismissButton = { TextButton(onClick = { pendingRestore = null }) { Text("Batal") } }
+        )
     }
 }
 
