@@ -7,6 +7,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -70,6 +72,8 @@ private fun AristaApp() {
     var password by remember { mutableStateOf("") }
     var session by remember { mutableStateOf<AristaSession?>(null) }
     var profile by remember { mutableStateOf<AristaProfile?>(null) }
+    var products by remember { mutableStateOf<List<AristaProduct>>(emptyList()) }
+    var productsLoading by remember { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf("") }
     var selectedTab by remember { mutableIntStateOf(0) }
@@ -121,6 +125,8 @@ private fun AristaApp() {
                                             val userProfile = api.profile(loggedIn.accessToken, loggedIn.userId)
                                             session = loggedIn
                                             profile = userProfile
+                                            productsLoading = true
+                                            try { products = api.products(loggedIn.accessToken) } finally { productsLoading = false }
                                         } catch (e: Exception) {
                                             error = e.message ?: "Tidak dapat masuk. Periksa koneksi."
                                         } finally { busy = false }
@@ -176,22 +182,52 @@ private fun AristaApp() {
                     Text("Halo, ${profile!!.nama}", color = Ink, fontSize = 19.sp, fontWeight = FontWeight.SemiBold)
                     Text("Peran: ${profile!!.peran}", color = Muted, fontSize = 13.sp)
                     Spacer(Modifier.height(18.dp))
-                    val descriptions = listOf(
-                        "Ringkasan usaha ARISTA akan ditampilkan di sini.",
-                        "Modul kasir sedang dibangun: menu, keranjang, pembayaran, dan pesanan.",
-                        "Modul laporan penjualan, laba, dan pengeluaran sedang dibangun.",
-                        "Pengelolaan menu, akun kasir, dan pengaturan sedang dibangun."
-                    )
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(18.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-                    ) {
-                        Column(Modifier.padding(18.dp)) {
-                            Text(labels[selectedTab], color = Terracotta, fontSize = 19.sp, fontWeight = FontWeight.SemiBold)
-                            Spacer(Modifier.height(8.dp))
-                            Text(descriptions[selectedTab], color = Muted, fontSize = 14.sp)
+                    if (selectedTab == 1) {
+                        Text("Pilih menu", color = Ink, fontSize = 19.sp, fontWeight = FontWeight.SemiBold)
+                        Spacer(Modifier.height(8.dp))
+                        when {
+                            productsLoading -> CircularProgressIndicator(color = Terracotta)
+                            products.isEmpty() -> Text("Belum ada menu aktif atau gagal memuat menu.", color = Muted, fontSize = 14.sp)
+                            else -> LazyColumn(verticalArrangement = Arrangement.spacedBy(9.dp)) {
+                                items(products, key = { it.id }) { product ->
+                                    Card(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(14.dp),
+                                        colors = CardDefaults.cardColors(containerColor = Color.White)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth().padding(14.dp),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Column(Modifier.weight(1f)) {
+                                                Text(product.name, color = Ink, fontWeight = FontWeight.SemiBold)
+                                                Text(product.category, color = Muted, fontSize = 12.sp)
+                                            }
+                                            Text("Rp ${product.price.toLong()}", color = Terracotta, fontWeight = FontWeight.Bold)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        val descriptions = listOf(
+                            "Ringkasan usaha ARISTA akan ditampilkan di sini.",
+                            "",
+                            "Modul laporan penjualan, laba, dan pengeluaran sedang dibangun.",
+                            "Pengelolaan menu, akun kasir, dan pengaturan sedang dibangun."
+                        )
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(18.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                        ) {
+                            Column(Modifier.padding(18.dp)) {
+                                Text(labels[selectedTab], color = Terracotta, fontSize = 19.sp, fontWeight = FontWeight.SemiBold)
+                                Spacer(Modifier.height(8.dp))
+                                Text(descriptions[selectedTab], color = Muted, fontSize = 14.sp)
+                            }
                         }
                     }
                 }
