@@ -542,7 +542,7 @@ private fun AristaApp() {
                         if (pendingOrders.isEmpty()) {
                             Text("Belum ada pesanan tertunda.", color = Muted, fontSize = 12.sp, modifier = Modifier.padding(vertical = 10.dp))
                         } else {
-                            LazyColumn(Modifier.height(180.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                 items(pendingOrders, key = { it.id }) { order ->
                                     Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
                                         Row(Modifier.fillMaxWidth().padding(10.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
