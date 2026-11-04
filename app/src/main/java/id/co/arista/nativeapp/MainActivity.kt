@@ -415,7 +415,14 @@ private fun AristaApp() {
                                                     var queuedAfterNetworkError = false
                                                     if (online) {
                                                         try {
-                                                            api.saveSale(active.accessToken, sale)
+                                                            try {
+                                                                api.saveSale(active.accessToken, sale)
+                                                            } catch (e: AristaHttpException) {
+                                                                if (e.statusCode != 401) throw e
+                                                                val refreshed = api.refreshSession(active.refreshToken)
+                                                                session = refreshed
+                                                                api.saveSale(refreshed.accessToken, sale)
+                                                            }
                                                         } catch (e: AristaHttpException) {
                                                             throw e
                                                         } catch (e: java.io.IOException) {
