@@ -75,6 +75,8 @@ private fun AristaApp() {
     var profile by remember { mutableStateOf<AristaProfile?>(null) }
     var products by remember { mutableStateOf<List<AristaProduct>>(emptyList()) }
     var productsLoading by remember { mutableStateOf(false) }
+    var reportSales by remember { mutableStateOf(org.json.JSONArray()) }
+    var reportsLoading by remember { mutableStateOf(false) }
     var cart by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
     var paymentBusy by remember { mutableStateOf(false) }
     var paymentMethod by remember { mutableStateOf("Tunai") }
@@ -161,7 +163,17 @@ private fun AristaApp() {
                         labels.forEachIndexed { index, label ->
                             NavigationBarItem(
                                 selected = selectedTab == index,
-                                onClick = { selectedTab = index },
+                                onClick = {
+                                    selectedTab = index
+                                    if (index == 2 && session != null) {
+                                        reportsLoading = true
+                                        scope.launch {
+                                            try { reportSales = api.sales(session!!.accessToken); error = "" }
+                                            catch (e: Exception) { error = e.message ?: "Laporan gagal dimuat." }
+                                            finally { reportsLoading = false }
+                                        }
+                                    }
+                                },
                                 icon = { Icon(icons[index], contentDescription = label) },
                                 label = { Text(label, fontSize = 11.sp) }
                             )
@@ -300,6 +312,53 @@ private fun AristaApp() {
                                 }
                             }
                         }
+                    } else if (selectedTab == 2) {
+                        val omzet = (0 until reportSales.length()).sumOf { i ->
+                            val row = reportSales.optJSONObject(i) ?: org.json.JSONObject()
+                            if (row.optBoolean("batal")) 0.0 else row.optDouble("total")
+                        }
+                        val jumlah = (0 until reportSales.length()).count { i ->
+                            !(reportSales.optJSONObject(i)?.optBoolean("batal") ?: false)
+                        }
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                            Text("Laporan penjualan", color = Ink, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                            TextButton(onClick = {
+                                reportsLoading = true
+                                scope.launch {
+                                    try { reportSales = api.sales(session!!.accessToken); error = "" }
+                                    catch (e: Exception) { error = e.message ?: "Gagal memuat laporan." }
+                                    finally { reportsLoading = false }
+                                }
+                            }) { Text("Muat ulang", color = Terracotta) }
+                        }
+                        if (reportsLoading) CircularProgressIndicator(color = Terracotta)
+                        else {
+                            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                                Column(Modifier.padding(16.dp)) {
+                                    Text("Omzet transaksi aktif", color = Muted, fontSize = 12.sp)
+                                    Text("Rp \${omzet.toLong()}", color = Terracotta, fontSize = 23.sp, fontWeight = FontWeight.Bold)
+                                    Text("Jumlah transaksi: \${jumlah}", color = Ink)
+                                    Text("Data maksimal 200 transaksi terakhir", color = Muted, fontSize = 11.sp)
+                                }
+                            }
+                            Spacer(Modifier.height(12.dp))
+                            Text("Transaksi terbaru", color = Ink, fontWeight = FontWeight.SemiBold)
+                            LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                items((0 until minOf(reportSales.length(), 50)).map { reportSales.getJSONObject(it) }) { sale ->
+                                    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                                        Column(Modifier.padding(12.dp)) {
+                                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                                Text(sale.optString("customer", "Umum"), color = Ink, fontWeight = FontWeight.SemiBold)
+                                                Text("Rp \${sale.optDouble("total").toLong()}", color = Terracotta, fontWeight = FontWeight.Bold)
+                                            }
+                                            Text("\${sale.optString("sale_date")} · \${sale.optString("sale_time")} · \${sale.optString("method")}", color = Muted, fontSize = 12.sp)
+                                            if (sale.optBoolean("batal")) Text("DIBATALKAN", color = Color(0xFFB3261E), fontSize = 11.sp)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        if (error.isNotBlank()) Text(error, color = Color(0xFFB3261E), fontSize = 12.sp)
                     } else {
                         val descriptions = listOf(
                             "Ringkasan usaha ARISTA akan ditampilkan di sini.",
