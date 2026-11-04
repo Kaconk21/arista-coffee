@@ -140,6 +140,10 @@ class AristaApi {
         call("/rest/v1/expenses", "POST", expense, token)
     }
 
+    suspend fun deleteExpense(token: String, id: String): String = withContext(Dispatchers.IO) {
+        call("/rest/v1/expenses?id=eq.$id", "DELETE", null, token)
+    }
+
     suspend fun cashierAction(token: String, payload: JSONObject): String = withContext(Dispatchers.IO) {
         call("/functions/v1/swift-worker", "POST", payload, token)
     }
