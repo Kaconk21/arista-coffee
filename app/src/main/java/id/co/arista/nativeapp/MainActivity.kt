@@ -91,6 +91,10 @@ private fun AristaApp() {
     var productStock by remember { mutableStateOf("0") }
     var editingProductId by remember { mutableStateOf<String?>(null) }
     var managementBusy by remember { mutableStateOf(false) }
+    var staffRows by remember { mutableStateOf(org.json.JSONArray()) }
+    var staffName by remember { mutableStateOf("") }
+    var staffEmail by remember { mutableStateOf("") }
+    var staffPassword by remember { mutableStateOf("") }
 
     Surface(modifier = Modifier.fillMaxSize(), color = Cream) {
         if (session == null || profile == null) {
@@ -181,6 +185,14 @@ private fun AristaApp() {
                                             try { reportSales = api.sales(session!!.accessToken); error = "" }
                                             catch (e: Exception) { error = e.message ?: "Data gagal dimuat." }
                                             finally { reportsLoading = false }
+                                        }
+                                    }
+                                    if (index == 3 && session != null && profile?.peran == "Pemilik") {
+                                        managementBusy = true
+                                        scope.launch {
+                                            try { staffRows = org.json.JSONArray(api.cashierAction(session!!.accessToken, org.json.JSONObject().put("aksi", "daftar"))); error = "" }
+                                            catch (e: Exception) { error = e.message ?: "Daftar akun gagal dimuat." }
+                                            finally { managementBusy = false }
                                         }
                                     }
                                 },
@@ -473,6 +485,58 @@ private fun AristaApp() {
                                                 scope.launch {
                                                     try { api.deleteProduct(token, p.id); products = api.products(token); error = "" }
                                                     catch (e: Exception) { error = e.message ?: "Menu gagal dihapus." }
+                                                    finally { managementBusy = false }
+                                                }
+                                            }) { Text("Hapus", color = Color(0xFFB3261E)) }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        if (owner) {
+                            Spacer(Modifier.height(12.dp))
+                            Text("Akun kasir", color = Ink, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                                Column(Modifier.padding(12.dp)) {
+                                    Text("Tambah akun kasir", color = Terracotta, fontWeight = FontWeight.SemiBold)
+                                    OutlinedTextField(staffName, { staffName = it }, Modifier.fillMaxWidth(), label = { Text("Nama kasir") }, singleLine = true)
+                                    OutlinedTextField(staffEmail, { staffEmail = it }, Modifier.fillMaxWidth(), label = { Text("Email kasir") }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email))
+                                    OutlinedTextField(staffPassword, { staffPassword = it }, Modifier.fillMaxWidth(), label = { Text("Password awal (min. 6 karakter)") }, singleLine = true, visualTransformation = PasswordVisualTransformation())
+                                    Button(enabled = !managementBusy && staffName.isNotBlank() && staffEmail.contains("@") && staffPassword.length >= 6, onClick = {
+                                        val token = session?.accessToken ?: return@Button
+                                        managementBusy = true
+                                        scope.launch {
+                                            try {
+                                                val payload = org.json.JSONObject().put("aksi", "tambah").put("nama", staffName.trim()).put("email", staffEmail.trim()).put("password", staffPassword)
+                                                api.cashierAction(token, payload)
+                                                staffName = ""; staffEmail = ""; staffPassword = ""
+                                                staffRows = org.json.JSONArray(api.cashierAction(token, org.json.JSONObject().put("aksi", "daftar")))
+                                                error = ""
+                                            } catch (e: Exception) { error = e.message ?: "Akun kasir gagal dibuat." }
+                                            finally { managementBusy = false }
+                                        }
+                                    }, colors = ButtonDefaults.buttonColors(containerColor = Terracotta)) { Text("Buat akun kasir") }
+                                }
+                            }
+                            Text("Pengguna terdaftar", color = Ink, fontWeight = FontWeight.SemiBold)
+                            if (managementBusy) CircularProgressIndicator(color = Terracotta)
+                            else LazyColumn(Modifier.height(180.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                items((0 until staffRows.length()).map { staffRows.getJSONObject(it) }) { staff ->
+                                    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                                        Row(Modifier.fillMaxWidth().padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                                            Column(Modifier.weight(1f)) {
+                                                Text(staff.optString("nama"), color = Ink, fontWeight = FontWeight.SemiBold)
+                                                Text("${staff.optString("email")} · ${staff.optString("peran")}", color = Muted, fontSize = 11.sp)
+                                            }
+                                            if (staff.optString("peran") == "Kasir") TextButton(onClick = {
+                                                val token = session?.accessToken ?: return@TextButton
+                                                managementBusy = true
+                                                scope.launch {
+                                                    try {
+                                                        api.cashierAction(token, org.json.JSONObject().put("aksi", "hapus").put("id", staff.optString("id")))
+                                                        staffRows = org.json.JSONArray(api.cashierAction(token, org.json.JSONObject().put("aksi", "daftar")))
+                                                        error = ""
+                                                    } catch (e: Exception) { error = e.message ?: "Akun gagal dihapus." }
                                                     finally { managementBusy = false }
                                                 }
                                             }) { Text("Hapus", color = Color(0xFFB3261E)) }
