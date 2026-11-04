@@ -557,12 +557,10 @@ private fun AristaApp() {
                             val date = try { java.time.LocalDate.parse(expense.optString("tanggal")) } catch (_: Exception) { null }
                             date != null && !date.isBefore(periodStart) && !date.isAfter(todayDate)
                         }
-                        val omzet = periodSales.sumOf { row ->
-                            val row = reportSales.optJSONObject(i) ?: org.json.JSONObject()
-                            if (row.optBoolean("batal")) 0.0 else row.optDouble("total")
+                        val omzet = periodSales.sumOf { sale ->
+                            if (sale.optBoolean("batal")) 0.0 else sale.optDouble("total")
                         }
                         val modal = periodSales.sumOf { sale ->
-                            val sale = reportSales.optJSONObject(i) ?: org.json.JSONObject()
                             if (sale.optBoolean("batal")) 0.0 else {
                                 val rows = sale.optJSONArray("items") ?: org.json.JSONArray()
                                 (0 until rows.length()).sumOf { k ->
@@ -572,9 +570,7 @@ private fun AristaApp() {
                             }
                         }
                         val expenseTotal = periodExpenses.sumOf { it.optDouble("total") }
-                        val jumlah = (0 until reportSales.length()).count { i ->
-                            !(reportSales.optJSONObject(i)?.optBoolean("batal") ?: false)
-                        }
+                        val jumlah = periodSales.count { !it.optBoolean("batal") }
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                             Text("Laporan penjualan", color = Ink, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                             TextButton(onClick = {
