@@ -512,16 +512,19 @@ private fun AristaApp() {
                                 }
                             }
                         }
-                        if (pendingOrders.isNotEmpty()) {
-                            Spacer(Modifier.height(12.dp))
-                            Text("Pesanan tersimpan di perangkat", color = Ink, fontWeight = FontWeight.SemiBold)
-                            LazyColumn(Modifier.height(150.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Spacer(Modifier.height(12.dp))
+                        Text("ORDERAN", color = Ink, fontWeight = FontWeight.SemiBold)
+                        Text("Pesanan yang belum dibayar. Stok belum berkurang sampai pembayaran selesai.", color = Muted, fontSize = 11.sp)
+                        if (pendingOrders.isEmpty()) {
+                            Text("Belum ada pesanan tertunda.", color = Muted, fontSize = 12.sp, modifier = Modifier.padding(vertical = 10.dp))
+                        } else {
+                            LazyColumn(Modifier.height(180.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                 items(pendingOrders, key = { it.id }) { order ->
                                     Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
                                         Row(Modifier.fillMaxWidth().padding(10.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                                             Column(Modifier.weight(1f)) {
                                                 Text(order.customer, color = Ink, fontWeight = FontWeight.SemiBold)
-                                                Text("Rp ${order.total.toLong()}", color = Muted, fontSize = 11.sp)
+                                                Text("${org.json.JSONArray(order.itemsJson).length()} jenis menu · Rp ${order.total.toLong()}", color = Muted, fontSize = 11.sp)
                                             }
                                             TextButton(onClick = {
                                                 val ids = org.json.JSONArray(order.itemsJson)
@@ -530,7 +533,7 @@ private fun AristaApp() {
                                                 cart = restored
                                                 customerName = order.customer
                                                 editingPendingId = order.id
-                                            }) { Text("Buka", color = Terracotta) }
+                                            }) { Text("Buka & bayar", color = Terracotta) }
                                             TextButton(onClick = { scope.launch { localDao.deletePendingOrder(order.id); pendingOrders = localDao.getPendingOrders() } }) { Text("Hapus", color = Color(0xFFB3261E)) }
                                         }
                                     }
