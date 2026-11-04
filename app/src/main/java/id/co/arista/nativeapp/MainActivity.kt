@@ -140,7 +140,10 @@ private fun AristaApp() {
                                             session = loggedIn
                                             profile = userProfile
                                             productsLoading = true
-                                            try { products = api.products(loggedIn.accessToken) } finally { productsLoading = false }
+                                            try {
+                                                products = api.products(loggedIn.accessToken)
+                                                reportSales = api.sales(loggedIn.accessToken)
+                                            } finally { productsLoading = false }
                                         } catch (e: Exception) {
                                             error = e.message ?: "Tidak dapat masuk. Periksa koneksi."
                                         } finally { busy = false }
