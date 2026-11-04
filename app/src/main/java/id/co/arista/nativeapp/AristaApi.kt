@@ -71,6 +71,10 @@ class AristaApi {
         }
     }
 
+    suspend fun saveSale(token: String, sale: JSONObject): String = withContext(Dispatchers.IO) {
+        call("/rest/v1/rpc/catat_penjualan", "POST", JSONObject().put("p_sale", sale), token)
+    }
+
     suspend fun cashierAction(token: String, payload: JSONObject): String = withContext(Dispatchers.IO) {
         call("/functions/v1/swift-worker", "POST", payload, token)
     }
