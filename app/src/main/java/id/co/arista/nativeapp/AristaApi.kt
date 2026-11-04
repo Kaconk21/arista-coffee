@@ -19,6 +19,7 @@ data class AristaSession(
 )
 
 data class AristaProfile(val id: String, val nama: String, val peran: String)
+data class AristaProduct(val id: String, val name: String, val category: String, val price: Double, val cost: Double, val stock: Int)
 
 class AristaApi {
     private val client = OkHttpClient.Builder()
@@ -48,6 +49,26 @@ class AristaApi {
         ))
         val row = rows.optJSONObject(0) ?: throw IOException("Profil pengguna tidak ditemukan.")
         AristaProfile(row.getString("id"), row.getString("nama"), row.getString("peran"))
+    }
+
+    suspend fun products(token: String): List<AristaProduct> = withContext(Dispatchers.IO) {
+        val rows = JSONArray(call(
+            "/rest/v1/products?deleted=eq.false&select=id,name,cat,price,cost,stock&order=name.asc",
+            "GET", null, token
+        ))
+        buildList {
+            for (i in 0 until rows.length()) {
+                val row = rows.getJSONObject(i)
+                add(AristaProduct(
+                    row.optString("id"),
+                    row.optString("name"),
+                    row.optString("cat"),
+                    row.optDouble("price"),
+                    row.optDouble("cost"),
+                    row.optInt("stock")
+                ))
+            }
+        }
     }
 
     suspend fun cashierAction(token: String, payload: JSONObject): String = withContext(Dispatchers.IO) {
