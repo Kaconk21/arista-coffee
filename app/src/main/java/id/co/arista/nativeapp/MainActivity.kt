@@ -77,6 +77,20 @@ private val Terracotta = Color(0xFFB5583A)
 private val Ink = Color(0xFF2B211A)
 private val Muted = Color(0xFF7A6B5D)
 
+private fun saleTimestamp(sale: org.json.JSONObject): Long {
+    val date = sale.optString("sale_date")
+    val time = sale.optString("sale_time").ifBlank { "00:00:00" }
+    val patterns = listOf("yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd HH:mm", "yyyy-MM-dd'T'HH:mm:ss")
+    for (pattern in patterns) {
+        try {
+            val parser = java.text.SimpleDateFormat(pattern, java.util.Locale.US)
+            parser.isLenient = false
+            return parser.parse("$date $time")?.time ?: continue
+        } catch (_: Exception) { }
+    }
+    return 0L
+}
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -338,6 +352,14 @@ private fun AristaApp() {
                     Text("Peran: ${profile!!.peran}", color = Muted, fontSize = 13.sp)
                     Spacer(Modifier.height(12.dp))
                     if (selectedTab == 1 && cashierSection != "Struk") {
+                        val shiftSales = (0 until reportSales.length()).mapNotNull { reportSales.optJSONObject(it) }
+                            .filter { sale ->
+                                if (sale.optBoolean("batal")) false
+                                else saleTimestamp(sale) >= (activeShift?.startedAt ?: Long.MAX_VALUE)
+                            }
+                        val shiftCashSales = shiftSales.filter { it.optString("method") == "Tunai" }.sumOf { it.optDouble("total") }
+                        val shiftAllSales = shiftSales.sumOf { it.optDouble("total") }
+                        val expectedCash = (activeShift?.openingCash ?: 0.0) + shiftCashSales
                         Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
                             Column(Modifier.padding(12.dp)) {
                                 if (activeShift == null) {
@@ -350,14 +372,40 @@ private fun AristaApp() {
                                     }, colors = ButtonDefaults.buttonColors(containerColor = Terracotta)) { Text("Buka shift") }
                                 } else {
                                     Text("Shift aktif", color = Terracotta, fontWeight = FontWeight.SemiBold)
-                                    Text("Modal awal: Rp ${activeShift!!.openingCash.toLong()}", color = Ink, fontSize = 12.sp)
-                                    OutlinedTextField(closingCashInput, { closingCashInput = it.filter(Char::isDigit) }, Modifier.fillMaxWidth().height(54.dp), label = { Text("Uang kas akhir (Rp)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true)
+                                    Text("Sejak " + java.text.SimpleDateFormat("HH:mm", java.util.Locale("id", "ID")).format(java.util.Date(activeShift!!.startedAt)), color = Muted, fontSize = 11.sp)
+                                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                        Text("Uang awal", color = Muted, fontSize = 12.sp)
+                                        Text("Rp ${activeShift!!.openingCash.toLong()}", color = Ink, fontSize = 12.sp)
+                                    }
+                                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                        Text("Penjualan tunai", color = Muted, fontSize = 12.sp)
+                                        Text("Rp ${shiftCashSales.toLong()}", color = Ink, fontSize = 12.sp)
+                                    }
+                                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                        Text("Semua penjualan (${shiftSales.size} transaksi)", color = Muted, fontSize = 12.sp)
+                                        Text("Rp ${shiftAllSales.toLong()}", color = Ink, fontSize = 12.sp)
+                                    }
+                                    HorizontalDivider(color = Cream, modifier = Modifier.padding(vertical = 7.dp))
+                                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                        Text("Kas seharusnya di laci", color = Ink, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+                                        Text("Rp ${expectedCash.toLong()}", color = Terracotta, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                    }
+                                    OutlinedTextField(closingCashInput, { closingCashInput = it.filter(Char::isDigit) }, Modifier.fillMaxWidth().height(54.dp), label = { Text("Uang yang dihitung sekarang (Rp)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true)
+                                    if (closingCashInput.isNotBlank()) {
+                                        val difference = (closingCashInput.toDoubleOrNull() ?: 0.0) - expectedCash
+                                        Text(
+                                            when { difference == 0.0 -> "Selisih: Pas"; difference > 0 -> "Selisih: Lebih Rp ${difference.toLong()}"; else -> "Selisih: Kurang Rp ${(-difference).toLong()}" },
+                                            color = if (difference < 0) Color(0xFFB3261E) else Terracotta,
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                    }
                                     Button(enabled = closingCashInput.isNotBlank(), onClick = {
                                         val current = activeShift ?: return@Button
                                         val endAmount = closingCashInput.toDoubleOrNull() ?: 0.0
-                                        val closed = current.copy(endedAt = System.currentTimeMillis(), closingCash = endAmount, difference = endAmount - current.openingCash)
+                                        val closed = current.copy(endedAt = System.currentTimeMillis(), closingCash = endAmount, difference = endAmount - expectedCash)
                                         scope.launch { localDao.saveShift(closed); activeShift = null; shiftHistory = localDao.getShifts(); closingCashInput = "" }
-                                    }, colors = ButtonDefaults.buttonColors(containerColor = Terracotta)) { Text("Tutup shift") }
+                                    }, colors = ButtonDefaults.buttonColors(containerColor = Terracotta)) { Text("Tutup kasir") }
                                 }
                             }
                         }
