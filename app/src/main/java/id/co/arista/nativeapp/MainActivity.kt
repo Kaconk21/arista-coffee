@@ -450,142 +450,180 @@ private fun AristaApp() {
                             }
                         }
                         if (cashierSection == "Keranjang") {
-                        val chosen = products.filter { (cart[it.id] ?: 0) > 0 }
-                        if (chosen.isNotEmpty()) {
-                            val subtotal = chosen.sumOf { it.price * (cart[it.id] ?: 0) }
-                            val discountValue = discountInput.toDoubleOrNull() ?: 0.0
-                            val discountAmount = if (discountType == "%") (subtotal * discountValue.coerceIn(0.0, 100.0) / 100.0).toLong().toDouble() else discountValue.coerceAtLeast(0.0).coerceAtMost(subtotal)
-                            val total = (subtotal - discountAmount).coerceAtLeast(0.0)
-                            Spacer(Modifier.height(10.dp))
-                            Card(modifier = Modifier.fillMaxWidth().weight(1f), colors = CardDefaults.cardColors(containerColor = Color.White)) {
-                                Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(14.dp)) {
-                                    Text("Keranjang · ${cart.values.sum()} item", color = Ink, fontWeight = FontWeight.Bold)
-                                    chosen.forEach { p ->
+                            val chosen = products.filter { (cart[it.id] ?: 0) > 0 }
+                            if (chosen.isEmpty()) {
+                                Text("Keranjang kosong.", color = Muted, fontSize = 12.sp)
+                                OutlinedButton(onClick = { cashierSection = "Menu" }) { Text("Pilih menu") }
+                            } else {
+                                val subtotal = chosen.sumOf { it.price * (cart[it.id] ?: 0) }
+                                Card(Modifier.fillMaxWidth().weight(1f), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                                    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(14.dp)) {
+                                        Text("Keranjang · ${cart.values.sum()} item", color = Ink, fontWeight = FontWeight.Bold)
+                                        chosen.forEach { p ->
+                                            Row(Modifier.fillMaxWidth().padding(vertical = 7.dp), verticalAlignment = Alignment.CenterVertically) {
+                                                Column(Modifier.weight(1f)) {
+                                                    Text(p.name, color = Ink, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                                                    Text("Rp ${p.price.toLong()} × ${cart[p.id]}", color = Muted, fontSize = 11.sp)
+                                                }
+                                                Text("Rp ${(p.price * (cart[p.id] ?: 0)).toLong()}", color = Ink, fontSize = 12.sp)
+                                                TextButton(onClick = { cart = if ((cart[p.id] ?: 0) <= 1) cart - p.id else cart + (p.id to ((cart[p.id] ?: 0) - 1)) }) { Text("−") }
+                                                Text("${cart[p.id] ?: 0}", color = Ink, fontSize = 12.sp)
+                                                TextButton(onClick = { cart = cart + (p.id to ((cart[p.id] ?: 0) + 1)) }) { Text("+") }
+                                            }
+                                            Divider(color = Cream)
+                                        }
+                                        Spacer(Modifier.height(8.dp))
+                                        OutlinedTextField(customerName, { customerName = it }, Modifier.fillMaxWidth(), label = { Text("Nama customer (kosong = Umum)") }, singleLine = true)
+                                        Spacer(Modifier.height(8.dp))
                                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                            Text("${p.name} × ${cart[p.id]}", color = Muted, fontSize = 12.sp)
-                                            Text("Rp ${(p.price * (cart[p.id] ?: 0)).toLong()}", color = Ink, fontSize = 12.sp)
+                                            Text("Subtotal", color = Muted)
+                                            Text("Rp ${subtotal.toLong()}", color = Ink, fontWeight = FontWeight.SemiBold)
                                         }
-                                    }
-                                    Spacer(Modifier.height(6.dp))
-                                    Text("Total Rp ${total.toLong()}", color = Terracotta, fontWeight = FontWeight.Bold)
-                                    OutlinedTextField(customerName, { customerName = it }, Modifier.fillMaxWidth(), label = { Text("Nama customer (kosong = Umum)") }, singleLine = true)
-                                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        OutlinedTextField(discountInput, { discountInput = it.filter { ch -> ch.isDigit() || ch == '.' } }, Modifier.weight(1f), label = { Text("Diskon") }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
-                                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                            listOf("Rp", "%").forEach { type ->
-                                                if (discountType == type) Button(onClick = { discountType = type }, colors = ButtonDefaults.buttonColors(containerColor = Terracotta)) { Text(type) }
-                                                else OutlinedButton(onClick = { discountType = type }) { Text(type) }
-                                            }
-                                        }
-                                    }
-                                    Text("Subtotal Rp ${subtotal.toLong()} · Potongan Rp ${discountAmount.toLong()}", color = Muted, fontSize = 12.sp)
-                                    Text("Total setelah diskon Rp ${total.toLong()}", color = Terracotta, fontWeight = FontWeight.Bold)
-                                    listOf(listOf("Tunai", "QRIS", "Debit/Kredit"), listOf("Transfer", "Piutang")).forEach { methodRow ->
-                                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                            methodRow.forEach { method ->
-                                            if (paymentMethod == method) Button(onClick = { paymentMethod = method }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(containerColor = Terracotta)) { Text(method) }
-                                            else OutlinedButton(onClick = { paymentMethod = method }, modifier = Modifier.weight(1f)) { Text(method, fontSize = 11.sp) }
-                                            }
-                                        }
-                                    }
-                                    if (paymentMethod == "Tunai") {
-                                        OutlinedTextField(value = cashReceived, onValueChange = { cashReceived = it.filter(Char::isDigit) }, modifier = Modifier.fillMaxWidth(), label = { Text("Uang diterima (Rp)") }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
-                                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                            listOf(total.toLong(), 20000L, 50000L).distinct().forEach { amount ->
-                                                TextButton(onClick = { cashReceived = amount.toString() }) { Text(if (amount == total.toLong()) "Uang pas" else "Rp ${amount}") }
-                                            }
-                                        }
-                                        val received = cashReceived.toLongOrNull() ?: 0L
-                                        Text("Kembalian Rp ${(received - total.toLong()).coerceAtLeast(0L)}", color = Muted, fontSize = 13.sp)
-                                    }
-                                    OutlinedButton(enabled = !savingPending && activeShift != null, modifier = Modifier.fillMaxWidth(), onClick = {
-                                        savingPending = true
-                                        scope.launch {
-                                            try {
-                                                val rows = org.json.JSONArray()
-                                                chosen.forEach { p -> rows.put(org.json.JSONObject().put("id", p.id).put("qty", cart[p.id] ?: 0)) }
-                                                localDao.savePendingOrder(PendingOrderEntity(editingPendingId ?: java.util.UUID.randomUUID().toString(), customerName.trim(), rows.toString(), subtotal, System.currentTimeMillis()))
-                                                pendingOrders = localDao.getPendingOrders(); editingPendingId = null; cart = emptyMap(); cashReceived = ""; customerName = ""; discountInput = ""; cashierSection = "ORDERAN"; error = ""
-                                            } catch (e: Exception) { error = e.message ?: "Pesanan gagal disimpan." }
-                                            finally { savingPending = false }
-                                        }
-                                    }) { Text(if (savingPending) "Menyimpan pesanan…" else "Simpan pesanan") }
-                                    Button(
-                                        enabled = !paymentBusy && activeShift != null && (if (paymentMethod == "Piutang") customerName.isNotBlank() else paymentMethod != "Tunai" || (cashReceived.toLongOrNull() ?: 0L) >= total.toLong()),
-                                        modifier = Modifier.fillMaxWidth(),
-                                        colors = ButtonDefaults.buttonColors(containerColor = Terracotta),
-                                        onClick = {
-                                            val active = session ?: return@Button
-                                            paymentBusy = true
+                                        Spacer(Modifier.height(12.dp))
+                                        OutlinedButton(enabled = !savingPending && activeShift != null, modifier = Modifier.fillMaxWidth(), onClick = {
+                                            savingPending = true
                                             scope.launch {
                                                 try {
                                                     val rows = org.json.JSONArray()
-                                                    chosen.forEach { p ->
-                                                        rows.put(org.json.JSONObject().put("id", p.id).put("name", p.name)
-                                                            .put("cat", p.category).put("price", p.price).put("cost", p.cost)
-                                                            .put("qty", cart[p.id] ?: 0))
-                                                    }
-                                                    val now = java.time.LocalDateTime.now()
-                                                    val sale = org.json.JSONObject()
-                                                        .put("id", java.util.UUID.randomUUID().toString())
-                                                        .put("sale_date", now.toLocalDate().toString())
-                                                        .put("sale_time", now.toLocalTime().toString().take(5))
-                                                        .put("items", rows).put("total", total)
-                                                        .put("method", paymentMethod).put("paid", if (paymentMethod == "Piutang") 0L else if (paymentMethod == "Tunai") (cashReceived.toLongOrNull() ?: 0L) else total.toLong()).put("change_amount", if (paymentMethod == "Tunai") ((cashReceived.toLongOrNull() ?: 0L) - total.toLong()).coerceAtLeast(0L) else 0L)
-                                                        .put("cashier_name", profile?.nama ?: "")
-                                                        .put("customer", customerName.trim().ifBlank { "Umum" }).put("diskon", discountAmount.toLong())
-                                                    val online = hasValidatedInternet(context)
-                                                    var queuedAfterNetworkError = false
-                                                    if (online) {
-                                                        try {
-                                                            try {
-                                                                api.saveSale(active.accessToken, sale)
-                                                            } catch (e: AristaHttpException) {
-                                                                if (e.statusCode != 401) throw e
-                                                                val refreshed = api.refreshSession(active.refreshToken)
-                                                                session = refreshed
-                                                                api.saveSale(refreshed.accessToken, sale)
-                                                            }
-                                                        } catch (e: AristaHttpException) {
-                                                            throw e
-                                                        } catch (e: java.io.IOException) {
-                                                            // Keep the same sale UUID: sync checks the server before retrying,
-                                                            // preventing a duplicate if the server committed but the reply was lost.
-                                                            localDao.enqueue(SyncOutboxEntity(sale.getString("id"), sale.toString(), System.currentTimeMillis()))
-                                                            queuedSalesCount = localDao.getOutbox().size
-                                                            queuedAfterNetworkError = true
-                                                        }
-                                                    } else {
-                                                        localDao.enqueue(SyncOutboxEntity(sale.getString("id"), sale.toString(), System.currentTimeMillis()))
-                                                        queuedSalesCount = localDao.getOutbox().size
-                                                    }
-                                                    cart = emptyMap()
-                                                    editingPendingId?.let { localDao.deletePendingOrder(it) }
-                                                    editingPendingId = null
-                                                    pendingOrders = localDao.getPendingOrders()
-                                                    cashierSection = "Menu"
-                                                    cashReceived = ""; customerName = ""; discountInput = ""; discountType = "Rp"
-                                                    if (online && !queuedAfterNetworkError) {
-                                                        try {
-                                                            products = api.products(active.accessToken)
-                                                            reportSales = api.sales(active.accessToken)
-                                                        } catch (_: Exception) {
-                                                            // The sale is already confirmed; a refresh failure must not invite duplicate payment.
-                                                        }
-                                                        error = ""
-                                                    } else {
-                                                        error = "Transaksi disimpan di perangkat. Akan disinkronkan saat internet tersedia."
-                                                    }
-                                                } catch (e: Exception) {
-                                                    error = e.message ?: "Transaksi gagal disimpan."
-                                                } finally { paymentBusy = false }
+                                                    chosen.forEach { p -> rows.put(org.json.JSONObject().put("id", p.id).put("qty", cart[p.id] ?: 0)) }
+                                                    localDao.savePendingOrder(PendingOrderEntity(editingPendingId ?: java.util.UUID.randomUUID().toString(), customerName.trim(), rows.toString(), subtotal, System.currentTimeMillis()))
+                                                    pendingOrders = localDao.getPendingOrders(); editingPendingId = null; cart = emptyMap(); cashReceived = ""; customerName = ""; discountInput = ""; cashierSection = "ORDERAN"; error = ""
+                                                } catch (e: Exception) { error = e.message ?: "Pesanan gagal disimpan." }
+                                                finally { savingPending = false }
+                                            }
+                                        }) { Text(if (savingPending) "Menyimpan pesanan…" else "Simpan pesanan") }
+                                        Button(enabled = activeShift != null, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = Terracotta), onClick = { cashierSection = "Pembayaran" }) {
+                                            Text("Lanjut ke pembayaran")
+                                        }
+                                        if (error.isNotBlank()) Text(error, color = Color(0xFFB3261E), fontSize = 12.sp)
+                                    }
+                                }
+                            }
+                        }
+                        if (cashierSection == "Pembayaran") {
+                            val chosen = products.filter { (cart[it.id] ?: 0) > 0 }
+                            if (chosen.isEmpty()) {
+                                Text("Keranjang kosong. Pilih menu terlebih dahulu.", color = Muted, fontSize = 12.sp)
+                                OutlinedButton(onClick = { cashierSection = "Menu" }) { Text("Pilih menu") }
+                            } else {
+                                val subtotal = chosen.sumOf { it.price * (cart[it.id] ?: 0) }
+                                val discountValue = discountInput.toDoubleOrNull() ?: 0.0
+                                val discountAmount = if (discountType == "%") (subtotal * discountValue.coerceIn(0.0, 100.0) / 100.0).toLong().toDouble() else discountValue.coerceAtLeast(0.0).coerceAtMost(subtotal)
+                                val total = (subtotal - discountAmount).coerceAtLeast(0.0)
+                                Card(Modifier.fillMaxWidth().weight(1f), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                                    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(14.dp)) {
+                                        Text("Pembayaran", color = Ink, fontWeight = FontWeight.Bold)
+                                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                            Text("Subtotal", color = Muted, fontSize = 12.sp)
+                                            Text("Rp ${subtotal.toLong()}", color = Ink, fontSize = 12.sp)
+                                        }
+                                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            OutlinedTextField(discountInput, { discountInput = it.filter { ch -> ch.isDigit() || ch == '.' } }, Modifier.weight(1f), label = { Text("Diskon") }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
+                                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                listOf("Rp", "%").forEach { type ->
+                                                    if (discountType == type) Button(onClick = { discountType = type }, contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp), colors = ButtonDefaults.buttonColors(containerColor = Terracotta)) { Text(type) }
+                                                    else OutlinedButton(onClick = { discountType = type }, contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)) { Text(type) }
+                                                }
                                             }
                                         }
-                                    ) {
-                                        if (paymentBusy) CircularProgressIndicator(color = Color.White, modifier = Modifier.height(18.dp))
-                                        else Text("BAYAR ${paymentMethod.uppercase()}")
+                                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                            Text("Potongan", color = Muted, fontSize = 12.sp)
+                                            Text("-Rp ${discountAmount.toLong()}", color = Muted, fontSize = 12.sp)
+                                        }
+                                        Text("TOTAL Rp ${total.toLong()}", color = Terracotta, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                                        Spacer(Modifier.height(10.dp))
+                                        listOf(listOf("Tunai", "QRIS", "Debit/Kredit"), listOf("Transfer", "Piutang")).forEach { methodRow ->
+                                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                                methodRow.forEach { method ->
+                                                    if (paymentMethod == method) Button(onClick = { paymentMethod = method }, modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 2.dp, vertical = 7.dp), colors = ButtonDefaults.buttonColors(containerColor = Terracotta)) { Text(method, fontSize = 10.sp) }
+                                                    else OutlinedButton(onClick = { paymentMethod = method }, modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 2.dp, vertical = 7.dp)) { Text(method, fontSize = 10.sp) }
+                                                }
+                                            }
+                                        }
+                                        if (paymentMethod == "Tunai") {
+                                            OutlinedTextField(value = cashReceived, onValueChange = { cashReceived = it.filter(Char::isDigit) }, modifier = Modifier.fillMaxWidth(), label = { Text("Uang diterima (Rp)") }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
+                                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                listOf(total.toLong(), 20000L, 50000L).distinct().forEach { amount ->
+                                                    TextButton(onClick = { cashReceived = amount.toString() }) { Text(if (amount == total.toLong()) "Uang pas" else "Rp $amount", fontSize = 11.sp) }
+                                                }
+                                            }
+                                            val received = cashReceived.toLongOrNull() ?: 0L
+                                            Text("Kembalian Rp ${(received - total.toLong()).coerceAtLeast(0L)}", color = Muted, fontSize = 12.sp)
+                                        } else if (paymentMethod == "Piutang") {
+                                            Text("Dicatat sebagai piutang untuk ${customerName.trim().ifBlank { "customer tanpa nama" }}.", color = Muted, fontSize = 12.sp)
+                                        } else {
+                                            Text("Pembayaran ${paymentMethod} dicatat manual.", color = Muted, fontSize = 12.sp)
+                                        }
+                                        Button(
+                                            enabled = !paymentBusy && activeShift != null && (if (paymentMethod == "Piutang") customerName.isNotBlank() else paymentMethod != "Tunai" || (cashReceived.toLongOrNull() ?: 0L) >= total.toLong()),
+                                            modifier = Modifier.fillMaxWidth(),
+                                            colors = ButtonDefaults.buttonColors(containerColor = Terracotta),
+                                            onClick = {
+                                                val active = session ?: return@Button
+                                                paymentBusy = true
+                                                scope.launch {
+                                                    try {
+                                                        val rows = org.json.JSONArray()
+                                                        chosen.forEach { p ->
+                                                            rows.put(org.json.JSONObject().put("id", p.id).put("name", p.name).put("cat", p.category).put("price", p.price).put("cost", p.cost).put("qty", cart[p.id] ?: 0))
+                                                        }
+                                                        val now = java.time.LocalDateTime.now()
+                                                        val sale = org.json.JSONObject()
+                                                            .put("id", java.util.UUID.randomUUID().toString())
+                                                            .put("sale_date", now.toLocalDate().toString())
+                                                            .put("sale_time", now.toLocalTime().toString().take(5))
+                                                            .put("items", rows).put("total", total)
+                                                            .put("method", paymentMethod)
+                                                            .put("paid", if (paymentMethod == "Piutang") 0L else if (paymentMethod == "Tunai") (cashReceived.toLongOrNull() ?: 0L) else total.toLong())
+                                                            .put("change_amount", if (paymentMethod == "Tunai") ((cashReceived.toLongOrNull() ?: 0L) - total.toLong()).coerceAtLeast(0L) else 0L)
+                                                            .put("cashier_name", profile?.nama ?: "")
+                                                            .put("customer", customerName.trim().ifBlank { "Umum" })
+                                                            .put("diskon", discountAmount.toLong())
+                                                        val online = hasValidatedInternet(context)
+                                                        var queuedAfterNetworkError = false
+                                                        if (online) {
+                                                            try {
+                                                                try { api.saveSale(active.accessToken, sale) }
+                                                                catch (e: AristaHttpException) {
+                                                                    if (e.statusCode != 401) throw e
+                                                                    val refreshed = api.refreshSession(active.refreshToken)
+                                                                    session = refreshed
+                                                                    api.saveSale(refreshed.accessToken, sale)
+                                                                }
+                                                            } catch (e: AristaHttpException) { throw e }
+                                                            catch (e: java.io.IOException) {
+                                                                localDao.enqueue(SyncOutboxEntity(sale.getString("id"), sale.toString(), System.currentTimeMillis()))
+                                                                queuedSalesCount = localDao.getOutbox().size
+                                                                queuedAfterNetworkError = true
+                                                            }
+                                                        } else {
+                                                            localDao.enqueue(SyncOutboxEntity(sale.getString("id"), sale.toString(), System.currentTimeMillis()))
+                                                            queuedSalesCount = localDao.getOutbox().size
+                                                        }
+                                                        cart = emptyMap()
+                                                        editingPendingId?.let { localDao.deletePendingOrder(it) }
+                                                        editingPendingId = null
+                                                        pendingOrders = localDao.getPendingOrders()
+                                                        cashierSection = "Menu"
+                                                        cashReceived = ""; customerName = ""; discountInput = ""; discountType = "Rp"
+                                                        if (online && !queuedAfterNetworkError) {
+                                                            try { products = api.products(active.accessToken); reportSales = api.sales(active.accessToken) } catch (_: Exception) { }
+                                                            error = ""
+                                                        } else {
+                                                            error = "Transaksi disimpan di perangkat. Akan disinkronkan saat internet tersedia."
+                                                        }
+                                                    } catch (e: Exception) {
+                                                        error = e.message ?: "Transaksi gagal disimpan."
+                                                    } finally { paymentBusy = false }
+                                                }
+                                            }
+                                        ) {
+                                            if (paymentBusy) CircularProgressIndicator(color = Color.White, modifier = Modifier.height(18.dp))
+                                            else Text("BAYAR ${paymentMethod.uppercase()}")
+                                        }
+                                        OutlinedButton(enabled = !paymentBusy, modifier = Modifier.fillMaxWidth(), onClick = { cashierSection = "Keranjang" }) { Text("Kembali ke keranjang") }
+                                        if (error.isNotBlank()) Text(error, color = Color(0xFFB3261E), fontSize = 12.sp)
                                     }
-                                    if (error.isNotBlank()) Text(error, color = Color(0xFFB3261E), fontSize = 12.sp)
                                 }
                             }
                         }
