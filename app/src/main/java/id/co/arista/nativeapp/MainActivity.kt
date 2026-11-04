@@ -433,7 +433,7 @@ private fun AristaApp() {
                             }
                         }
                         if (shiftHistory.isNotEmpty()) {
-                            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                                 Column(Modifier.padding(12.dp)) {
                                     Text("Riwayat shift kasir", color = Ink, fontWeight = FontWeight.SemiBold)
                                     Spacer(Modifier.height(6.dp))
@@ -465,7 +465,7 @@ private fun AristaApp() {
                             else shiftHistory.forEach { oldShift ->
                                 val startText = java.text.SimpleDateFormat("dd/MM/yy HH:mm", java.util.Locale("id", "ID")).format(java.util.Date(oldShift.startedAt))
                                 val endText = oldShift.endedAt?.let { java.text.SimpleDateFormat("HH:mm", java.util.Locale("id", "ID")).format(java.util.Date(it)) } ?: "Masih aktif"
-                                Card(Modifier.fillMaxWidth().padding(bottom = 7.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                                Card(Modifier.fillMaxWidth().padding(bottom = 7.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                                     Column(Modifier.padding(10.dp)) {
                                         Text(startText + " – " + endText, color = Ink, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
                                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("Uang awal", color = Muted, fontSize = 11.sp); Text("Rp ${oldShift.openingCash.toLong()}", color = Ink, fontSize = 11.sp) }
@@ -548,7 +548,7 @@ private fun AristaApp() {
                                 OutlinedButton(onClick = { cashierSection = "Menu" }) { Text("Pilih menu") }
                             } else {
                                 val subtotal = chosen.sumOf { it.price * (cart[it.id] ?: 0) }
-                                Card(Modifier.fillMaxWidth().weight(1f), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                                Card(Modifier.fillMaxWidth().weight(1f), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                                     Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(12.dp)) {
                                         Text("Keranjang · ${cart.values.sum()} item", color = Ink, fontWeight = FontWeight.Bold)
                                         chosen.forEach { p ->
@@ -609,7 +609,7 @@ private fun AristaApp() {
                                 val discountValue = discountInput.toDoubleOrNull() ?: 0.0
                                 val discountAmount = if (discountType == "%") (subtotal * discountValue.coerceIn(0.0, 100.0) / 100.0).toLong().toDouble() else discountValue.coerceAtLeast(0.0).coerceAtMost(subtotal)
                                 val total = (subtotal - discountAmount).coerceAtLeast(0.0)
-                                Card(Modifier.fillMaxWidth().weight(1f), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                                Card(Modifier.fillMaxWidth().weight(1f), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                                     Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(12.dp)) {
                                         Text("Pembayaran", color = Ink, fontWeight = FontWeight.Bold)
                                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -737,7 +737,7 @@ private fun AristaApp() {
                                 }
                                 val receiptTotal = receipt.optDouble("total")
                                 val receiptDiscount = receipt.optDouble("diskon")
-                                Card(Modifier.fillMaxWidth().weight(1f), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                                Card(Modifier.fillMaxWidth().weight(1f), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                                     Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                                         Text("ARISTA", color = Ink, fontSize = 22.sp, fontWeight = FontWeight.Bold, letterSpacing = 3.sp)
                                         Text("COFFEE & ROASTERY", color = Muted, fontSize = 10.sp, letterSpacing = 1.sp)
@@ -813,7 +813,7 @@ private fun AristaApp() {
                         }
                         if (queuedSalesCount > 0 && cashierSection != "Struk") {
                             Spacer(Modifier.height(10.dp))
-                            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                                 Column(Modifier.padding(12.dp)) {
                                     Text("$queuedSalesCount transaksi menunggu sinkronisasi", color = Ink, fontWeight = FontWeight.SemiBold)
                                     OutlinedButton(enabled = !syncingSales && hasValidatedInternet(context), modifier = Modifier.fillMaxWidth(), onClick = {
@@ -844,7 +844,7 @@ private fun AristaApp() {
                                 items(pendingOrders, key = { it.id }) { order ->
                                     val savedItems = org.json.JSONArray(order.itemsJson)
                                     val itemSummary = (0 until savedItems.length()).mapNotNull { i -> savedItems.optJSONObject(i)?.let { row -> "${row.optString("name", "Menu")} × ${row.optInt("qty", 1)}" } }.joinToString(", ")
-                                    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                                    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                                         Row(Modifier.fillMaxWidth().padding(10.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                                             Column(Modifier.weight(1f)) {
                                                 Text(order.customer, color = Ink, fontWeight = FontWeight.SemiBold)
@@ -962,7 +962,7 @@ private fun AristaApp() {
                                 }.filter { it.optDouble("sisa") > 0.0 }
                                 val customers = unpaid.map { it.optString("customer").ifBlank { "Umum" } }.distinct().sorted()
                                 val totalDue = unpaid.sumOf { it.optDouble("sisa") }
-                                Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                                Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                                     Column(Modifier.padding(12.dp)) {
                                         Text("Total piutang belum lunas", color = Muted, fontSize = 12.sp)
                                         Text("Rp ${totalDue.toLong()}", color = Terracotta, fontSize = 22.sp, fontWeight = FontWeight.Bold)
@@ -974,7 +974,7 @@ private fun AristaApp() {
                                     if (customers.isEmpty()) Text("Tidak ada piutang yang belum lunas.", color = Muted, fontSize = 12.sp)
                                     customers.forEach { customer ->
                                         val due = unpaid.filter { it.optString("customer").ifBlank { "Umum" } == customer }.sumOf { it.optDouble("sisa") }
-                                        Card(Modifier.fillMaxWidth().clickable { receivableCustomer = customer }, colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                                        Card(Modifier.fillMaxWidth().clickable { receivableCustomer = customer }, colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                                             Row(Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                                                 Text(customer, color = Ink, fontWeight = FontWeight.SemiBold)
                                                 Text("Rp ${due.toLong()}", color = Terracotta, fontWeight = FontWeight.Bold)
@@ -1011,7 +1011,7 @@ private fun AristaApp() {
                                     }, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = Terracotta)) { Text("Bayar sekaligus") }
                                     Text("Nota belum lunas", color = Ink, fontWeight = FontWeight.SemiBold)
                                     customerNotes.forEach { note ->
-                                        Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                                        Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                                             Column(Modifier.padding(12.dp)) {
                                                 Text(note.optString("sale_date"), color = Ink, fontWeight = FontWeight.SemiBold)
                                                 Text("Total Rp ${note.optDouble("total").toLong()} · Sudah dibayar Rp ${note.optDouble("dibayar").toLong()}", color = Muted, fontSize = 11.sp)
@@ -1039,7 +1039,7 @@ private fun AristaApp() {
                         } else if (reportTab == "Pengeluaran" && owner) {
                             val expenseSum = periodExpenses.sumOf { it.optDouble("total") }
                             Text("Laporan pengeluaran", color = Ink, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                                 Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                     Text("Total pengeluaran: Rp ${expenseSum.toLong()}", color = Terracotta, fontWeight = FontWeight.Bold)
                                     OutlinedTextField(expenseName, { expenseName = it }, Modifier.fillMaxWidth().height(56.dp), label = { Text("Nama pengeluaran") }, singleLine = true)
@@ -1073,7 +1073,7 @@ private fun AristaApp() {
                             Text("Riwayat pengeluaran", color = Ink, fontWeight = FontWeight.SemiBold)
                             LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
                                 items(periodExpenses, key = { it.optString("id") }) { expense ->
-                                    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                                    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                                         Row(Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                                             Column(Modifier.weight(1f)) {
                                                 Text(expense.optString("nama"), color = Ink, fontWeight = FontWeight.SemiBold)
@@ -1097,7 +1097,7 @@ private fun AristaApp() {
                             }
                         } else if (reportsLoading) CircularProgressIndicator(color = Terracotta)
                         else {
-                            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                                 Column(Modifier.padding(16.dp)) {
                                     Text("Omzet transaksi aktif", color = Muted, fontSize = 12.sp)
                                     Text("Rp ${omzet.toLong()}", color = Terracotta, fontSize = 23.sp, fontWeight = FontWeight.Bold)
@@ -1115,7 +1115,7 @@ private fun AristaApp() {
 Text("Transaksi terbaru", color = Ink, fontWeight = FontWeight.SemiBold)
                             LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 items(periodSales.filterNot { it.optBoolean("batal") }.take(50)) { sale ->
-                                    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                                    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                                         Column(Modifier.padding(12.dp)) {
                                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                                 Text(sale.optString("customer", "Umum"), color = Ink, fontWeight = FontWeight.SemiBold)
@@ -1161,13 +1161,13 @@ Text("Transaksi terbaru", color = Ink, fontWeight = FontWeight.SemiBold)
                         Text("Ringkasan usaha", color = Ink, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(10.dp))
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            Card(Modifier.weight(1f), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                            Card(Modifier.weight(1f), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                                 Column(Modifier.padding(12.dp)) {
                                     Text("Omzet hari ini", color = Muted, fontSize = 11.sp)
                                     Text("Rp ${todayTotal.toLong()}", color = Terracotta, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                                 }
                             }
-                            Card(Modifier.weight(1f), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                            Card(Modifier.weight(1f), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                                 Column(Modifier.padding(12.dp)) {
                                     Text("Transaksi", color = Muted, fontSize = 11.sp)
                                     Text("${todaySales.size}", color = Ink, fontSize = 18.sp, fontWeight = FontWeight.Bold)
@@ -1196,7 +1196,7 @@ Text("Transaksi terbaru", color = Ink, fontWeight = FontWeight.SemiBold)
                             modifier = Modifier.fillMaxWidth()
                         ) { Text("ORDERAN · " + pendingOrders.size, color = Terracotta, fontSize = 12.sp) }
                         Spacer(Modifier.height(10.dp))
-                        Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                        Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                             Column(Modifier.padding(12.dp)) {
                                 Text("Menu aktif", color = Muted, fontSize = 12.sp)
                                 Text("${products.size} menu", color = Ink, fontSize = 20.sp, fontWeight = FontWeight.Bold)
@@ -1215,7 +1215,7 @@ Text("Transaksi terbaru", color = Ink, fontWeight = FontWeight.SemiBold)
                         if (reportsLoading) CircularProgressIndicator(color = Terracotta)
                         else LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
                             items(todaySales.take(10)) { sale ->
-                                Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                                Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                                     Row(Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                                         Column(Modifier.weight(1f)) {
                                             Text(sale.optString("customer", "Umum"), color = Ink, fontWeight = FontWeight.SemiBold)
@@ -1229,7 +1229,7 @@ Text("Transaksi terbaru", color = Ink, fontWeight = FontWeight.SemiBold)
                         if (error.isNotBlank()) Text(error, color = Color(0xFFB3261E), fontSize = 12.sp)
                     } else if (profile?.peran.equals("Pemilik", ignoreCase = true) && selectedTab == 3) {
                         val owner = true
-                        Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                        Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                             Column(Modifier.padding(12.dp)) {
                                 Text("Backup dan pemulihan", color = Ink, fontWeight = FontWeight.SemiBold)
                                 Text("Simpan data lokal aplikasi. Snapshot menu dan transaksi disertakan sebagai arsip; pemulihan tidak mengubah data cloud.", color = Muted, fontSize = 11.sp)
@@ -1273,7 +1273,7 @@ Text("Transaksi terbaru", color = Ink, fontWeight = FontWeight.SemiBold)
                         if (manageTab == "Menu" || !owner) {
                         Text("Daftar menu", color = Ink, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                         if (owner) {
-                            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                                 Column(Modifier.padding(12.dp)) {
                                     Text(if (editingProductId == null) "Tambah menu" else "Ubah menu", color = Terracotta, fontWeight = FontWeight.SemiBold)
                                     OutlinedTextField(productName, { productName = it }, Modifier.fillMaxWidth().height(56.dp), label = { Text("Nama menu") }, singleLine = true)
@@ -1306,7 +1306,7 @@ Text("Transaksi terbaru", color = Ink, fontWeight = FontWeight.SemiBold)
                         } else Text("Akun Kasir hanya dapat melihat daftar menu.", color = Muted, fontSize = 12.sp)
                         LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
                             items(products, key = { it.id }) { p ->
-                                Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                                Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                                     Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                                         Column(Modifier.weight(1f)) {
                                             Text(p.name, color = Ink, fontWeight = FontWeight.SemiBold)
@@ -1335,7 +1335,7 @@ Text("Transaksi terbaru", color = Ink, fontWeight = FontWeight.SemiBold)
                             if (categoryCounts.isEmpty()) Text("Belum ada kategori.", color = Muted, fontSize = 12.sp)
                             else LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
                                 items(categoryCounts) { entry ->
-                                    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                                    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                                         Row(Modifier.fillMaxWidth().padding(14.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                                             Text(entry.first, color = Ink, fontWeight = FontWeight.SemiBold)
                                             Text("${entry.second} menu", color = Muted, fontSize = 12.sp)
@@ -1349,7 +1349,7 @@ Text("Transaksi terbaru", color = Ink, fontWeight = FontWeight.SemiBold)
                             LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
                                 items(products, key = { it.id }) { product ->
                                     val marginPercent = if (product.price > 0) ((product.price - product.cost) / product.price * 100).toInt() else 0
-                                    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                                    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                                         Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                                             Column(Modifier.weight(1f)) {
                                                 Text(product.name, color = Ink, fontWeight = FontWeight.SemiBold)
@@ -1365,7 +1365,7 @@ Text("Transaksi terbaru", color = Ink, fontWeight = FontWeight.SemiBold)
                         if (manageTab == "Akun kasir" && owner) {
                             Spacer(Modifier.height(12.dp))
                             Text("Kelola akun kasir", color = Ink, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                                 Column(Modifier.padding(12.dp)) {
                                     Text("Tambah akun kasir", color = Terracotta, fontWeight = FontWeight.SemiBold)
                                     OutlinedTextField(staffName, { staffName = it }, Modifier.fillMaxWidth().height(56.dp), label = { Text("Nama kasir") }, singleLine = true)
@@ -1391,7 +1391,7 @@ Text("Transaksi terbaru", color = Ink, fontWeight = FontWeight.SemiBold)
                             if (managementBusy) CircularProgressIndicator(color = Terracotta)
                             else LazyColumn(Modifier.height(180.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                 items((0 until staffRows.length()).map { staffRows.getJSONObject(it) }) { staff ->
-                                    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                                    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                                         Row(Modifier.fillMaxWidth().padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
                                             Column(Modifier.weight(1f)) {
                                                 Text(staff.optString("nama"), color = Ink, fontWeight = FontWeight.SemiBold)
@@ -1417,7 +1417,7 @@ Text("Transaksi terbaru", color = Ink, fontWeight = FontWeight.SemiBold)
                         if (error.isNotBlank()) Text(error, color = Color(0xFFB3261E), fontSize = 12.sp)
                     } else {
                         Text("Profil", color = Ink, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                        Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                        Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                             Column(Modifier.padding(16.dp)) {
                                 Text(profile!!.nama, color = Ink, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
                                 Text(profile!!.peran, color = Muted, fontSize = 13.sp)
