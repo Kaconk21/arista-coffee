@@ -279,7 +279,7 @@ private fun AristaApp() {
                         when {
                             productsLoading -> CircularProgressIndicator(color = Terracotta)
                             products.isEmpty() -> Text("Belum ada menu aktif atau gagal memuat menu.", color = Muted, fontSize = 14.sp)
-                            else -> LazyColumn(verticalArrangement = Arrangement.spacedBy(9.dp)) {
+                            else -> LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(9.dp)) {
                                 items(products, key = { it.id }) { product ->
                                     Card(
                                         modifier = Modifier.fillMaxWidth().clickable {
