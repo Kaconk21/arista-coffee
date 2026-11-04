@@ -392,8 +392,12 @@ private fun AristaApp() {
                                                     pendingOrders = localDao.getPendingOrders()
                                                     cashReceived = ""
                                                     if (online) {
-                                                        products = api.products(active.accessToken)
-                                                        reportSales = api.sales(active.accessToken)
+                                                        try {
+                                                            products = api.products(active.accessToken)
+                                                            reportSales = api.sales(active.accessToken)
+                                                        } catch (_: Exception) {
+                                                            // The sale is already confirmed; a refresh failure must not invite duplicate payment.
+                                                        }
                                                         error = ""
                                                     } else {
                                                         error = "Transaksi disimpan di perangkat. Akan disinkronkan saat internet tersedia."
