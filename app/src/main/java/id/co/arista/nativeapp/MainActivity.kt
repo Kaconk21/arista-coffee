@@ -752,11 +752,13 @@ private fun AristaApp() {
                         } else {
                             LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                 items(pendingOrders, key = { it.id }) { order ->
+                                    val savedItems = org.json.JSONArray(order.itemsJson)
+                                    val itemSummary = (0 until savedItems.length()).mapNotNull { i -> savedItems.optJSONObject(i)?.let { row -> "${row.optString("name", "Menu")} × ${row.optInt("qty", 1)}" } }.joinToString(", ")
                                     Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
                                         Row(Modifier.fillMaxWidth().padding(10.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                                             Column(Modifier.weight(1f)) {
                                                 Text(order.customer, color = Ink, fontWeight = FontWeight.SemiBold)
-                                                Text("${org.json.JSONArray(order.itemsJson).length()} jenis menu · Rp ${order.total.toLong()}", color = Muted, fontSize = 11.sp)
+                                                Text(itemSummary.ifBlank { "${savedItems.length()} jenis menu" } + " · Rp ${order.total.toLong()}", color = Muted, fontSize = 11.sp)
                                             }
                                             TextButton(onClick = {
                                                 val ids = org.json.JSONArray(order.itemsJson)
