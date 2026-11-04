@@ -79,7 +79,25 @@ class AristaApi {
         }
     }
 
+    suspend fun refreshSession(refreshToken: String): AristaSession = withContext(Dispatchers.IO) {
+        val data = JSONObject(call(
+            "/auth/v1/token?grant_type=refresh_token",
+            "POST",
+            JSONObject().put("refresh_token", refreshToken),
+            null
+        ))
+        val user = data.getJSONObject("user")
+        AristaSession(
+            data.getString("access_token"),
+            data.optString("refresh_token", refreshToken),
+            user.getString("id"),
+            user.optString("email", "")
+        )
+    }
+
     suspend fun saveSale(token: String, sale: JSONObject): String = withContext(Dispatchers.IO) {
+        val id = sale.optString("id")
+        if (id.isNotBlank() && saleExists(token, id)) return@withContext "already_recorded"
         call("/rest/v1/rpc/catat_penjualan", "POST", JSONObject().put("p_sale", sale), token)
     }
 
