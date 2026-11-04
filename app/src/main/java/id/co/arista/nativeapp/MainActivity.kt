@@ -130,6 +130,7 @@ private fun AristaApp() {
     var closingCashInput by remember { mutableStateOf("") }
     var paymentBusy by remember { mutableStateOf(false) }
     var paymentMethod by remember { mutableStateOf("Tunai") }
+    var lastReceipt by remember { mutableStateOf<org.json.JSONObject?>(null) }
     var cashReceived by remember { mutableStateOf("") }
     var customerName by remember { mutableStateOf("") }
     var discountInput by remember { mutableStateOf("") }
@@ -336,7 +337,7 @@ private fun AristaApp() {
                     Text("Halo, ${profile!!.nama}", color = Ink, fontSize = 19.sp, fontWeight = FontWeight.SemiBold)
                     Text("Peran: ${profile!!.peran}", color = Muted, fontSize = 13.sp)
                     Spacer(Modifier.height(18.dp))
-                    if (selectedTab == 1) {
+                    if (selectedTab == 1 && cashierSection != "Struk") {
                         Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
                             Column(Modifier.padding(12.dp)) {
                                 if (activeShift == null) {
@@ -379,7 +380,7 @@ private fun AristaApp() {
                                 }
                             }
                         }
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                        if (cashierSection != "Struk") Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                             listOf("Menu", "Keranjang", "ORDERAN").forEach { section ->
                                 val label = when (section) { "Keranjang" -> "Keranjang (${cart.values.sum()})"; "ORDERAN" -> "ORDERAN (${pendingOrders.size})"; else -> section }
                                 if (cashierSection == section) Button(onClick = { cashierSection = section }, modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 2.dp, vertical = 8.dp), colors = ButtonDefaults.buttonColors(containerColor = Terracotta)) { Text(label, fontSize = 10.sp) }
@@ -601,11 +602,12 @@ private fun AristaApp() {
                                                             localDao.enqueue(SyncOutboxEntity(sale.getString("id"), sale.toString(), System.currentTimeMillis()))
                                                             queuedSalesCount = localDao.getOutbox().size
                                                         }
+                                                        lastReceipt = sale
                                                         cart = emptyMap()
                                                         editingPendingId?.let { localDao.deletePendingOrder(it) }
                                                         editingPendingId = null
                                                         pendingOrders = localDao.getPendingOrders()
-                                                        cashierSection = "Menu"
+                                                        cashierSection = "Struk"
                                                         cashReceived = ""; customerName = ""; discountInput = ""; discountType = "Rp"
                                                         if (online && !queuedAfterNetworkError) {
                                                             try { products = api.products(active.accessToken); reportSales = api.sales(active.accessToken) } catch (_: Exception) { }
@@ -628,7 +630,91 @@ private fun AristaApp() {
                                 }
                             }
                         }
-                        if (queuedSalesCount > 0) {
+                        if (cashierSection == "Struk") {
+                            val receipt = lastReceipt
+                            if (receipt != null) {
+                                val receiptItems = receipt.optJSONArray("items") ?: org.json.JSONArray()
+                                val receiptSubtotal = (0 until receiptItems.length()).sumOf { i ->
+                                    val item = receiptItems.optJSONObject(i) ?: org.json.JSONObject()
+                                    item.optDouble("price") * item.optInt("qty", 1)
+                                }
+                                val receiptTotal = receipt.optDouble("total")
+                                val receiptDiscount = receipt.optDouble("diskon")
+                                Card(Modifier.fillMaxWidth().weight(1f), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                                    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text("ARISTA", color = Ink, fontSize = 22.sp, fontWeight = FontWeight.Bold, letterSpacing = 3.sp)
+                                        Text("COFFEE & ROASTERY", color = Muted, fontSize = 10.sp, letterSpacing = 1.sp)
+                                        Spacer(Modifier.height(12.dp))
+                                        HorizontalDivider(color = Cream)
+                                        Text("STRUK PEMBAYARAN", color = Ink, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(vertical = 10.dp))
+                                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                            Text("Tanggal", color = Muted, fontSize = 12.sp)
+                                            Text(receipt.optString("sale_date"), color = Ink, fontSize = 12.sp)
+                                        }
+                                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                            Text("Jam", color = Muted, fontSize = 12.sp)
+                                            Text(receipt.optString("sale_time"), color = Ink, fontSize = 12.sp)
+                                        }
+                                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                            Text("Customer", color = Muted, fontSize = 12.sp)
+                                            Text(receipt.optString("customer", "Umum"), color = Ink, fontSize = 12.sp)
+                                        }
+                                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                            Text("Kasir", color = Muted, fontSize = 12.sp)
+                                            Text(receipt.optString("cashier_name"), color = Ink, fontSize = 12.sp)
+                                        }
+                                        HorizontalDivider(color = Cream)
+                                        for (i in 0 until receiptItems.length()) {
+                                            val item = receiptItems.optJSONObject(i) ?: org.json.JSONObject()
+                                            val qty = item.optInt("qty", 1)
+                                            Column(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
+                                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                                    Text(item.optString("name"), color = Ink, fontSize = 12.sp, modifier = Modifier.weight(1f))
+                                                    Text("Rp ${(item.optDouble("price") * qty).toLong()}", color = Ink, fontSize = 12.sp)
+                                                }
+                                                Text("${qty} × Rp ${item.optDouble("price").toLong()}", color = Muted, fontSize = 10.sp)
+                                            }
+                                        }
+                                        HorizontalDivider(color = Cream)
+                                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                            Text("Subtotal", color = Muted, fontSize = 12.sp)
+                                            Text("Rp ${receiptSubtotal.toLong()}", color = Ink, fontSize = 12.sp)
+                                        }
+                                        if (receiptDiscount > 0) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                            Text("Diskon", color = Muted, fontSize = 12.sp)
+                                            Text("-Rp ${receiptDiscount.toLong()}", color = Ink, fontSize = 12.sp)
+                                        }
+                                        Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                                            Text("TOTAL", color = Ink, fontWeight = FontWeight.Bold)
+                                            Text("Rp ${receiptTotal.toLong()}", color = Terracotta, fontWeight = FontWeight.Bold)
+                                        }
+                                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                            Text("Metode", color = Muted, fontSize = 12.sp)
+                                            Text(receipt.optString("method"), color = Ink, fontSize = 12.sp)
+                                        }
+                                        if (receipt.optString("method") == "Tunai") {
+                                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                                Text("Diterima", color = Muted, fontSize = 12.sp)
+                                                Text("Rp ${receipt.optDouble("paid").toLong()}", color = Ink, fontSize = 12.sp)
+                                            }
+                                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                                Text("Kembalian", color = Muted, fontSize = 12.sp)
+                                                Text("Rp ${receipt.optDouble("change_amount").toLong()}", color = Ink, fontSize = 12.sp)
+                                            }
+                                        }
+                                        Spacer(Modifier.height(12.dp))
+                                        Text("Terima kasih", color = Terracotta, fontWeight = FontWeight.SemiBold)
+                                    }
+                                }
+                            }
+                            Button(
+                                onClick = { lastReceipt = null; cashierSection = "Menu"; error = "" },
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.buttonColors(containerColor = Terracotta)
+                            ) { Text("Selesai") }
+                            if (error.isNotBlank()) Text(error, color = Muted, fontSize = 11.sp)
+                        }
+                        if (queuedSalesCount > 0 && cashierSection != "Struk") {
                             Spacer(Modifier.height(10.dp))
                             Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
                                 Column(Modifier.padding(12.dp)) {
