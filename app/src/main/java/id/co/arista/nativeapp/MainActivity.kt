@@ -429,10 +429,27 @@ private fun AristaApp() {
                             }
                         }
                         if (cashierSection != "Struk") Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                            listOf("Menu", "Keranjang", "ORDERAN").forEach { section ->
+                            listOf("Menu", "Keranjang", "ORDERAN", "SHIFT").forEach { section ->
                                 val label = when (section) { "Keranjang" -> "Keranjang (${cart.values.sum()})"; "ORDERAN" -> "ORDERAN (${pendingOrders.size})"; else -> section }
                                 if (cashierSection == section) Button(onClick = { cashierSection = section }, modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 2.dp, vertical = 6.dp), colors = ButtonDefaults.buttonColors(containerColor = Terracotta)) { Text(label, fontSize = 10.sp) }
                                 else OutlinedButton(onClick = { cashierSection = section }, modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 2.dp, vertical = 6.dp)) { Text(label, fontSize = 10.sp) }
+                            }
+                        }
+                        if (cashierSection == "SHIFT") {
+                            Text("SHIFT KASIR", color = Ink, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+                            Text("Ringkasan dan riwayat buka/tutup kasir", color = Muted, fontSize = 11.sp)
+                            if (shiftHistory.isEmpty()) Text("Belum ada riwayat tutup kasir.", color = Muted, fontSize = 12.sp, modifier = Modifier.padding(vertical = 12.dp))
+                            else shiftHistory.forEach { oldShift ->
+                                val startText = java.text.SimpleDateFormat("dd/MM/yy HH:mm", java.util.Locale("id", "ID")).format(java.util.Date(oldShift.startedAt))
+                                val endText = oldShift.endedAt?.let { java.text.SimpleDateFormat("HH:mm", java.util.Locale("id", "ID")).format(java.util.Date(it)) } ?: "Masih aktif"
+                                Card(Modifier.fillMaxWidth().padding(bottom = 7.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                                    Column(Modifier.padding(10.dp)) {
+                                        Text(startText + " – " + endText, color = Ink, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+                                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("Uang awal", color = Muted, fontSize = 11.sp); Text("Rp ${oldShift.openingCash.toLong()}", color = Ink, fontSize = 11.sp) }
+                                        oldShift.closingCash?.let { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("Uang dihitung", color = Muted, fontSize = 11.sp); Text("Rp ${it.toLong()}", color = Ink, fontSize = 11.sp) } }
+                                        oldShift.difference?.let { diff -> Text(if (diff == 0.0) "Selisih: Pas" else if (diff > 0) "Selisih: Lebih Rp ${diff.toLong()}" else "Selisih: Kurang Rp ${(-diff).toLong()}", color = if (diff < 0) Color(0xFFB3261E) else Terracotta, fontSize = 11.sp, fontWeight = FontWeight.SemiBold) }
+                                    }
+                                }
                             }
                         }
                         if (cashierSection == "Menu") {
@@ -1109,7 +1126,7 @@ Text("Transaksi terbaru", color = Ink, fontWeight = FontWeight.SemiBold)
                         }
                         Spacer(Modifier.height(10.dp))
                         Card(
-                            Modifier.fillMaxWidth().clickable { selectedTab = 1 },
+                            Modifier.fillMaxWidth().clickable { selectedTab = 1; cashierSection = "SHIFT" },
                             colors = CardDefaults.cardColors(containerColor = Color.White)
                         ) {
                             Row(Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
