@@ -43,6 +43,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.OutlinedButton
@@ -470,7 +471,7 @@ private fun AristaApp() {
                                                 Text("${cart[p.id] ?: 0}", color = Ink, fontSize = 12.sp)
                                                 TextButton(onClick = { cart = cart + (p.id to ((cart[p.id] ?: 0) + 1)) }) { Text("+") }
                                             }
-                                            Divider(color = Cream)
+                                            HorizontalDivider(color = Cream)
                                         }
                                         Spacer(Modifier.height(8.dp))
                                         OutlinedTextField(customerName, { customerName = it }, Modifier.fillMaxWidth(), label = { Text("Nama customer (kosong = Umum)") }, singleLine = true)
