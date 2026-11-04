@@ -110,6 +110,11 @@ class AristaApi {
         JSONArray(call("/rest/v1/sales?select=id,sale_date,sale_time,items,total,method,paid,change_amount,cashier_name,customer,batal,diskon&order=sale_date.desc,sale_time.desc&limit=200", "GET", null, token))
     }
 
+    suspend fun salesForRange(token: String, from: String, to: String): JSONArray = withContext(Dispatchers.IO) {
+        JSONArray(call("/rest/v1/sales?select=id,sale_date,sale_time,items,total,method,paid,change_amount,cashier_name,customer,batal,diskon&sale_date=gte.$from&sale_date=lte.$to&order=sale_date.desc,sale_time.desc&limit=1000", "GET", null, token))
+    }
+
+
     suspend fun expenses(token: String): JSONArray = withContext(Dispatchers.IO) {
         JSONArray(call("/rest/v1/expenses?select=id,tanggal,nama,kategori,qty,harga,total,catatan&order=tanggal.desc&limit=200", "GET", null, token))
     }
