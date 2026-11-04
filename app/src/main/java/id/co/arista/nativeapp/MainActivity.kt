@@ -649,7 +649,6 @@ private fun AristaApp() {
                                 }
                             }
                         }
-                        }
                         if (cashierSection == "ORDERAN") {
                         Spacer(Modifier.height(12.dp))
                         Text("ORDERAN", color = Ink, fontWeight = FontWeight.SemiBold)
