@@ -350,7 +350,7 @@ private fun AristaApp() {
                                                     try {
                                                         api.saveSale(active.accessToken, sale)
                                                     } catch (e: IOException) {
-                                                        if (e.message?.startsWith("Permintaan gagal") == true) throw e
+                                                        if (e is AristaHttpException) throw e
                                                         localDao.enqueue(SyncOutboxEntity(sale.getString("id"), sale.toString(), System.currentTimeMillis()))
                                                         error = "Koneksi terputus. Transaksi disimpan di perangkat dan akan dikirim saat online."
                                                     }
