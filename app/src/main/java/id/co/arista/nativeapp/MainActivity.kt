@@ -95,6 +95,7 @@ private fun AristaApp() {
     var expenseQty by remember { mutableStateOf("1") }
     var expensePrice by remember { mutableStateOf("") }
     var expenseNote by remember { mutableStateOf("") }
+    var expenseDate by remember { mutableStateOf(java.time.LocalDate.now().toString()) }
     var reportsLoading by remember { mutableStateOf(false) }
     var reportRange by remember { mutableStateOf("Harian") }
     var reportTab by remember { mutableStateOf("Penjualan") }
@@ -718,6 +719,52 @@ private fun AristaApp() {
                                     }
                                 }
                             }
+                        } else if (reportTab == "Pengeluaran" && owner) {
+                            val expenseSum = periodExpenses.sumOf { it.optDouble("total") }
+                            Text("Laporan pengeluaran", color = Ink, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                                Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Text("Total pengeluaran: Rp ${expenseSum.toLong()}", color = Terracotta, fontWeight = FontWeight.Bold)
+                                    OutlinedTextField(expenseName, { expenseName = it }, Modifier.fillMaxWidth(), label = { Text("Nama pengeluaran") }, singleLine = true)
+                                    OutlinedTextField(expenseCategory, { expenseCategory = it }, Modifier.fillMaxWidth(), label = { Text("Kategori (opsional)") }, singleLine = true)
+                                    OutlinedTextField(expenseDate, { expenseDate = it }, Modifier.fillMaxWidth(), label = { Text("Tanggal (YYYY-MM-DD)") }, singleLine = true)
+                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        OutlinedTextField(expenseQty, { expenseQty = it.filter(Char::isDigit) }, Modifier.weight(1f), label = { Text("Jumlah") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true)
+                                        OutlinedTextField(expensePrice, { expensePrice = it.filter(Char::isDigit) }, Modifier.weight(1f), label = { Text("Harga satuan") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true)
+                                    }
+                                    OutlinedTextField(expenseNote, { expenseNote = it }, Modifier.fillMaxWidth(), label = { Text("Catatan (opsional)") }, singleLine = true)
+                                    val qVal = expenseQty.toDoubleOrNull() ?: 0.0
+                                    val pVal = expensePrice.toDoubleOrNull() ?: 0.0
+                                    Text("Total: Rp ${(qVal * pVal).toLong()}", color = Muted)
+                                    Button(enabled = !managementBusy && expenseName.isNotBlank() && qVal > 0 && pVal > 0 && runCatching { java.time.LocalDate.parse(expenseDate) }.isSuccess, onClick = {
+                                        val token = session?.accessToken ?: return@Button
+                                        managementBusy = true
+                                        scope.launch {
+                                            try {
+                                                val payload = org.json.JSONObject().put("tanggal", expenseDate).put("nama", expenseName.trim()).put("kategori", expenseCategory.trim().ifBlank { org.json.JSONObject.NULL }).put("qty", qVal).put("harga", pVal).put("total", qVal * pVal).put("catatan", expenseNote.trim().ifBlank { org.json.JSONObject.NULL })
+                                                api.createExpense(token, payload)
+                                                reportExpenses = api.expenses(token)
+                                                expenseName = ""; expenseCategory = ""; expenseQty = "1"; expensePrice = ""; expenseNote = ""; expenseDate = java.time.LocalDate.now().toString(); error = ""
+                                            } catch (e: Exception) { error = e.message ?: "Pengeluaran gagal disimpan." }
+                                            finally { managementBusy = false }
+                                        }
+                                    }, colors = ButtonDefaults.buttonColors(containerColor = Terracotta)) { Text("Simpan pengeluaran") }
+                                }
+                            }
+                            Text("Riwayat pengeluaran", color = Ink, fontWeight = FontWeight.SemiBold)
+                            LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                                items(periodExpenses, key = { it.optString("id") }) { expense ->
+                                    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                                        Row(Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                            Column(Modifier.weight(1f)) {
+                                                Text(expense.optString("nama"), color = Ink, fontWeight = FontWeight.SemiBold)
+                                                Text("${expense.optString("tanggal")} · ${expense.optString("kategori", "-")} · ${expense.optDouble("qty")} × Rp ${expense.optDouble("harga").toLong()}", color = Muted, fontSize = 11.sp)
+                                            }
+                                            Text("Rp ${expense.optDouble("total").toLong()}", color = Terracotta, fontWeight = FontWeight.Bold)
+                                        }
+                                    }
+                                }
+                            }
                         } else if (reportsLoading) CircularProgressIndicator(color = Terracotta)
                         else {
                             Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
@@ -735,38 +782,6 @@ private fun AristaApp() {
                                 }
                             }
                             Spacer(Modifier.height(12.dp))
-                             if (owner) {
-                                 Text("Catat pengeluaran", color = Ink, fontWeight = FontWeight.SemiBold)
-                                 Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
-                                     Column(Modifier.padding(12.dp)) {
-                                         OutlinedTextField(expenseName, { expenseName = it }, Modifier.fillMaxWidth(), label = { Text("Nama pengeluaran") }, singleLine = true)
-                                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                             OutlinedTextField(expenseQty, { expenseQty = it.filter(Char::isDigit) }, Modifier.weight(1f), label = { Text("Jumlah") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true)
-                                             OutlinedTextField(expensePrice, { expensePrice = it.filter(Char::isDigit) }, Modifier.weight(1f), label = { Text("Harga satuan") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true)
-                                         }
-                                         OutlinedTextField(expenseCategory, { expenseCategory = it }, Modifier.fillMaxWidth(), label = { Text("Kategori (opsional)") }, singleLine = true)
-                                         OutlinedTextField(expenseNote, { expenseNote = it }, Modifier.fillMaxWidth(), label = { Text("Catatan (opsional)") }, singleLine = true)
-                                         val qtyValue = expenseQty.toDoubleOrNull() ?: 0.0
-                                         val priceValue = expensePrice.toDoubleOrNull() ?: 0.0
-                                         Text("Total: Rp ${(qtyValue * priceValue).toLong()}", color = Terracotta, fontWeight = FontWeight.SemiBold)
-                                         Button(enabled = !managementBusy && expenseName.isNotBlank() && qtyValue > 0 && priceValue > 0, onClick = {
-                                             val token = session?.accessToken ?: return@Button
-                                             managementBusy = true
-                                             scope.launch {
-                                                 try {
-                                                     val q = expenseQty.toDouble()
-                                                     val p = expensePrice.toDouble()
-                                                     val payload = org.json.JSONObject().put("tanggal", java.time.LocalDate.now().toString()).put("nama", expenseName.trim()).put("kategori", expenseCategory.trim().ifBlank { org.json.JSONObject.NULL }).put("qty", q).put("harga", p).put("total", q * p).put("catatan", expenseNote.trim().ifBlank { org.json.JSONObject.NULL })
-                                                     api.createExpense(token, payload)
-                                                     reportExpenses = api.expenses(token)
-                                                     expenseName = ""; expenseCategory = ""; expenseQty = "1"; expensePrice = ""; expenseNote = ""; error = ""
-                                                 } catch (e: Exception) { error = e.message ?: "Pengeluaran gagal disimpan." }
-                                                 finally { managementBusy = false }
-                                             }
-                                         }, colors = ButtonDefaults.buttonColors(containerColor = Terracotta)) { Text("Simpan pengeluaran") }
-                                     }
-                                 }
-                             }
 Text("Transaksi terbaru", color = Ink, fontWeight = FontWeight.SemiBold)
                             LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 items(periodSales.filterNot { it.optBoolean("batal") }.take(50)) { sale ->
