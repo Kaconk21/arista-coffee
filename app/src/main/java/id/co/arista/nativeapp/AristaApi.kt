@@ -166,6 +166,7 @@ class AristaApi {
             "POST" -> builder.post((body ?: JSONObject()).toString().toRequestBody(jsonType))
             "PATCH" -> builder.patch((body ?: JSONObject()).toString().toRequestBody(jsonType))
             "GET" -> builder.get()
+            "DELETE" -> builder.delete()
             else -> throw IllegalArgumentException("Metode tidak didukung")
         }
         client.newCall(builder.build()).execute().use { response ->
