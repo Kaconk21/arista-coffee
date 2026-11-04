@@ -760,7 +760,18 @@ private fun AristaApp() {
                                                 Text(expense.optString("nama"), color = Ink, fontWeight = FontWeight.SemiBold)
                                                 Text("${expense.optString("tanggal")} · ${expense.optString("kategori", "-")} · ${expense.optDouble("qty")} × Rp ${expense.optDouble("harga").toLong()}", color = Muted, fontSize = 11.sp)
                                             }
-                                            Text("Rp ${expense.optDouble("total").toLong()}", color = Terracotta, fontWeight = FontWeight.Bold)
+                                            Column(horizontalAlignment = Alignment.End) {
+                                                Text("Rp ${expense.optDouble("total").toLong()}", color = Terracotta, fontWeight = FontWeight.Bold)
+                                                TextButton(enabled = !managementBusy, onClick = {
+                                                    val token = session?.accessToken ?: return@TextButton
+                                                    managementBusy = true
+                                                    scope.launch {
+                                                        try { api.deleteExpense(token, expense.optString("id")); reportExpenses = api.expenses(token); error = "" }
+                                                        catch (e: Exception) { error = e.message ?: "Pengeluaran gagal dihapus." }
+                                                        finally { managementBusy = false }
+                                                    }
+                                                }) { Text("Hapus", color = Color(0xFFB3261E), fontSize = 11.sp) }
+                                            }
                                         }
                                     }
                                 }
