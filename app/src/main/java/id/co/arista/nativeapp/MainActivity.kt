@@ -554,7 +554,6 @@ private fun AristaApp() {
                                 }
                             }
                         }
-                        }
                         if (error.isNotBlank()) Text(error, color = Color(0xFFB3261E), fontSize = 12.sp)
                     }
                 }
