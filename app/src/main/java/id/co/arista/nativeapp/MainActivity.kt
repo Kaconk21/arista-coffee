@@ -466,13 +466,15 @@ private fun AristaApp() {
                                     if (active) {
                                         Button(
                                             onClick = { selectedCategory = category },
-                                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 5.dp),
+                                            modifier = Modifier.height(34.dp),
+                                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
                                             colors = ButtonDefaults.buttonColors(containerColor = Terracotta)
                                         ) { Text(category, fontSize = 12.sp, maxLines = 1) }
                                     } else {
                                         OutlinedButton(
                                             onClick = { selectedCategory = category },
-                                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 5.dp)
+                                            modifier = Modifier.height(34.dp),
+                                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp)
                                         ) { Text(category, fontSize = 12.sp, maxLines = 1) }
                                     }
                                 }
@@ -892,14 +894,14 @@ private fun AristaApp() {
                                     val startDate = when (range) { "Mingguan" -> endDate.minusDays(6); "Bulanan" -> endDate.withDayOfMonth(1); else -> endDate }
                                     val token = session?.accessToken
                                     if (token != null) { reportsLoading = true; scope.launch { try { reportSales = api.salesForRange(token, startDate.toString(), endDate.toString()); if (owner) reportExpenses = api.expensesForRange(token, startDate.toString(), endDate.toString()); error = "" } catch (e: Exception) { error = e.message ?: "Gagal memuat laporan." } finally { reportsLoading = false } } }
-                                }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(containerColor = Terracotta)) { Text(range, fontSize = 11.sp) }
+                                }, modifier = Modifier.weight(1f).height(34.dp), contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp), colors = ButtonDefaults.buttonColors(containerColor = Terracotta)) { Text(range, fontSize = 11.sp) }
                                 else OutlinedButton(onClick = {
                                     reportRange = range
                                     val endDate = java.time.LocalDate.now()
                                     val startDate = when (range) { "Mingguan" -> endDate.minusDays(6); "Bulanan" -> endDate.withDayOfMonth(1); else -> endDate }
                                     val token = session?.accessToken
                                     if (token != null) { reportsLoading = true; scope.launch { try { reportSales = api.salesForRange(token, startDate.toString(), endDate.toString()); if (owner) reportExpenses = api.expensesForRange(token, startDate.toString(), endDate.toString()); error = "" } catch (e: Exception) { error = e.message ?: "Gagal memuat laporan." } finally { reportsLoading = false } } }
-                                }, modifier = Modifier.weight(1f)) { Text(range, fontSize = 11.sp) }
+                                }, modifier = Modifier.weight(1f).height(34.dp), contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)) { Text(range, fontSize = 11.sp) }
                             }
                         }
                         if (owner) {
@@ -921,8 +923,8 @@ private fun AristaApp() {
                                                 }
                                             }
                                         }
-                                    }, modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 2.dp, vertical = 6.dp), colors = ButtonDefaults.buttonColors(containerColor = Terracotta)) { Text(tab, fontSize = 10.sp) }
-                                    else OutlinedButton(onClick = { reportTab = tab }, modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 2.dp, vertical = 6.dp)) { Text(tab, fontSize = 10.sp) }
+                                    }, modifier = Modifier.weight(1f).height(34.dp), contentPadding = PaddingValues(horizontal = 2.dp, vertical = 0.dp), colors = ButtonDefaults.buttonColors(containerColor = Terracotta)) { Text(tab, fontSize = 10.sp) }
+                                    else OutlinedButton(onClick = { reportTab = tab }, modifier = Modifier.weight(1f).height(34.dp), contentPadding = PaddingValues(horizontal = 2.dp, vertical = 0.dp)) { Text(tab, fontSize = 10.sp) }
                                 }
                             }
                         }
