@@ -29,6 +29,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -74,6 +75,7 @@ private fun AristaApp() {
     var profile by remember { mutableStateOf<AristaProfile?>(null) }
     var products by remember { mutableStateOf<List<AristaProduct>>(emptyList()) }
     var productsLoading by remember { mutableStateOf(false) }
+    var cart by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf("") }
     var selectedTab by remember { mutableIntStateOf(0) }
@@ -204,7 +206,12 @@ private fun AristaApp() {
                                                 Text(product.name, color = Ink, fontWeight = FontWeight.SemiBold)
                                                 Text(product.category, color = Muted, fontSize = 12.sp)
                                             }
-                                            Text("Rp ${product.price.toLong()}", color = Terracotta, fontWeight = FontWeight.Bold)
+                                            Column(horizontalAlignment = Alignment.End) {
+                                                Text("Rp ${product.price.toLong()}", color = Terracotta, fontWeight = FontWeight.Bold)
+                                                OutlinedButton(onClick = {
+                                                    cart = cart + (product.id to ((cart[product.id] ?: 0) + 1))
+                                                }) { Text("Tambah") }
+                                            }
                                         }
                                     }
                                 }
