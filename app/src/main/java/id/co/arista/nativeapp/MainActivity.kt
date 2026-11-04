@@ -107,6 +107,9 @@ private fun AristaApp() {
     var paymentBusy by remember { mutableStateOf(false) }
     var paymentMethod by remember { mutableStateOf("Tunai") }
     var cashReceived by remember { mutableStateOf("") }
+    var customerName by remember { mutableStateOf("") }
+    var discountInput by remember { mutableStateOf("") }
+    var discountType by remember { mutableStateOf("Rp") }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf("") }
     var selectedTab by remember { mutableIntStateOf(0) }
@@ -316,8 +319,8 @@ private fun AristaApp() {
                                 items(products, key = { it.id }) { product ->
                                     Card(
                                         modifier = Modifier.fillMaxWidth().clickable {
-                                            cart = cart + (product.id to ((cart[product.id] ?: 0) + 1))
-                                            error = ""
+                                            if (activeShift == null) error = "Buka kasir dulu untuk mulai menjual."
+                                            else { cart = cart + (product.id to ((cart[product.id] ?: 0) + 1)); error = "" }
                                         },
                                         shape = RoundedCornerShape(14.dp),
                                         colors = CardDefaults.cardColors(containerColor = Color.White)
@@ -350,7 +353,10 @@ private fun AristaApp() {
                         }
                         val chosen = products.filter { (cart[it.id] ?: 0) > 0 }
                         if (chosen.isNotEmpty()) {
-                            val total = chosen.sumOf { it.price * (cart[it.id] ?: 0) }
+                            val subtotal = chosen.sumOf { it.price * (cart[it.id] ?: 0) }
+                            val discountValue = discountInput.toDoubleOrNull() ?: 0.0
+                            val discountAmount = if (discountType == "%") (subtotal * discountValue.coerceIn(0.0, 100.0) / 100.0).toLong().toDouble() else discountValue.coerceAtLeast(0.0).coerceAtMost(subtotal)
+                            val total = (subtotal - discountAmount).coerceAtLeast(0.0)
                             Spacer(Modifier.height(10.dp))
                             Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
                                 Column(Modifier.padding(14.dp)) {
@@ -363,10 +369,23 @@ private fun AristaApp() {
                                     }
                                     Spacer(Modifier.height(6.dp))
                                     Text("Total Rp ${total.toLong()}", color = Terracotta, fontWeight = FontWeight.Bold)
-                                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        listOf("Tunai", "QRIS").forEach { method ->
+                                    OutlinedTextField(customerName, { customerName = it }, Modifier.fillMaxWidth(), label = { Text("Nama customer (kosong = Umum)") }, singleLine = true)
+                                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        OutlinedTextField(discountInput, { discountInput = it.filter { ch -> ch.isDigit() || ch == '.' } }, Modifier.weight(1f), label = { Text("Diskon") }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
+                                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                            listOf("Rp", "%").forEach { type ->
+                                                if (discountType == type) Button(onClick = { discountType = type }, colors = ButtonDefaults.buttonColors(containerColor = Terracotta)) { Text(type) }
+                                                else OutlinedButton(onClick = { discountType = type }) { Text(type) }
+                                            }
+                                        }
+                                    }
+                                    Text("Subtotal Rp ${subtotal.toLong()} · Potongan Rp ${discountAmount.toLong()}", color = Muted, fontSize = 12.sp)
+                                    Text("Total setelah diskon Rp ${total.toLong()}", color = Terracotta, fontWeight = FontWeight.Bold)
+                                    listOf(listOf("Tunai", "QRIS", "Debit/Kredit"), listOf("Transfer", "Piutang")).forEach { methodRow ->
+                                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                            methodRow.forEach { method ->
                                             if (paymentMethod == method) Button(onClick = { paymentMethod = method }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(containerColor = Terracotta)) { Text(method) }
-                                            else OutlinedButton(onClick = { paymentMethod = method }, modifier = Modifier.weight(1f)) { Text(method) }
+                                            else OutlinedButton(onClick = { paymentMethod = method }, modifier = Modifier.weight(1f)) { Text(method, fontSize = 11.sp) }
                                         }
                                     }
                                     if (paymentMethod == "Tunai") {
@@ -379,20 +398,21 @@ private fun AristaApp() {
                                         val received = cashReceived.toLongOrNull() ?: 0L
                                         Text("Kembalian Rp ${(received - total.toLong()).coerceAtLeast(0L)}", color = Muted, fontSize = 13.sp)
                                     }
-                                    OutlinedButton(enabled = !savingPending, modifier = Modifier.fillMaxWidth(), onClick = {
+                                    OutlinedButton(enabled = !savingPending && activeShift != null && customerName.isNotBlank(), modifier = Modifier.fillMaxWidth(), onClick = {
                                         savingPending = true
                                         scope.launch {
                                             try {
                                                 val rows = org.json.JSONArray()
                                                 chosen.forEach { p -> rows.put(org.json.JSONObject().put("id", p.id).put("qty", cart[p.id] ?: 0)) }
-                                                localDao.savePendingOrder(PendingOrderEntity(editingPendingId ?: java.util.UUID.randomUUID().toString(), "Umum", rows.toString(), total, System.currentTimeMillis()))
-                                                pendingOrders = localDao.getPendingOrders(); editingPendingId = null; cart = emptyMap(); cashReceived = ""; error = ""
+                                                if (customerName.isBlank()) { error = "Isi nama customer dulu untuk menyimpan ORDERAN."; return@launch }
+                                                localDao.savePendingOrder(PendingOrderEntity(editingPendingId ?: java.util.UUID.randomUUID().toString(), customerName.trim(), rows.toString(), subtotal, System.currentTimeMillis()))
+                                                pendingOrders = localDao.getPendingOrders(); editingPendingId = null; cart = emptyMap(); cashReceived = ""; customerName = ""; discountInput = ""; error = ""
                                             } catch (e: Exception) { error = e.message ?: "Pesanan gagal disimpan." }
                                             finally { savingPending = false }
                                         }
                                     }) { Text(if (savingPending) "Menyimpan pesanan…" else "Simpan pesanan") }
                                     Button(
-                                        enabled = !paymentBusy && (paymentMethod != "Tunai" || (cashReceived.toLongOrNull() ?: 0L) >= total.toLong()),
+                                        enabled = !paymentBusy && activeShift != null && (if (paymentMethod == "Piutang") customerName.isNotBlank() else paymentMethod != "Tunai" || (cashReceived.toLongOrNull() ?: 0L) >= total.toLong()),
                                         modifier = Modifier.fillMaxWidth(),
                                         colors = ButtonDefaults.buttonColors(containerColor = Terracotta),
                                         onClick = {
@@ -412,9 +432,9 @@ private fun AristaApp() {
                                                         .put("sale_date", now.toLocalDate().toString())
                                                         .put("sale_time", now.toLocalTime().toString().take(5))
                                                         .put("items", rows).put("total", total)
-                                                        .put("method", paymentMethod).put("paid", if (paymentMethod == "Tunai") (cashReceived.toLongOrNull() ?: 0L) else total).put("change_amount", if (paymentMethod == "Tunai") ((cashReceived.toLongOrNull() ?: 0L) - total.toLong()).coerceAtLeast(0L) else 0L)
+                                                        .put("method", paymentMethod).put("paid", if (paymentMethod == "Piutang") 0L else if (paymentMethod == "Tunai") (cashReceived.toLongOrNull() ?: 0L) else total.toLong()).put("change_amount", if (paymentMethod == "Tunai") ((cashReceived.toLongOrNull() ?: 0L) - total.toLong()).coerceAtLeast(0L) else 0L)
                                                         .put("cashier_name", profile?.nama ?: "")
-                                                        .put("customer", "Umum").put("diskon", 0)
+                                                        .put("customer", customerName.trim().ifBlank { "Umum" }).put("diskon", discountAmount.toLong())
                                                     val online = hasValidatedInternet(context)
                                                     var queuedAfterNetworkError = false
                                                     if (online) {
@@ -444,7 +464,7 @@ private fun AristaApp() {
                                                     editingPendingId?.let { localDao.deletePendingOrder(it) }
                                                     editingPendingId = null
                                                     pendingOrders = localDao.getPendingOrders()
-                                                    cashReceived = ""
+                                                    cashReceived = ""; customerName = ""; discountInput = ""; discountType = "Rp"
                                                     if (online && !queuedAfterNetworkError) {
                                                         try {
                                                             products = api.products(active.accessToken)
@@ -507,6 +527,7 @@ private fun AristaApp() {
                                                 val restored = mutableMapOf<String, Int>()
                                                 for (i in 0 until ids.length()) { val row = ids.getJSONObject(i); restored[row.optString("id")] = row.optInt("qty") }
                                                 cart = restored
+                                                customerName = order.customer
                                                 editingPendingId = order.id
                                             }) { Text("Buka", color = Terracotta) }
                                             TextButton(onClick = { scope.launch { localDao.deletePendingOrder(order.id); pendingOrders = localDao.getPendingOrders() } }) { Text("Hapus", color = Color(0xFFB3261E)) }
