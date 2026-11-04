@@ -412,8 +412,19 @@ private fun AristaApp() {
                                                         .put("cashier_name", profile?.nama ?: "")
                                                         .put("customer", "Umum").put("diskon", 0)
                                                     val online = hasValidatedInternet(context)
+                                                    var queuedAfterNetworkError = false
                                                     if (online) {
-                                                        api.saveSale(active.accessToken, sale)
+                                                        try {
+                                                            api.saveSale(active.accessToken, sale)
+                                                        } catch (e: AristaHttpException) {
+                                                            throw e
+                                                        } catch (e: java.io.IOException) {
+                                                            // Keep the same sale UUID: sync checks the server before retrying,
+                                                            // preventing a duplicate if the server committed but the reply was lost.
+                                                            localDao.enqueue(SyncOutboxEntity(sale.getString("id"), sale.toString(), System.currentTimeMillis()))
+                                                            queuedSalesCount = localDao.getOutbox().size
+                                                            queuedAfterNetworkError = true
+                                                        }
                                                     } else {
                                                         localDao.enqueue(SyncOutboxEntity(sale.getString("id"), sale.toString(), System.currentTimeMillis()))
                                                         queuedSalesCount = localDao.getOutbox().size
@@ -423,7 +434,7 @@ private fun AristaApp() {
                                                     editingPendingId = null
                                                     pendingOrders = localDao.getPendingOrders()
                                                     cashReceived = ""
-                                                    if (online) {
+                                                    if (online && !queuedAfterNetworkError) {
                                                         try {
                                                             products = api.products(active.accessToken)
                                                             reportSales = api.sales(active.accessToken)
