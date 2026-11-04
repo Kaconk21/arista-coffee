@@ -76,6 +76,7 @@ private fun AristaApp() {
     var products by remember { mutableStateOf<List<AristaProduct>>(emptyList()) }
     var productsLoading by remember { mutableStateOf(false) }
     var reportSales by remember { mutableStateOf(org.json.JSONArray()) }
+    var reportExpenses by remember { mutableStateOf(org.json.JSONArray()) }
     var reportsLoading by remember { mutableStateOf(false) }
     var cart by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
     var paymentBusy by remember { mutableStateOf(false) }
@@ -336,10 +337,22 @@ private fun AristaApp() {
                             }
                         }
                     } else if (selectedTab == 2) {
+                        val owner = profile?.peran.equals("Pemilik", true)
                         val omzet = (0 until reportSales.length()).sumOf { i ->
                             val row = reportSales.optJSONObject(i) ?: org.json.JSONObject()
                             if (row.optBoolean("batal")) 0.0 else row.optDouble("total")
                         }
+                        val modal = (0 until reportSales.length()).sumOf { i ->
+                            val sale = reportSales.optJSONObject(i) ?: org.json.JSONObject()
+                            if (sale.optBoolean("batal")) 0.0 else {
+                                val rows = sale.optJSONArray("items") ?: org.json.JSONArray()
+                                (0 until rows.length()).sumOf { k ->
+                                    val item = rows.optJSONObject(k) ?: org.json.JSONObject()
+                                    item.optDouble("cost") * item.optDouble("qty")
+                                }
+                            }
+                        }
+                        val expenseTotal = (0 until reportExpenses.length()).sumOf { i -> reportExpenses.optJSONObject(i)?.optDouble("total") ?: 0.0 }
                         val jumlah = (0 until reportSales.length()).count { i ->
                             !(reportSales.optJSONObject(i)?.optBoolean("batal") ?: false)
                         }
@@ -361,6 +374,12 @@ private fun AristaApp() {
                                     Text("Omzet transaksi aktif", color = Muted, fontSize = 12.sp)
                                     Text("Rp ${omzet.toLong()}", color = Terracotta, fontSize = 23.sp, fontWeight = FontWeight.Bold)
                                     Text("Jumlah transaksi: ${jumlah}", color = Ink)
+                                     if (owner) {
+                                         Text("Estimasi modal: Rp ${modal.toLong()}", color = Muted, fontSize = 12.sp)
+                                         Text("Laba kotor: Rp ${(omzet - modal).toLong()}", color = Terracotta, fontWeight = FontWeight.SemiBold)
+                                         Text("Pengeluaran tercatat: Rp ${expenseTotal.toLong()}", color = Muted, fontSize = 12.sp)
+                                         Text("Sisa setelah pengeluaran: Rp ${(omzet - modal - expenseTotal).toLong()}", color = Ink, fontWeight = FontWeight.SemiBold)
+                                     }
                                     Text("Data maksimal 200 transaksi terakhir", color = Muted, fontSize = 11.sp)
                                 }
                             }
