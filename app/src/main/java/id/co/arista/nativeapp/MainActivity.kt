@@ -7,6 +7,7 @@ import android.net.NetworkCapabilities
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -281,7 +282,10 @@ private fun AristaApp() {
                             else -> LazyColumn(verticalArrangement = Arrangement.spacedBy(9.dp)) {
                                 items(products, key = { it.id }) { product ->
                                     Card(
-                                        modifier = Modifier.fillMaxWidth(),
+                                        modifier = Modifier.fillMaxWidth().clickable {
+                                            cart = cart + (product.id to ((cart[product.id] ?: 0) + 1))
+                                            error = ""
+                                        },
                                         shape = RoundedCornerShape(14.dp),
                                         colors = CardDefaults.cardColors(containerColor = Color.White)
                                     ) {
@@ -293,18 +297,17 @@ private fun AristaApp() {
                                             Column(Modifier.weight(1f)) {
                                                 Text(product.name, color = Ink, fontWeight = FontWeight.SemiBold)
                                                 Text(product.category, color = Muted, fontSize = 12.sp)
+                                                Text("Ketuk untuk tambah", color = Muted, fontSize = 11.sp)
                                             }
                                             Column(horizontalAlignment = Alignment.End) {
                                                 Text("Rp ${product.price.toLong()}", color = Terracotta, fontWeight = FontWeight.Bold)
-                                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                                    OutlinedButton(onClick = {
-                                                        val next = (cart[product.id] ?: 0) - 1
+                                                val quantity = cart[product.id] ?: 0
+                                                if (quantity > 0) {
+                                                    Text("Di keranjang: $quantity", color = Terracotta, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+                                                    TextButton(onClick = {
+                                                        val next = quantity - 1
                                                         cart = if (next <= 0) cart - product.id else cart + (product.id to next)
-                                                    }, enabled = (cart[product.id] ?: 0) > 0) { Text("−") }
-                                                    Text("  ${cart[product.id] ?: 0}  ", color = Ink)
-                                                    OutlinedButton(onClick = {
-                                                        cart = cart + (product.id to ((cart[product.id] ?: 0) + 1))
-                                                    }) { Text("+") }
+                                                    }) { Text("Kurangi", color = Muted) }
                                                 }
                                             }
                                         }
