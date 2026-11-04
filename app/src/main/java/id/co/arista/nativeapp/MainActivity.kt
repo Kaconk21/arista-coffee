@@ -84,29 +84,6 @@ private fun AristaApp() {
     val localDb = remember(context) { Room.databaseBuilder(context.applicationContext, AristaDatabase::class.java, "arista-local.db").build() }
     val localDao = remember(localDb) { localDb.localDao() }
     val scope = rememberCoroutineScope()
-    val createBackupLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
-        if (uri != null && backupContent.isNotBlank()) {
-            try {
-                context.contentResolver.openOutputStream(uri)?.use { it.write(backupContent.toByteArray(Charsets.UTF_8)) }
-                error = "Backup berhasil disimpan."
-            } catch (e: Exception) { error = "Gagal menyimpan backup: ${e.message ?: "kesalahan file"}" }
-        }
-    }
-    val restoreBackupLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) {
-            try {
-                val raw = context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
-                    ?: throw IllegalStateException("File tidak dapat dibaca.")
-                val parsed = org.json.JSONObject(raw)
-                if (parsed.optString("app") != "arista-native" || parsed.optInt("version") != 1 ||
-                    !parsed.has("pendingOrders") || !parsed.has("syncOutbox") || !parsed.has("shifts")) {
-                    throw IllegalArgumentException("Format backup ARISTA tidak sesuai.")
-                }
-                pendingRestore = parsed
-                error = ""
-            } catch (e: Exception) { error = e.message ?: "File backup tidak valid." }
-        }
-    }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var recoveryBusy by remember { mutableStateOf(false) }
@@ -166,6 +143,29 @@ private fun AristaApp() {
     var manageTab by remember { mutableStateOf("Menu") }
     var backupContent by remember { mutableStateOf("") }
     var pendingRestore by remember { mutableStateOf<org.json.JSONObject?>(null) }
+    val createBackupLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+        if (uri != null && backupContent.isNotBlank()) {
+            try {
+                context.contentResolver.openOutputStream(uri)?.use { it.write(backupContent.toByteArray(Charsets.UTF_8)) }
+                error = "Backup berhasil disimpan."
+            } catch (e: Exception) { error = "Gagal menyimpan backup: ${e.message ?: "kesalahan file"}" }
+        }
+    }
+    val restoreBackupLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            try {
+                val raw = context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
+                    ?: throw IllegalStateException("File tidak dapat dibaca.")
+                val parsed = org.json.JSONObject(raw)
+                if (parsed.optString("app") != "arista-native" || parsed.optInt("version") != 1 ||
+                    !parsed.has("pendingOrders") || !parsed.has("syncOutbox") || !parsed.has("shifts")) {
+                    throw IllegalArgumentException("Format backup ARISTA tidak sesuai.")
+                }
+                pendingRestore = parsed
+                error = ""
+            } catch (e: Exception) { error = e.message ?: "File backup tidak valid." }
+        }
+    }
 
     Surface(modifier = Modifier.fillMaxSize(), color = Cream) {
         if (session == null || profile == null) {
