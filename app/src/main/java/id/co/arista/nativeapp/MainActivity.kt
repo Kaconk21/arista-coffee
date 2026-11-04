@@ -51,6 +51,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Shapes
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -97,6 +98,18 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             MaterialTheme(
+                colorScheme = lightColorScheme(
+                    primary = Terracotta,
+                    onPrimary = Color.White,
+                    secondary = Terracotta,
+                    onSecondary = Color.White,
+                    background = Cream,
+                    onBackground = Ink,
+                    surface = Color.White,
+                    onSurface = Ink,
+                    outline = Color(0xFFE6DCCD),
+                    outlineVariant = Color(0xFFE6DCCD)
+                ),
                 shapes = Shapes(
                     small = RoundedCornerShape(14.dp),
                     medium = RoundedCornerShape(18.dp),
@@ -370,7 +383,7 @@ private fun AristaApp() {
                         val shiftCashSales = shiftSales.filter { it.optString("method") == "Tunai" }.sumOf { it.optDouble("total") }
                         val shiftAllSales = shiftSales.sumOf { it.optDouble("total") }
                         val expectedCash = (activeShift?.openingCash ?: 0.0) + shiftCashSales
-                        Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                        Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                             Column(Modifier.padding(12.dp)) {
                                 if (activeShift == null) {
                                     Text("Shift belum dibuka", color = Ink, fontWeight = FontWeight.SemiBold)
