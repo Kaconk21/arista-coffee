@@ -50,6 +50,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -94,7 +95,15 @@ private fun saleTimestamp(sale: org.json.JSONObject): Long {
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { MaterialTheme { AristaApp() } }
+        setContent {
+            MaterialTheme(
+                shapes = Shapes(
+                    small = RoundedCornerShape(14.dp),
+                    medium = RoundedCornerShape(18.dp),
+                    large = RoundedCornerShape(24.dp)
+                )
+            ) { AristaApp() }
+        }
     }
 }
 
@@ -194,7 +203,7 @@ private fun AristaApp() {
     Surface(modifier = Modifier.fillMaxSize(), color = Cream) {
         if (session == null || profile == null) {
             Column(
-                modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
+                modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -203,7 +212,7 @@ private fun AristaApp() {
                 Spacer(Modifier.height(24.dp))
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(18.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White)
                 ) {
                     Column(Modifier.padding(14.dp)) {
