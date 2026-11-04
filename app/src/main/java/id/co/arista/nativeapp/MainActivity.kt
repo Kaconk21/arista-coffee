@@ -97,6 +97,13 @@ private fun AristaApp() {
     var expenseNote by remember { mutableStateOf("") }
     var reportsLoading by remember { mutableStateOf(false) }
     var reportRange by remember { mutableStateOf("Harian") }
+    var reportTab by remember { mutableStateOf("Penjualan") }
+    var receivableSales by remember { mutableStateOf(org.json.JSONArray()) }
+    var receivablePayments by remember { mutableStateOf(org.json.JSONArray()) }
+    var receivablesLoading by remember { mutableStateOf(false) }
+    var receivableCustomer by remember { mutableStateOf<String?>(null) }
+    var receivableAmount by remember { mutableStateOf("") }
+    var receivableMethod by remember { mutableStateOf("Tunai") }
     var cart by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
     var pendingOrders by remember { mutableStateOf<List<PendingOrderEntity>>(emptyList()) }
     var editingPendingId by remember { mutableStateOf<String?>(null) }
@@ -589,7 +596,117 @@ private fun AristaApp() {
                                 else OutlinedButton(onClick = { reportRange = range }, modifier = Modifier.weight(1f)) { Text(range, fontSize = 11.sp) }
                             }
                         }
-                        if (reportsLoading) CircularProgressIndicator(color = Terracotta)
+                        if (owner) {
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                                listOf("Penjualan", "Pengeluaran", "Piutang").forEach { tab ->
+                                    if (reportTab == tab) Button(onClick = {
+                                        reportTab = tab
+                                        if (tab == "Piutang" && receivableSales.length() == 0 && !receivablesLoading) {
+                                            val token = session?.accessToken
+                                            if (token != null) {
+                                                receivablesLoading = true
+                                                scope.launch {
+                                                    try {
+                                                        receivableSales = api.receivableSales(token)
+                                                        receivablePayments = api.receivablePayments(token)
+                                                        error = ""
+                                                    } catch (e: Exception) { error = e.message ?: "Piutang gagal dimuat." }
+                                                    finally { receivablesLoading = false }
+                                                }
+                                            }
+                                        }
+                                    }, modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 2.dp, vertical = 8.dp), colors = ButtonDefaults.buttonColors(containerColor = Terracotta)) { Text(tab, fontSize = 10.sp) }
+                                    else OutlinedButton(onClick = { reportTab = tab }, modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 2.dp, vertical = 8.dp)) { Text(tab, fontSize = 10.sp) }
+                                }
+                            }
+                        }
+                        if (reportTab == "Piutang" && owner) {
+                            if (receivablesLoading) CircularProgressIndicator(color = Terracotta)
+                            else {
+                                val unpaid = (0 until receivableSales.length()).mapNotNull { receivableSales.optJSONObject(it) }.filterNot { it.optBoolean("batal") }.map { sale ->
+                                    val paid = (0 until receivablePayments.length()).sumOf { i ->
+                                        val payment = receivablePayments.optJSONObject(i) ?: org.json.JSONObject()
+                                        if (payment.optString("sale_id") == sale.optString("id")) payment.optDouble("nominal") else 0.0
+                                    }
+                                    org.json.JSONObject(sale.toString()).put("dibayar", paid).put("sisa", (sale.optDouble("total") - paid).coerceAtLeast(0.0))
+                                }.filter { it.optDouble("sisa") > 0.0 }
+                                val customers = unpaid.map { it.optString("customer").ifBlank { "Umum" } }.distinct().sorted()
+                                val totalDue = unpaid.sumOf { it.optDouble("sisa") }
+                                Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                                    Column(Modifier.padding(14.dp)) {
+                                        Text("Total piutang belum lunas", color = Muted, fontSize = 12.sp)
+                                        Text("Rp ${totalDue.toLong()}", color = Terracotta, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                                        Text("${unpaid.size} nota · ${customers.size} customer", color = Muted, fontSize = 11.sp)
+                                    }
+                                }
+                                if (receivableCustomer == null) {
+                                    Text("Daftar customer", color = Ink, fontWeight = FontWeight.SemiBold)
+                                    if (customers.isEmpty()) Text("Tidak ada piutang yang belum lunas.", color = Muted, fontSize = 12.sp)
+                                    customers.forEach { customer ->
+                                        val due = unpaid.filter { it.optString("customer").ifBlank { "Umum" } == customer }.sumOf { it.optDouble("sisa") }
+                                        Card(Modifier.fillMaxWidth().clickable { receivableCustomer = customer }, colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                                            Row(Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                                                Text(customer, color = Ink, fontWeight = FontWeight.SemiBold)
+                                                Text("Rp ${due.toLong()}", color = Terracotta, fontWeight = FontWeight.Bold)
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    TextButton(onClick = { receivableCustomer = null; receivableAmount = "" }) { Text("← Semua customer", color = Terracotta) }
+                                    val customerNotes = unpaid.filter { it.optString("customer").ifBlank { "Umum" } == receivableCustomer }
+                                    val customerDue = customerNotes.sumOf { it.optDouble("sisa") }
+                                    Text(receivableCustomer ?: "", color = Ink, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                                    Text("Sisa tagihan Rp ${customerDue.toLong()}", color = Terracotta, fontWeight = FontWeight.SemiBold)
+                                    OutlinedTextField(receivableAmount, { receivableAmount = it.filter(Char::isDigit) }, Modifier.fillMaxWidth(), label = { Text("Nominal pembayaran (Rp)") }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
+                                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                        listOf("Tunai", "QRIS", "Debit/Kredit", "Transfer").forEach { method ->
+                                            if (receivableMethod == method) Button(onClick = { receivableMethod = method }, modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 2.dp, vertical = 7.dp), colors = ButtonDefaults.buttonColors(containerColor = Terracotta)) { Text(method, fontSize = 9.sp) }
+                                            else OutlinedButton(onClick = { receivableMethod = method }, modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 2.dp, vertical = 7.dp)) { Text(method, fontSize = 9.sp) }
+                                        }
+                                    }
+                                    Button(enabled = !paymentBusy && (receivableAmount.toDoubleOrNull() ?: 0.0) > 0, onClick = {
+                                        val token = session?.accessToken ?: return@Button
+                                        val amount = receivableAmount.toDoubleOrNull() ?: 0.0
+                                        paymentBusy = true
+                                        scope.launch {
+                                            try {
+                                                api.payReceivableCustomer(token, receivableCustomer ?: "", amount, receivableMethod)
+                                                receivableSales = api.receivableSales(token)
+                                                receivablePayments = api.receivablePayments(token)
+                                                receivableAmount = ""
+                                                error = ""
+                                            } catch (e: Exception) { error = e.message ?: "Pembayaran piutang gagal." }
+                                            finally { paymentBusy = false }
+                                        }
+                                    }, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = Terracotta)) { Text("Bayar sekaligus") }
+                                    Text("Nota belum lunas", color = Ink, fontWeight = FontWeight.SemiBold)
+                                    customerNotes.forEach { note ->
+                                        Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                                            Column(Modifier.padding(12.dp)) {
+                                                Text(note.optString("sale_date"), color = Ink, fontWeight = FontWeight.SemiBold)
+                                                Text("Total Rp ${note.optDouble("total").toLong()} · Sudah dibayar Rp ${note.optDouble("dibayar").toLong()}", color = Muted, fontSize = 11.sp)
+                                                Text("Sisa Rp ${note.optDouble("sisa").toLong()}", color = Terracotta, fontWeight = FontWeight.Bold)
+                                                TextButton(enabled = !paymentBusy, onClick = {
+                                                    val token = session?.accessToken ?: return@TextButton
+                                                    val amount = (receivableAmount.toDoubleOrNull() ?: 0.0).let { if (it > 0) it.coerceAtMost(note.optDouble("sisa")) else note.optDouble("sisa") }
+                                                    paymentBusy = true
+                                                    scope.launch {
+                                                        try {
+                                                            api.payReceivableNote(token, note.optString("id"), amount, receivableMethod)
+                                                            receivableSales = api.receivableSales(token)
+                                                            receivablePayments = api.receivablePayments(token)
+                                                            receivableAmount = ""
+                                                            error = ""
+                                                        } catch (e: Exception) { error = e.message ?: "Pembayaran nota gagal." }
+                                                        finally { paymentBusy = false }
+                                                    }
+                                                }) { Text("Bayar nota ini", color = Terracotta) }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        } else if (reportsLoading) CircularProgressIndicator(color = Terracotta)
                         else {
                             Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
                                 Column(Modifier.padding(16.dp)) {
