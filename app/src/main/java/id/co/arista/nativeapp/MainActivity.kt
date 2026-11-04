@@ -125,7 +125,7 @@ private fun AristaApp() {
     var staffName by remember { mutableStateOf("") }
     var staffEmail by remember { mutableStateOf("") }
     var staffPassword by remember { mutableStateOf("") }
-    var manageAccounts by remember { mutableStateOf(false) }
+    var manageTab by remember { mutableStateOf("Menu") }
 
     Surface(modifier = Modifier.fillMaxSize(), color = Cream) {
         if (session == null || profile == null) {
@@ -710,12 +710,14 @@ Text("Transaksi terbaru", color = Ink, fontWeight = FontWeight.SemiBold)
                     } else if (profile?.peran.equals("Pemilik", ignoreCase = true) && selectedTab == 3) {
                         val owner = true
                         if (owner) {
-                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Button(onClick = { manageAccounts = false }, colors = ButtonDefaults.buttonColors(containerColor = if (!manageAccounts) Terracotta else Color.LightGray), modifier = Modifier.weight(1f)) { Text("Menu") }
-                                Button(onClick = { manageAccounts = true }, colors = ButtonDefaults.buttonColors(containerColor = if (manageAccounts) Terracotta else Color.LightGray), modifier = Modifier.weight(1f)) { Text("Akun kasir") }
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                                listOf("Menu", "Kategori", "Harga", "Akun kasir").forEach { tab ->
+                                    if (manageTab == tab) Button(onClick = { manageTab = tab }, modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 3.dp, vertical = 8.dp), colors = ButtonDefaults.buttonColors(containerColor = Terracotta)) { Text(tab, fontSize = 10.sp) }
+                                    else OutlinedButton(onClick = { manageTab = tab }, modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 3.dp, vertical = 8.dp)) { Text(tab, fontSize = 10.sp) }
+                                }
                             }
                         }
-                        if (!manageAccounts || !owner) {
+                        if (manageTab == "Menu" || !owner) {
                         Text("Daftar menu", color = Ink, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                         if (owner) {
                             Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
@@ -774,7 +776,40 @@ Text("Transaksi terbaru", color = Ink, fontWeight = FontWeight.SemiBold)
                             }
                         }
                         }
-                        if (manageAccounts && owner) {
+                        if (manageTab == "Kategori" && owner) {
+                            Text("Kategori menu", color = Ink, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                            val categoryCounts = products.groupingBy { it.category.ifBlank { "Tanpa kategori" } }.eachCount().toList().sortedBy { it.first.lowercase() }
+                            if (categoryCounts.isEmpty()) Text("Belum ada kategori.", color = Muted, fontSize = 12.sp)
+                            else LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                                items(categoryCounts) { entry ->
+                                    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                                        Row(Modifier.fillMaxWidth().padding(14.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                                            Text(entry.first, color = Ink, fontWeight = FontWeight.SemiBold)
+                                            Text("${entry.second} menu", color = Muted, fontSize = 12.sp)
+                                        }
+                                    }
+                                }
+                            }
+                            Text("Kategori diatur melalui kolom Kategori saat menambah atau mengubah menu.", color = Muted, fontSize = 11.sp)
+                        } else if (manageTab == "Harga" && owner) {
+                            Text("Harga & margin", color = Ink, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                            LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                                items(products, key = { it.id }) { product ->
+                                    val marginPercent = if (product.price > 0) ((product.price - product.cost) / product.price * 100).toInt() else 0
+                                    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                                        Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                            Column(Modifier.weight(1f)) {
+                                                Text(product.name, color = Ink, fontWeight = FontWeight.SemiBold)
+                                                Text("Jual Rp ${product.price.toLong()} · Modal Rp ${product.cost.toLong()}", color = Muted, fontSize = 11.sp)
+                                                Text("Margin ${marginPercent}%", color = Terracotta, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                                            }
+                                            TextButton(onClick = { manageTab = "Menu"; editingProductId = product.id; productName = product.name; productCategory = product.category; productPrice = product.price.toLong().toString(); productCost = product.cost.toLong().toString(); productStock = product.stock.toString() }) { Text("Ubah", color = Terracotta) }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        if (manageTab == "Akun kasir" && owner) {
                             Spacer(Modifier.height(12.dp))
                             Text("Kelola akun kasir", color = Ink, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                             Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
