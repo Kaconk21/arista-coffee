@@ -268,7 +268,7 @@ private fun AristaApp() {
                                             }
                                         }
                                         val received = cashReceived.toLongOrNull() ?: 0L
-                                        Text("Kembalian Rp ${(received - total).coerceAtLeast(0.0).toLong()}", color = Muted, fontSize = 13.sp)
+                                        Text("Kembalian Rp ${(received - total.toLong()).coerceAtLeast(0L)}", color = Muted, fontSize = 13.sp)
                                     }
                                     Button(
                                         enabled = !paymentBusy && (paymentMethod != "Tunai" || (cashReceived.toLongOrNull() ?: 0L) >= total.toLong()),
@@ -291,7 +291,7 @@ private fun AristaApp() {
                                                         .put("sale_date", now.toLocalDate().toString())
                                                         .put("sale_time", now.toLocalTime().toString().take(5))
                                                         .put("items", rows).put("total", total)
-                                                        .put("method", paymentMethod).put("paid", if (paymentMethod == "Tunai") (cashReceived.toLongOrNull() ?: 0L) else total).put("change_amount", if (paymentMethod == "Tunai") ((cashReceived.toLongOrNull() ?: 0L) - total).coerceAtLeast(0.0) else 0)
+                                                        .put("method", paymentMethod).put("paid", if (paymentMethod == "Tunai") (cashReceived.toLongOrNull() ?: 0L) else total).put("change_amount", if (paymentMethod == "Tunai") ((cashReceived.toLongOrNull() ?: 0L) - total.toLong()).coerceAtLeast(0L) else 0L)
                                                         .put("cashier_name", profile?.nama ?: "")
                                                         .put("customer", "Umum").put("diskon", 0)
                                                     api.saveSale(active.accessToken, sale)
