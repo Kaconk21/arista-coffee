@@ -1,6 +1,9 @@
 package id.co.arista.nativeapp
 
 import android.os.Bundle
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -54,7 +57,6 @@ import androidx.room.Room
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
-import java.io.IOException
 
 private val Cream = Color(0xFFF7F1E8)
 private val Terracotta = Color(0xFFB5583A)
@@ -374,12 +376,11 @@ private fun AristaApp() {
                                                         .put("method", paymentMethod).put("paid", if (paymentMethod == "Tunai") (cashReceived.toLongOrNull() ?: 0L) else total).put("change_amount", if (paymentMethod == "Tunai") ((cashReceived.toLongOrNull() ?: 0L) - total.toLong()).coerceAtLeast(0L) else 0L)
                                                         .put("cashier_name", profile?.nama ?: "")
                                                         .put("customer", "Umum").put("diskon", 0)
-                                                    try {
+                                                    if (hasValidatedInternet(context)) {
                                                         api.saveSale(active.accessToken, sale)
-                                                    } catch (e: IOException) {
-                                                        if (e is AristaHttpException) throw e
+                                                    } else {
                                                         localDao.enqueue(SyncOutboxEntity(sale.getString("id"), sale.toString(), System.currentTimeMillis()))
-                                                        error = "Koneksi terputus. Transaksi disimpan di perangkat dan akan dikirim saat online."
+                                                        error = "Tidak ada internet. Transaksi disimpan di perangkat dan akan dikirim saat online."
                                                     }
                                                     cart = emptyMap()
                                                     editingPendingId?.let { localDao.deletePendingOrder(it) }
@@ -744,4 +745,11 @@ private suspend fun syncPendingSales(api: AristaApi, dao: AristaLocalDao, token:
             break
         }
     }
+}
+private fun hasValidatedInternet(context: Context): Boolean {
+    val manager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+    val network = manager.activeNetwork ?: return false
+    val capabilities = manager.getNetworkCapabilities(network) ?: return false
+    return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
+        capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
 }
