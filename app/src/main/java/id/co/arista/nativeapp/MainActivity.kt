@@ -336,8 +336,8 @@ private fun AristaApp() {
                             Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
                                 Column(Modifier.padding(16.dp)) {
                                     Text("Omzet transaksi aktif", color = Muted, fontSize = 12.sp)
-                                    Text("Rp \${omzet.toLong()}", color = Terracotta, fontSize = 23.sp, fontWeight = FontWeight.Bold)
-                                    Text("Jumlah transaksi: \${jumlah}", color = Ink)
+                                    Text("Rp ${omzet.toLong()}", color = Terracotta, fontSize = 23.sp, fontWeight = FontWeight.Bold)
+                                    Text("Jumlah transaksi: ${jumlah}", color = Ink)
                                     Text("Data maksimal 200 transaksi terakhir", color = Muted, fontSize = 11.sp)
                                 }
                             }
@@ -349,9 +349,9 @@ private fun AristaApp() {
                                         Column(Modifier.padding(12.dp)) {
                                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                                 Text(sale.optString("customer", "Umum"), color = Ink, fontWeight = FontWeight.SemiBold)
-                                                Text("Rp \${sale.optDouble("total").toLong()}", color = Terracotta, fontWeight = FontWeight.Bold)
+                                                Text("Rp ${sale.optDouble("total").toLong()}", color = Terracotta, fontWeight = FontWeight.Bold)
                                             }
-                                            Text("\${sale.optString("sale_date")} · \${sale.optString("sale_time")} · \${sale.optString("method")}", color = Muted, fontSize = 12.sp)
+                                            Text("${sale.optString("sale_date")} · ${sale.optString("sale_time")} · ${sale.optString("method")}", color = Muted, fontSize = 12.sp)
                                             if (sale.optBoolean("batal")) Text("DIBATALKAN", color = Color(0xFFB3261E), fontSize = 11.sp)
                                         }
                                     }
