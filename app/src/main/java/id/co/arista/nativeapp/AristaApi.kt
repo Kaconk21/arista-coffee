@@ -78,6 +78,10 @@ class AristaApi {
     }
 
 
+    suspend fun saleExists(token: String, saleId: String): Boolean = withContext(Dispatchers.IO) {
+        val rows = JSONArray(call("/rest/v1/sales?id=eq.$saleId&select=id&limit=1", "GET", null, token))
+        rows.length() > 0
+    }
     suspend fun sales(token: String): JSONArray = withContext(Dispatchers.IO) {
         JSONArray(call("/rest/v1/sales?select=id,sale_date,sale_time,items,total,method,paid,change_amount,cashier_name,customer,batal,diskon&order=sale_date.desc,sale_time.desc&limit=200", "GET", null, token))
     }
