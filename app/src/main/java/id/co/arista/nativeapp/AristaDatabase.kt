@@ -48,6 +48,9 @@ interface AristaLocalDao {
     @Query("DELETE FROM pending_orders WHERE id = :id")
     suspend fun deletePendingOrder(id: String)
 
+    @Query("DELETE FROM pending_orders")
+    suspend fun clearPendingOrders()
+
     @Query("SELECT * FROM sync_outbox ORDER BY createdAt ASC")
     suspend fun getOutbox(): List<SyncOutboxEntity>
 
@@ -57,6 +60,9 @@ interface AristaLocalDao {
     @Query("DELETE FROM sync_outbox WHERE id = :id")
     suspend fun removeFromOutbox(id: String)
 
+    @Query("DELETE FROM sync_outbox")
+    suspend fun clearOutbox()
+
     @Query("UPDATE sync_outbox SET retryCount = retryCount + 1, lastError = :message WHERE id = :id")
     suspend fun markRetry(id: String, message: String)
 
@@ -65,6 +71,9 @@ interface AristaLocalDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun saveShift(shift: ShiftEntity)
+
+    @Query("DELETE FROM cashier_shifts")
+    suspend fun clearShifts()
 }
 
 @Database(
