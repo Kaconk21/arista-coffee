@@ -24,6 +24,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.Coffee
 import androidx.compose.material.icons.filled.PointOfSale
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -226,8 +227,11 @@ private fun AristaApp() {
                 Text("Gunakan akun ARISTA yang sudah terdaftar.", color = Muted, fontSize = 12.sp)
             }
         } else {
-            val labels = listOf("Beranda", "Kasir", "Laporan", "Kelola")
-            val icons = listOf(Icons.Default.Coffee, Icons.Default.PointOfSale, Icons.Default.Assessment, Icons.Default.Settings)
+            val isOwner = profile?.peran.equals("Pemilik", true)
+            val labels = if (isOwner) listOf("Beranda", "Kasir", "Laporan", "Kelola", "Profil")
+                else listOf("Beranda", "Kasir", "Laporan", "Profil")
+            val icons = if (isOwner) listOf(Icons.Default.Coffee, Icons.Default.PointOfSale, Icons.Default.Assessment, Icons.Default.Settings, Icons.Default.Person)
+                else listOf(Icons.Default.Coffee, Icons.Default.PointOfSale, Icons.Default.Assessment, Icons.Default.Person)
             Scaffold(
                 containerColor = Cream,
                 bottomBar = {
@@ -661,8 +665,8 @@ Text("Transaksi terbaru", color = Ink, fontWeight = FontWeight.SemiBold)
                             }
                         }
                         if (error.isNotBlank()) Text(error, color = Color(0xFFB3261E), fontSize = 12.sp)
-                    } else {
-                        val owner = profile?.peran.equals("Pemilik", ignoreCase = true)
+                    } else if (profile?.peran.equals("Pemilik", ignoreCase = true) && selectedTab == 3) {
+                        val owner = true
                         if (owner) {
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Button(onClick = { manageAccounts = false }, colors = ButtonDefaults.buttonColors(containerColor = if (!manageAccounts) Terracotta else Color.LightGray), modifier = Modifier.weight(1f)) { Text("Menu") }
@@ -781,6 +785,20 @@ Text("Transaksi terbaru", color = Ink, fontWeight = FontWeight.SemiBold)
                             }
                         }
                         if (error.isNotBlank()) Text(error, color = Color(0xFFB3261E), fontSize = 12.sp)
+                    } else {
+                        Text("Profil", color = Ink, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                        Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                            Column(Modifier.padding(16.dp)) {
+                                Text(profile!!.nama, color = Ink, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+                                Text(profile!!.peran, color = Muted, fontSize = 13.sp)
+                                Spacer(Modifier.height(12.dp))
+                                Text("Status koneksi: " + if (hasValidatedInternet(context)) "Online" else "Offline", color = Muted, fontSize = 12.sp)
+                                Text("Transaksi menunggu sinkronisasi: $queuedSalesCount", color = Muted, fontSize = 12.sp)
+                            }
+                        }
+                        Button(onClick = { session = null; profile = null; password = ""; selectedTab = 0 }, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = Terracotta)) {
+                            Text("Keluar dari akun")
+                        }
                     }
                 }
             }
