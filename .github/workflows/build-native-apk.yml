@@ -11,6 +11,10 @@ on:
       - "gradle.properties"
       - ".github/workflows/build-native-apk.yml"
 
+concurrency:
+  group: arista-native-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
