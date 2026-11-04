@@ -89,3 +89,31 @@ Workflow `.github/workflows/build-native-apk.yml` berhasil menjalankan `assemble
 4. Cetak Bluetooth diuji pada HP-M200.
 5. APK release ditandatangani dan diuji instalasi di Redmi 14C.
 6. Website tetap tersedia sebagai cadangan.
+
+## Status implementasi native (4 November 2026)
+
+Sudah ada di cabang `native-android`:
+- Login Supabase dan pembacaan profil/peran.
+- Kasir dasar, keranjang, Tunai/QRIS, validasi uang diterima dan kembalian.
+- Pencatatan transaksi melalui RPC `catat_penjualan`.
+- Beranda dan laporan dasar dari transaksi Supabase.
+- Pengelolaan menu untuk Pemilik (tambah, ubah, hapus).
+- Pengelolaan akun Kasir melalui `swift-worker`.
+- Room lokal untuk pesanan tertunda, antrean sinkronisasi, dan shift.
+- Simpan/buka/hapus pesanan tertunda di perangkat; pesanan tetap ada sampai pembayaran berhasil.
+- Antrean transaksi saat Android mendeteksi tidak ada koneksi internet; percobaan sinkronisasi ulang saat login.
+- Buka/tutup shift lokal dengan modal awal, kas akhir, dan selisih.
+- Laporan estimasi modal/laba kotor dan form catat pengeluaran untuk Pemilik.
+
+## Belum selesai / belum teruji
+- Pemulihan sesi login dan pengamanan token lokal.
+- Riwayat shift dan laporan yang lengkap dengan filter tanggal, ekspor CSV, dan piutang.
+- Alur pembayaran debit/transfer/piutang dan pencatatan pembayaran piutang.
+- Pembatalan transaksi dan penyesuaian stok melalui RPC yang sudah ada.
+- Cache produk dan sinkronisasi perubahan menu saat offline.
+- Backup/restore database lokal secara lengkap.
+- Cetak Bluetooth native untuk CODESOFT HP-M200; harus diuji pada Redmi 14C dan printer fisik.
+- Uji end-to-end pada akun uji agar tidak membuat transaksi sungguhan pada data produksi.
+- APK release final, pemeriksaan instalasi, dan uji perangkat.
+
+Build KSP/Room berhasil pada commit `ff6642f7046ccaada14eba7c89f30db691364e00`. Perubahan setelah commit tersebut masih menunggu build dan verifikasi.
