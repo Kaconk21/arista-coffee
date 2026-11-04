@@ -584,7 +584,7 @@ private fun AristaApp() {
                             TextButton(onClick = {
                                 reportsLoading = true
                                 scope.launch {
-                                    try { reportSales = api.sales(session!!.accessToken); error = "" }
+                                    try { reportSales = api.salesForRange(session!!.accessToken, periodStart.toString(), todayDate.toString()); error = "" }
                                     catch (e: Exception) { error = e.message ?: "Gagal memuat laporan." }
                                     finally { reportsLoading = false }
                                 }
@@ -592,8 +592,20 @@ private fun AristaApp() {
                         }
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             listOf("Harian", "Mingguan", "Bulanan").forEach { range ->
-                                if (reportRange == range) Button(onClick = { reportRange = range }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(containerColor = Terracotta)) { Text(range, fontSize = 11.sp) }
-                                else OutlinedButton(onClick = { reportRange = range }, modifier = Modifier.weight(1f)) { Text(range, fontSize = 11.sp) }
+                                if (reportRange == range) Button(onClick = {
+                                    reportRange = range
+                                    val endDate = java.time.LocalDate.now()
+                                    val startDate = when (range) { "Mingguan" -> endDate.with(java.time.DayOfWeek.MONDAY); "Bulanan" -> endDate.withDayOfMonth(1); else -> endDate }
+                                    val token = session?.accessToken
+                                    if (token != null) { reportsLoading = true; scope.launch { try { reportSales = api.salesForRange(token, startDate.toString(), endDate.toString()); error = "" } catch (e: Exception) { error = e.message ?: "Gagal memuat laporan." } finally { reportsLoading = false } } }
+                                }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(containerColor = Terracotta)) { Text(range, fontSize = 11.sp) }
+                                else OutlinedButton(onClick = {
+                                    reportRange = range
+                                    val endDate = java.time.LocalDate.now()
+                                    val startDate = when (range) { "Mingguan" -> endDate.with(java.time.DayOfWeek.MONDAY); "Bulanan" -> endDate.withDayOfMonth(1); else -> endDate }
+                                    val token = session?.accessToken
+                                    if (token != null) { reportsLoading = true; scope.launch { try { reportSales = api.salesForRange(token, startDate.toString(), endDate.toString()); error = "" } catch (e: Exception) { error = e.message ?: "Gagal memuat laporan." } finally { reportsLoading = false } } }
+                                }, modifier = Modifier.weight(1f)) { Text(range, fontSize = 11.sp) }
                             }
                         }
                         if (owner) {
