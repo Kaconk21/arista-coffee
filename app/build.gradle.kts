@@ -18,6 +18,12 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
+    }
+
+    defaultConfig {
+        buildConfigField("String", "SUPABASE_URL", "\"https://ijdwxdczuqilhcxffxhh.supabase.co\"")
+        buildConfigField("String", "SUPABASE_ANON_KEY", "\"sb_publishable_mt2sOvrURI1vkUhQ1t4lvw_wPwQEuy0\"")
     }
 
     compileOptions {
@@ -37,5 +43,6 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
     debugImplementation("androidx.compose.ui:ui-tooling")
 }
