@@ -386,6 +386,7 @@ private fun AristaApp() {
                                             methodRow.forEach { method ->
                                             if (paymentMethod == method) Button(onClick = { paymentMethod = method }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(containerColor = Terracotta)) { Text(method) }
                                             else OutlinedButton(onClick = { paymentMethod = method }, modifier = Modifier.weight(1f)) { Text(method, fontSize = 11.sp) }
+                                            }
                                         }
                                     }
                                     if (paymentMethod == "Tunai") {
