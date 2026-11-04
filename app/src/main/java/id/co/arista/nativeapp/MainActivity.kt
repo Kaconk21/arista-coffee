@@ -76,6 +76,7 @@ private fun AristaApp() {
     var products by remember { mutableStateOf<List<AristaProduct>>(emptyList()) }
     var productsLoading by remember { mutableStateOf(false) }
     var cart by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
+    var paymentBusy by remember { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf("") }
     var selectedTab by remember { mutableIntStateOf(0) }
