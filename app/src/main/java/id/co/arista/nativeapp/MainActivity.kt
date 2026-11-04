@@ -342,7 +342,7 @@ private fun AristaApp() {
                             Column(Modifier.padding(12.dp)) {
                                 if (activeShift == null) {
                                     Text("Shift belum dibuka", color = Ink, fontWeight = FontWeight.SemiBold)
-                                    OutlinedTextField(openingCashInput, { openingCashInput = it.filter(Char::isDigit) }, Modifier.fillMaxWidth(), label = { Text("Modal awal kas (Rp)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true)
+                                    OutlinedTextField(openingCashInput, { openingCashInput = it.filter(Char::isDigit) }, Modifier.fillMaxWidth().height(54.dp), label = { Text("Modal awal kas (Rp)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true)
                                     Button(enabled = openingCashInput.isNotBlank(), onClick = {
                                         val amount = openingCashInput.toDoubleOrNull() ?: 0.0
                                         val shift = ShiftEntity(java.util.UUID.randomUUID().toString(), System.currentTimeMillis(), amount)
@@ -351,7 +351,7 @@ private fun AristaApp() {
                                 } else {
                                     Text("Shift aktif", color = Terracotta, fontWeight = FontWeight.SemiBold)
                                     Text("Modal awal: Rp ${activeShift!!.openingCash.toLong()}", color = Ink, fontSize = 12.sp)
-                                    OutlinedTextField(closingCashInput, { closingCashInput = it.filter(Char::isDigit) }, Modifier.fillMaxWidth(), label = { Text("Uang kas akhir (Rp)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true)
+                                    OutlinedTextField(closingCashInput, { closingCashInput = it.filter(Char::isDigit) }, Modifier.fillMaxWidth().height(54.dp), label = { Text("Uang kas akhir (Rp)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true)
                                     Button(enabled = closingCashInput.isNotBlank(), onClick = {
                                         val current = activeShift ?: return@Button
                                         val endAmount = closingCashInput.toDoubleOrNull() ?: 0.0
@@ -475,7 +475,7 @@ private fun AristaApp() {
                                             HorizontalDivider(color = Cream)
                                         }
                                         Spacer(Modifier.height(8.dp))
-                                        OutlinedTextField(customerName, { customerName = it; error = "" }, Modifier.fillMaxWidth(), label = { Text("Nama customer") }, singleLine = true)
+                                        OutlinedTextField(customerName, { customerName = it; error = "" }, Modifier.fillMaxWidth().height(54.dp), label = { Text("Nama customer") }, singleLine = true)
                                         Spacer(Modifier.height(8.dp))
                                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                             Text("Subtotal", color = Muted)
@@ -527,7 +527,7 @@ private fun AristaApp() {
                                             Text("Rp ${subtotal.toLong()}", color = Ink, fontSize = 12.sp)
                                         }
                                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                            OutlinedTextField(discountInput, { discountInput = it.filter { ch -> ch.isDigit() || ch == '.' } }, Modifier.weight(1f), label = { Text("Diskon") }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
+                                            OutlinedTextField(discountInput, { discountInput = it.filter { ch -> ch.isDigit() || ch == '.' } }, Modifier.weight(1f).height(54.dp), label = { Text("Diskon") }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
                                             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                                                 listOf("Rp", "%").forEach { type ->
                                                     if (discountType == type) Button(onClick = { discountType = type }, contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp), colors = ButtonDefaults.buttonColors(containerColor = Terracotta)) { Text(type) }
@@ -896,7 +896,7 @@ private fun AristaApp() {
                                     val customerDue = customerNotes.sumOf { it.optDouble("sisa") }
                                     Text(receivableCustomer ?: "", color = Ink, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                                     Text("Sisa tagihan Rp ${customerDue.toLong()}", color = Terracotta, fontWeight = FontWeight.SemiBold)
-                                    OutlinedTextField(receivableAmount, { receivableAmount = it.filter(Char::isDigit) }, Modifier.fillMaxWidth(), label = { Text("Nominal pembayaran (Rp)") }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
+                                    OutlinedTextField(receivableAmount, { receivableAmount = it.filter(Char::isDigit) }, Modifier.fillMaxWidth().height(54.dp), label = { Text("Nominal pembayaran (Rp)") }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
                                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                         listOf("Tunai", "QRIS", "Debit/Kredit", "Transfer").forEach { method ->
                                             if (receivableMethod == method) Button(onClick = { receivableMethod = method }, modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 2.dp, vertical = 7.dp), colors = ButtonDefaults.buttonColors(containerColor = Terracotta)) { Text(method, fontSize = 9.sp) }
@@ -951,14 +951,14 @@ private fun AristaApp() {
                             Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
                                 Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                     Text("Total pengeluaran: Rp ${expenseSum.toLong()}", color = Terracotta, fontWeight = FontWeight.Bold)
-                                    OutlinedTextField(expenseName, { expenseName = it }, Modifier.fillMaxWidth(), label = { Text("Nama pengeluaran") }, singleLine = true)
-                                    OutlinedTextField(expenseCategory, { expenseCategory = it }, Modifier.fillMaxWidth(), label = { Text("Kategori (opsional)") }, singleLine = true)
-                                    OutlinedTextField(expenseDate, { expenseDate = it }, Modifier.fillMaxWidth(), label = { Text("Tanggal (YYYY-MM-DD)") }, singleLine = true)
+                                    OutlinedTextField(expenseName, { expenseName = it }, Modifier.fillMaxWidth().height(54.dp), label = { Text("Nama pengeluaran") }, singleLine = true)
+                                    OutlinedTextField(expenseCategory, { expenseCategory = it }, Modifier.fillMaxWidth().height(54.dp), label = { Text("Kategori (opsional)") }, singleLine = true)
+                                    OutlinedTextField(expenseDate, { expenseDate = it }, Modifier.fillMaxWidth().height(54.dp), label = { Text("Tanggal (YYYY-MM-DD)") }, singleLine = true)
                                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        OutlinedTextField(expenseQty, { expenseQty = it.filter(Char::isDigit) }, Modifier.weight(1f), label = { Text("Jumlah") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true)
-                                        OutlinedTextField(expensePrice, { expensePrice = it.filter(Char::isDigit) }, Modifier.weight(1f), label = { Text("Harga satuan") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true)
+                                        OutlinedTextField(expenseQty, { expenseQty = it.filter(Char::isDigit) }, Modifier.weight(1f).height(54.dp), label = { Text("Jumlah") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true)
+                                        OutlinedTextField(expensePrice, { expensePrice = it.filter(Char::isDigit) }, Modifier.weight(1f).height(54.dp), label = { Text("Harga satuan") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true)
                                     }
-                                    OutlinedTextField(expenseNote, { expenseNote = it }, Modifier.fillMaxWidth(), label = { Text("Catatan (opsional)") }, singleLine = true)
+                                    OutlinedTextField(expenseNote, { expenseNote = it }, Modifier.fillMaxWidth().height(54.dp), label = { Text("Catatan (opsional)") }, singleLine = true)
                                     val qVal = expenseQty.toDoubleOrNull() ?: 0.0
                                     val pVal = expensePrice.toDoubleOrNull() ?: 0.0
                                     Text("Total: Rp ${(qVal * pVal).toLong()}", color = Muted)
@@ -1140,13 +1140,13 @@ Text("Transaksi terbaru", color = Ink, fontWeight = FontWeight.SemiBold)
                             Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
                                 Column(Modifier.padding(12.dp)) {
                                     Text(if (editingProductId == null) "Tambah menu" else "Ubah menu", color = Terracotta, fontWeight = FontWeight.SemiBold)
-                                    OutlinedTextField(productName, { productName = it }, Modifier.fillMaxWidth(), label = { Text("Nama menu") }, singleLine = true)
-                                    OutlinedTextField(productCategory, { productCategory = it }, Modifier.fillMaxWidth(), label = { Text("Kategori") }, singleLine = true)
+                                    OutlinedTextField(productName, { productName = it }, Modifier.fillMaxWidth().height(54.dp), label = { Text("Nama menu") }, singleLine = true)
+                                    OutlinedTextField(productCategory, { productCategory = it }, Modifier.fillMaxWidth().height(54.dp), label = { Text("Kategori") }, singleLine = true)
                                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        OutlinedTextField(productPrice, { productPrice = it.filter(Char::isDigit) }, Modifier.weight(1f), label = { Text("Harga jual") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true)
-                                        OutlinedTextField(productCost, { productCost = it.filter(Char::isDigit) }, Modifier.weight(1f), label = { Text("Modal") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true)
+                                        OutlinedTextField(productPrice, { productPrice = it.filter(Char::isDigit) }, Modifier.weight(1f).height(54.dp), label = { Text("Harga jual") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true)
+                                        OutlinedTextField(productCost, { productCost = it.filter(Char::isDigit) }, Modifier.weight(1f).height(54.dp), label = { Text("Modal") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true)
                                     }
-                                    OutlinedTextField(productStock, { productStock = it.filter(Char::isDigit) }, Modifier.fillMaxWidth(), label = { Text("Stok") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true)
+                                    OutlinedTextField(productStock, { productStock = it.filter(Char::isDigit) }, Modifier.fillMaxWidth().height(54.dp), label = { Text("Stok") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true)
                                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                         Button(enabled = !managementBusy && productName.isNotBlank() && (productPrice.toDoubleOrNull() ?: 0.0) > 0, onClick = {
                                             val token = session?.accessToken ?: return@Button
@@ -1232,9 +1232,9 @@ Text("Transaksi terbaru", color = Ink, fontWeight = FontWeight.SemiBold)
                             Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
                                 Column(Modifier.padding(12.dp)) {
                                     Text("Tambah akun kasir", color = Terracotta, fontWeight = FontWeight.SemiBold)
-                                    OutlinedTextField(staffName, { staffName = it }, Modifier.fillMaxWidth(), label = { Text("Nama kasir") }, singleLine = true)
-                                    OutlinedTextField(staffEmail, { staffEmail = it }, Modifier.fillMaxWidth(), label = { Text("Email kasir") }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email))
-                                    OutlinedTextField(staffPassword, { staffPassword = it }, Modifier.fillMaxWidth(), label = { Text("Password awal (min. 6 karakter)") }, singleLine = true, visualTransformation = PasswordVisualTransformation())
+                                    OutlinedTextField(staffName, { staffName = it }, Modifier.fillMaxWidth().height(54.dp), label = { Text("Nama kasir") }, singleLine = true)
+                                    OutlinedTextField(staffEmail, { staffEmail = it }, Modifier.fillMaxWidth().height(54.dp), label = { Text("Email kasir") }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email))
+                                    OutlinedTextField(staffPassword, { staffPassword = it }, Modifier.fillMaxWidth().height(54.dp), label = { Text("Password awal (min. 6 karakter)") }, singleLine = true, visualTransformation = PasswordVisualTransformation())
                                     Button(enabled = !managementBusy && staffName.isNotBlank() && staffEmail.contains("@") && staffPassword.length >= 6, onClick = {
                                         val token = session?.accessToken ?: return@Button
                                         managementBusy = true
