@@ -188,21 +188,21 @@ private fun AristaApp() {
                 Spacer(Modifier.height(24.dp))
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(20.dp),
+                    shape = RoundedCornerShape(14.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White)
                 ) {
-                    Column(Modifier.padding(16.dp)) {
+                    Column(Modifier.padding(14.dp)) {
                         Text("Masuk ke ARISTA", color = Ink, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
                         Spacer(Modifier.height(12.dp))
                         OutlinedTextField(
                             value = email, onValueChange = { email = it; error = ""; recoveryMessage = "" },
-                            modifier = Modifier.fillMaxWidth(), label = { Text("Email") },
+                            modifier = Modifier.fillMaxWidth().height(54.dp), label = { Text("Email") },
                             singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
                         )
-                        Spacer(Modifier.height(10.dp))
+                        Spacer(Modifier.height(8.dp))
                         OutlinedTextField(
                             value = password, onValueChange = { password = it; error = "" },
-                            modifier = Modifier.fillMaxWidth(), label = { Text("Password") },
+                            modifier = Modifier.fillMaxWidth().height(54.dp), label = { Text("Password") },
                             singleLine = true, visualTransformation = PasswordVisualTransformation()
                         )
                         if (error.isNotBlank()) {
@@ -550,7 +550,7 @@ private fun AristaApp() {
                                             }
                                         }
                                         if (paymentMethod == "Tunai") {
-                                            OutlinedTextField(value = cashReceived, onValueChange = { cashReceived = it.filter(Char::isDigit) }, modifier = Modifier.fillMaxWidth(), label = { Text("Uang diterima (Rp)") }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
+                                            OutlinedTextField(value = cashReceived, onValueChange = { cashReceived = it.filter(Char::isDigit) }, modifier = Modifier.fillMaxWidth().height(54.dp), label = { Text("Uang diterima (Rp)") }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
                                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                                                 listOf(total.toLong(), 20000L, 50000L).distinct().forEach { amount ->
                                                     TextButton(onClick = { cashReceived = amount.toString() }) { Text(if (amount == total.toLong()) "Uang pas" else "Rp $amount", fontSize = 11.sp) }
