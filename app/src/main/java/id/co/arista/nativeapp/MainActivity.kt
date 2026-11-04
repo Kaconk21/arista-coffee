@@ -77,6 +77,8 @@ private fun AristaApp() {
     var productsLoading by remember { mutableStateOf(false) }
     var cart by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
     var paymentBusy by remember { mutableStateOf(false) }
+    var paymentMethod by remember { mutableStateOf("Tunai") }
+    var cashReceived by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf("") }
     var selectedTab by remember { mutableIntStateOf(0) }
@@ -209,9 +211,16 @@ private fun AristaApp() {
                                             }
                                             Column(horizontalAlignment = Alignment.End) {
                                                 Text("Rp ${product.price.toLong()}", color = Terracotta, fontWeight = FontWeight.Bold)
-                                                OutlinedButton(onClick = {
-                                                    cart = cart + (product.id to ((cart[product.id] ?: 0) + 1))
-                                                }) { Text("Tambah") }
+                                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                                    OutlinedButton(onClick = {
+                                                        val next = (cart[product.id] ?: 0) - 1
+                                                        cart = if (next <= 0) cart - product.id else cart + (product.id to next)
+                                                    }, enabled = (cart[product.id] ?: 0) > 0) { Text("−") }
+                                                    Text("  ${cart[product.id] ?: 0}  ", color = Ink)
+                                                    OutlinedButton(onClick = {
+                                                        cart = cart + (product.id to ((cart[product.id] ?: 0) + 1))
+                                                    }) { Text("+") }
+                                                }
                                             }
                                         }
                                     }
@@ -233,8 +242,24 @@ private fun AristaApp() {
                                     }
                                     Spacer(Modifier.height(6.dp))
                                     Text("Total Rp ${total.toLong()}", color = Terracotta, fontWeight = FontWeight.Bold)
+                                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        listOf("Tunai", "QRIS").forEach { method ->
+                                            if (paymentMethod == method) Button(onClick = { paymentMethod = method }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(containerColor = Terracotta)) { Text(method) }
+                                            else OutlinedButton(onClick = { paymentMethod = method }, modifier = Modifier.weight(1f)) { Text(method) }
+                                        }
+                                    }
+                                    if (paymentMethod == "Tunai") {
+                                        OutlinedTextField(value = cashReceived, onValueChange = { cashReceived = it.filter(Char::isDigit) }, modifier = Modifier.fillMaxWidth(), label = { Text("Uang diterima (Rp)") }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
+                                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                            listOf(total.toLong(), 20000L, 50000L).distinct().forEach { amount ->
+                                                TextButton(onClick = { cashReceived = amount.toString() }) { Text(if (amount == total.toLong()) "Uang pas" else "Rp ${amount}") }
+                                            }
+                                        }
+                                        val received = cashReceived.toLongOrNull() ?: 0L
+                                        Text("Kembalian Rp ${(received - total).coerceAtLeast(0).toLong()}", color = Muted, fontSize = 13.sp)
+                                    }
                                     Button(
-                                        enabled = !paymentBusy,
+                                        enabled = !paymentBusy && (paymentMethod != "Tunai" || (cashReceived.toLongOrNull() ?: 0L) >= total.toLong()),
                                         modifier = Modifier.fillMaxWidth(),
                                         colors = ButtonDefaults.buttonColors(containerColor = Terracotta),
                                         onClick = {
@@ -254,11 +279,12 @@ private fun AristaApp() {
                                                         .put("sale_date", now.toLocalDate().toString())
                                                         .put("sale_time", now.toLocalTime().toString().take(5))
                                                         .put("items", rows).put("total", total)
-                                                        .put("method", "QRIS").put("paid", total).put("change_amount", 0)
+                                                        .put("method", paymentMethod).put("paid", if (paymentMethod == "Tunai") (cashReceived.toLongOrNull() ?: 0L) else total).put("change_amount", if (paymentMethod == "Tunai") ((cashReceived.toLongOrNull() ?: 0L) - total).coerceAtLeast(0) else 0)
                                                         .put("cashier_name", profile?.nama ?: "")
                                                         .put("customer", "Umum").put("diskon", 0)
                                                     api.saveSale(active.accessToken, sale)
                                                     cart = emptyMap()
+                                                    cashReceived = ""
                                                     products = api.products(active.accessToken)
                                                     error = ""
                                                 } catch (e: Exception) {
@@ -268,7 +294,7 @@ private fun AristaApp() {
                                         }
                                     ) {
                                         if (paymentBusy) CircularProgressIndicator(color = Color.White, modifier = Modifier.height(18.dp))
-                                        else Text("BAYAR QRIS")
+                                        else Text("BAYAR ${paymentMethod.uppercase()}")
                                     }
                                     if (error.isNotBlank()) Text(error, color = Color(0xFFB3261E), fontSize = 12.sp)
                                 }
