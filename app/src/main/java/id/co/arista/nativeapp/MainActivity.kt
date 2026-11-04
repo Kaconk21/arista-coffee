@@ -49,6 +49,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.platform.LocalContext
+import androidx.room.Room
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
@@ -68,6 +70,9 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun AristaApp() {
     val api = remember { AristaApi() }
+    val context = LocalContext.current
+    val localDb = remember(context) { Room.databaseBuilder(context.applicationContext, AristaDatabase::class.java, "arista-local.db").build() }
+    val localDao = remember(localDb) { localDb.localDao() }
     val scope = rememberCoroutineScope()
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -84,6 +89,8 @@ private fun AristaApp() {
     var expenseNote by remember { mutableStateOf("") }
     var reportsLoading by remember { mutableStateOf(false) }
     var cart by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
+    var pendingOrders by remember { mutableStateOf<List<PendingOrderEntity>>(emptyList()) }
+    var savingPending by remember { mutableStateOf(false) }
     var paymentBusy by remember { mutableStateOf(false) }
     var paymentMethod by remember { mutableStateOf("Tunai") }
     var cashReceived by remember { mutableStateOf("") }
@@ -154,6 +161,7 @@ private fun AristaApp() {
                                             try {
                                                 products = api.products(loggedIn.accessToken)
                                                 reportSales = api.sales(loggedIn.accessToken)
+                                                pendingOrders = localDao.getPendingOrders()
                                                 if (userProfile.peran.equals("Pemilik", true)) reportExpenses = api.expenses(loggedIn.accessToken)
                                             } finally { productsLoading = false }
                                         } catch (e: Exception) {
@@ -300,6 +308,18 @@ private fun AristaApp() {
                                         val received = cashReceived.toLongOrNull() ?: 0L
                                         Text("Kembalian Rp ${(received - total.toLong()).coerceAtLeast(0L)}", color = Muted, fontSize = 13.sp)
                                     }
+                                    OutlinedButton(enabled = !savingPending, modifier = Modifier.fillMaxWidth(), onClick = {
+                                        savingPending = true
+                                        scope.launch {
+                                            try {
+                                                val rows = org.json.JSONArray()
+                                                chosen.forEach { p -> rows.put(org.json.JSONObject().put("id", p.id).put("qty", cart[p.id] ?: 0)) }
+                                                localDao.savePendingOrder(PendingOrderEntity(java.util.UUID.randomUUID().toString(), "Umum", rows.toString(), total, System.currentTimeMillis()))
+                                                pendingOrders = localDao.getPendingOrders(); cart = emptyMap(); cashReceived = ""; error = ""
+                                            } catch (e: Exception) { error = e.message ?: "Pesanan gagal disimpan." }
+                                            finally { savingPending = false }
+                                        }
+                                    }) { Text(if (savingPending) "Menyimpan pesanan…" else "Simpan pesanan") }
                                     Button(
                                         enabled = !paymentBusy && (paymentMethod != "Tunai" || (cashReceived.toLongOrNull() ?: 0L) >= total.toLong()),
                                         modifier = Modifier.fillMaxWidth(),
@@ -339,6 +359,30 @@ private fun AristaApp() {
                                         else Text("BAYAR ${paymentMethod.uppercase()}")
                                     }
                                     if (error.isNotBlank()) Text(error, color = Color(0xFFB3261E), fontSize = 12.sp)
+                                }
+                            }
+                        }
+                        if (pendingOrders.isNotEmpty()) {
+                            Spacer(Modifier.height(12.dp))
+                            Text("Pesanan tersimpan di perangkat", color = Ink, fontWeight = FontWeight.SemiBold)
+                            LazyColumn(Modifier.height(150.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                items(pendingOrders, key = { it.id }) { order ->
+                                    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                                        Row(Modifier.fillMaxWidth().padding(10.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                            Column(Modifier.weight(1f)) {
+                                                Text(order.customer, color = Ink, fontWeight = FontWeight.SemiBold)
+                                                Text("Rp ${order.total.toLong()}", color = Muted, fontSize = 11.sp)
+                                            }
+                                            TextButton(onClick = {
+                                                val ids = org.json.JSONArray(order.itemsJson)
+                                                val restored = mutableMapOf<String, Int>()
+                                                for (i in 0 until ids.length()) { val row = ids.getJSONObject(i); restored[row.optString("id")] = row.optInt("qty") }
+                                                cart = restored
+                                                scope.launch { localDao.deletePendingOrder(order.id); pendingOrders = localDao.getPendingOrders() }
+                                            }) { Text("Buka", color = Terracotta) }
+                                            TextButton(onClick = { scope.launch { localDao.deletePendingOrder(order.id); pendingOrders = localDao.getPendingOrders() } }) { Text("Hapus", color = Color(0xFFB3261E)) }
+                                        }
+                                    }
                                 }
                             }
                         }
