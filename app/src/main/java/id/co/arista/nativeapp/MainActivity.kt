@@ -95,6 +95,7 @@ private fun AristaApp() {
     var staffName by remember { mutableStateOf("") }
     var staffEmail by remember { mutableStateOf("") }
     var staffPassword by remember { mutableStateOf("") }
+    var manageAccounts by remember { mutableStateOf(false) }
 
     Surface(modifier = Modifier.fillMaxSize(), color = Cream) {
         if (session == null || profile == null) {
@@ -436,6 +437,13 @@ private fun AristaApp() {
                         if (error.isNotBlank()) Text(error, color = Color(0xFFB3261E), fontSize = 12.sp)
                     } else {
                         val owner = profile?.peran.equals("Pemilik", ignoreCase = true)
+                        if (owner) {
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Button(onClick = { manageAccounts = false }, colors = ButtonDefaults.buttonColors(containerColor = if (!manageAccounts) Terracotta else Color.LightGray), modifier = Modifier.weight(1f)) { Text("Menu") }
+                                Button(onClick = { manageAccounts = true }, colors = ButtonDefaults.buttonColors(containerColor = if (manageAccounts) Terracotta else Color.LightGray), modifier = Modifier.weight(1f)) { Text("Akun kasir") }
+                            }
+                        }
+                        if (!manageAccounts || !owner) {
                         Text("Daftar menu", color = Ink, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                         if (owner) {
                             Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
@@ -493,9 +501,10 @@ private fun AristaApp() {
                                 }
                             }
                         }
-                        if (owner) {
+                        }
+                        if (manageAccounts && owner) {
                             Spacer(Modifier.height(12.dp))
-                            Text("Akun kasir", color = Ink, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                            Text("Kelola akun kasir", color = Ink, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                             Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
                                 Column(Modifier.padding(12.dp)) {
                                     Text("Tambah akun kasir", color = Terracotta, fontWeight = FontWeight.SemiBold)
@@ -544,6 +553,7 @@ private fun AristaApp() {
                                     }
                                 }
                             }
+                        }
                         }
                         if (error.isNotBlank()) Text(error, color = Color(0xFFB3261E), fontSize = 12.sp)
                     }
