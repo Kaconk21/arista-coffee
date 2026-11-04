@@ -95,6 +95,8 @@ private fun AristaApp() {
     var pendingOrders by remember { mutableStateOf<List<PendingOrderEntity>>(emptyList()) }
     var editingPendingId by remember { mutableStateOf<String?>(null) }
     var savingPending by remember { mutableStateOf(false) }
+    var queuedSalesCount by remember { mutableIntStateOf(0) }
+    var syncingSales by remember { mutableStateOf(false) }
     var activeShift by remember { mutableStateOf<ShiftEntity?>(null) }
     var openingCashInput by remember { mutableStateOf("") }
     var closingCashInput by remember { mutableStateOf("") }
@@ -171,6 +173,7 @@ private fun AristaApp() {
                                                 pendingOrders = localDao.getPendingOrders()
                                                 activeShift = localDao.getShifts().firstOrNull { it.endedAt == null }
                                                 syncPendingSales(api, localDao, loggedIn.accessToken)
+                                                queuedSalesCount = localDao.getOutbox().size
                                                 if (userProfile.peran.equals("Pemilik", true)) reportExpenses = api.expenses(loggedIn.accessToken)
                                             } finally { productsLoading = false }
                                         } catch (e: Exception) {
@@ -381,6 +384,7 @@ private fun AristaApp() {
                                                         api.saveSale(active.accessToken, sale)
                                                     } else {
                                                         localDao.enqueue(SyncOutboxEntity(sale.getString("id"), sale.toString(), System.currentTimeMillis()))
+                                                        queuedSalesCount = localDao.getOutbox().size
                                                     }
                                                     cart = emptyMap()
                                                     editingPendingId?.let { localDao.deletePendingOrder(it) }
@@ -404,6 +408,28 @@ private fun AristaApp() {
                                         else Text("BAYAR ${paymentMethod.uppercase()}")
                                     }
                                     if (error.isNotBlank()) Text(error, color = Color(0xFFB3261E), fontSize = 12.sp)
+                                }
+                            }
+                        }
+                        if (queuedSalesCount > 0) {
+                            Spacer(Modifier.height(10.dp))
+                            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                                Column(Modifier.padding(12.dp)) {
+                                    Text("$queuedSalesCount transaksi menunggu sinkronisasi", color = Ink, fontWeight = FontWeight.SemiBold)
+                                    OutlinedButton(enabled = !syncingSales && hasValidatedInternet(context), modifier = Modifier.fillMaxWidth(), onClick = {
+                                        val token = session?.accessToken ?: return@OutlinedButton
+                                        syncingSales = true
+                                        scope.launch {
+                                            try {
+                                                syncPendingSales(api, localDao, token)
+                                                queuedSalesCount = localDao.getOutbox().size
+                                                products = api.products(token)
+                                                reportSales = api.sales(token)
+                                                error = if (queuedSalesCount == 0) "Semua transaksi offline berhasil disinkronkan." else "Masih ada transaksi yang belum berhasil dikirim."
+                                            } catch (e: Exception) { error = e.message ?: "Sinkronisasi gagal." }
+                                            finally { syncingSales = false }
+                                        }
+                                    }) { Text(if (syncingSales) "Menyinkronkan…" else "Sinkronkan sekarang") }
                                 }
                             }
                         }
