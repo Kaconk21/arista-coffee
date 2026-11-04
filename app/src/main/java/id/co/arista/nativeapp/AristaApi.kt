@@ -75,6 +75,19 @@ class AristaApi {
         call("/rest/v1/rpc/catat_penjualan", "POST", JSONObject().put("p_sale", sale), token)
     }
 
+
+    suspend fun sales(token: String): JSONArray = withContext(Dispatchers.IO) {
+        JSONArray(call("/rest/v1/sales?select=id,sale_date,sale_time,items,total,method,paid,change_amount,cashier_name,customer,batal,diskon&order=sale_date.desc,sale_time.desc&limit=200", "GET", null, token))
+    }
+
+    suspend fun expenses(token: String): JSONArray = withContext(Dispatchers.IO) {
+        JSONArray(call("/rest/v1/expenses?select=id,tanggal,nama,kategori,qty,harga,total,catatan&order=tanggal.desc&limit=200", "GET", null, token))
+    }
+
+    suspend fun createExpense(token: String, expense: JSONObject): String = withContext(Dispatchers.IO) {
+        call("/rest/v1/expenses", "POST", expense, token)
+    }
+
     suspend fun cashierAction(token: String, payload: JSONObject): String = withContext(Dispatchers.IO) {
         call("/functions/v1/swift-worker", "POST", payload, token)
     }
