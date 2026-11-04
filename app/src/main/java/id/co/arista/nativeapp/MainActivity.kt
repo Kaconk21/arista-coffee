@@ -217,6 +217,62 @@ private fun AristaApp() {
                                 }
                             }
                         }
+                        val chosen = products.filter { (cart[it.id] ?: 0) > 0 }
+                        if (chosen.isNotEmpty()) {
+                            val total = chosen.sumOf { it.price * (cart[it.id] ?: 0) }
+                            Spacer(Modifier.height(10.dp))
+                            Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                                Column(Modifier.padding(14.dp)) {
+                                    Text("Keranjang · ${cart.values.sum()} item", color = Ink, fontWeight = FontWeight.Bold)
+                                    chosen.forEach { p ->
+                                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                            Text("${p.name} × ${cart[p.id]}", color = Muted, fontSize = 12.sp)
+                                            Text("Rp ${(p.price * (cart[p.id] ?: 0)).toLong()}", color = Ink, fontSize = 12.sp)
+                                        }
+                                    }
+                                    Spacer(Modifier.height(6.dp))
+                                    Text("Total Rp ${total.toLong()}", color = Terracotta, fontWeight = FontWeight.Bold)
+                                    Button(
+                                        enabled = !paymentBusy,
+                                        modifier = Modifier.fillMaxWidth(),
+                                        colors = ButtonDefaults.buttonColors(containerColor = Terracotta),
+                                        onClick = {
+                                            val active = session ?: return@Button
+                                            paymentBusy = true
+                                            scope.launch {
+                                                try {
+                                                    val rows = org.json.JSONArray()
+                                                    chosen.forEach { p ->
+                                                        rows.put(org.json.JSONObject().put("id", p.id).put("name", p.name)
+                                                            .put("cat", p.category).put("price", p.price).put("cost", p.cost)
+                                                            .put("qty", cart[p.id] ?: 0))
+                                                    }
+                                                    val now = java.time.LocalDateTime.now()
+                                                    val sale = org.json.JSONObject()
+                                                        .put("id", java.util.UUID.randomUUID().toString())
+                                                        .put("sale_date", now.toLocalDate().toString())
+                                                        .put("sale_time", now.toLocalTime().toString().take(5))
+                                                        .put("items", rows).put("total", total)
+                                                        .put("method", "QRIS").put("paid", total).put("change_amount", 0)
+                                                        .put("cashier_name", profile?.nama ?: "")
+                                                        .put("customer", "Umum").put("diskon", 0)
+                                                    api.saveSale(active.accessToken, sale)
+                                                    cart = emptyMap()
+                                                    products = api.products(active.accessToken)
+                                                    error = ""
+                                                } catch (e: Exception) {
+                                                    error = e.message ?: "Transaksi gagal disimpan."
+                                                } finally { paymentBusy = false }
+                                            }
+                                        }
+                                    ) {
+                                        if (paymentBusy) CircularProgressIndicator(color = Color.White, modifier = Modifier.height(18.dp))
+                                        else Text("BAYAR QRIS")
+                                    }
+                                    if (error.isNotBlank()) Text(error, color = Color(0xFFB3261E), fontSize = 12.sp)
+                                }
+                            }
+                        }
                     } else {
                         val descriptions = listOf(
                             "Ringkasan usaha ARISTA akan ditampilkan di sini.",
