@@ -92,6 +92,18 @@ class AristaApi {
         call("/functions/v1/swift-worker", "POST", payload, token)
     }
 
+    suspend fun addProduct(token: String, product: JSONObject): String = withContext(Dispatchers.IO) {
+        call("/rest/v1/products", "POST", product, token)
+    }
+
+    suspend fun updateProduct(token: String, id: String, product: JSONObject): String = withContext(Dispatchers.IO) {
+        call("/rest/v1/products?id=eq.$id", "PATCH", product, token)
+    }
+
+    suspend fun deleteProduct(token: String, id: String): String = withContext(Dispatchers.IO) {
+        call("/rest/v1/products?id=eq.$id", "PATCH", JSONObject().put("deleted", true), token)
+    }
+
     private fun call(path: String, method: String, body: JSONObject?, token: String?): String {
         val builder = Request.Builder()
             .url(base + path)
@@ -100,6 +112,7 @@ class AristaApi {
         if (token != null) builder.header("Authorization", "Bearer $token")
         when (method) {
             "POST" -> builder.post((body ?: JSONObject()).toString().toRequestBody(jsonType))
+            "PATCH" -> builder.patch((body ?: JSONObject()).toString().toRequestBody(jsonType))
             "GET" -> builder.get()
             else -> throw IllegalArgumentException("Metode tidak didukung")
         }
