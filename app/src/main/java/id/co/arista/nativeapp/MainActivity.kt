@@ -149,6 +149,7 @@ private fun AristaApp() {
                                             try {
                                                 products = api.products(loggedIn.accessToken)
                                                 reportSales = api.sales(loggedIn.accessToken)
+                                                if (userProfile.peran.equals("Pemilik", true)) reportExpenses = api.expenses(loggedIn.accessToken)
                                             } finally { productsLoading = false }
                                         } catch (e: Exception) {
                                             error = e.message ?: "Tidak dapat masuk. Periksa koneksi."
@@ -184,7 +185,7 @@ private fun AristaApp() {
                                     if ((index == 0 || index == 2) && session != null) {
                                         reportsLoading = true
                                         scope.launch {
-                                            try { reportSales = api.sales(session!!.accessToken); error = "" }
+                                            try { reportSales = api.sales(session!!.accessToken); if (profile?.peran.equals("Pemilik", true)) reportExpenses = api.expenses(session!!.accessToken); error = "" }
                                             catch (e: Exception) { error = e.message ?: "Data gagal dimuat." }
                                             finally { reportsLoading = false }
                                         }
