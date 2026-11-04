@@ -21,6 +21,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -429,8 +431,8 @@ private fun AristaApp() {
                             val discountAmount = if (discountType == "%") (subtotal * discountValue.coerceIn(0.0, 100.0) / 100.0).toLong().toDouble() else discountValue.coerceAtLeast(0.0).coerceAtMost(subtotal)
                             val total = (subtotal - discountAmount).coerceAtLeast(0.0)
                             Spacer(Modifier.height(10.dp))
-                            Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
-                                Column(Modifier.padding(14.dp)) {
+                            Card(modifier = Modifier.fillMaxWidth().weight(1f), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                                Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(14.dp)) {
                                     Text("Keranjang · ${cart.values.sum()} item", color = Ink, fontWeight = FontWeight.Bold)
                                     chosen.forEach { p ->
                                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -470,13 +472,12 @@ private fun AristaApp() {
                                         val received = cashReceived.toLongOrNull() ?: 0L
                                         Text("Kembalian Rp ${(received - total.toLong()).coerceAtLeast(0L)}", color = Muted, fontSize = 13.sp)
                                     }
-                                    OutlinedButton(enabled = !savingPending && activeShift != null && customerName.isNotBlank(), modifier = Modifier.fillMaxWidth(), onClick = {
+                                    OutlinedButton(enabled = !savingPending && activeShift != null, modifier = Modifier.fillMaxWidth(), onClick = {
                                         savingPending = true
                                         scope.launch {
                                             try {
                                                 val rows = org.json.JSONArray()
                                                 chosen.forEach { p -> rows.put(org.json.JSONObject().put("id", p.id).put("qty", cart[p.id] ?: 0)) }
-                                                if (customerName.isBlank()) { error = "Isi nama customer dulu untuk menyimpan ORDERAN."; return@launch }
                                                 localDao.savePendingOrder(PendingOrderEntity(editingPendingId ?: java.util.UUID.randomUUID().toString(), customerName.trim(), rows.toString(), subtotal, System.currentTimeMillis()))
                                                 pendingOrders = localDao.getPendingOrders(); editingPendingId = null; cart = emptyMap(); cashReceived = ""; customerName = ""; discountInput = ""; cashierSection = "ORDERAN"; error = ""
                                             } catch (e: Exception) { error = e.message ?: "Pesanan gagal disimpan." }
