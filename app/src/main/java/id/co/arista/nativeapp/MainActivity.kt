@@ -90,6 +90,7 @@ private fun AristaApp() {
     var reportsLoading by remember { mutableStateOf(false) }
     var cart by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
     var pendingOrders by remember { mutableStateOf<List<PendingOrderEntity>>(emptyList()) }
+    var editingPendingId by remember { mutableStateOf<String?>(null) }
     var savingPending by remember { mutableStateOf(false) }
     var paymentBusy by remember { mutableStateOf(false) }
     var paymentMethod by remember { mutableStateOf("Tunai") }
@@ -314,8 +315,8 @@ private fun AristaApp() {
                                             try {
                                                 val rows = org.json.JSONArray()
                                                 chosen.forEach { p -> rows.put(org.json.JSONObject().put("id", p.id).put("qty", cart[p.id] ?: 0)) }
-                                                localDao.savePendingOrder(PendingOrderEntity(java.util.UUID.randomUUID().toString(), "Umum", rows.toString(), total, System.currentTimeMillis()))
-                                                pendingOrders = localDao.getPendingOrders(); cart = emptyMap(); cashReceived = ""; error = ""
+                                                localDao.savePendingOrder(PendingOrderEntity(editingPendingId ?: java.util.UUID.randomUUID().toString(), "Umum", rows.toString(), total, System.currentTimeMillis()))
+                                                pendingOrders = localDao.getPendingOrders(); editingPendingId = null; cart = emptyMap(); cashReceived = ""; error = ""
                                             } catch (e: Exception) { error = e.message ?: "Pesanan gagal disimpan." }
                                             finally { savingPending = false }
                                         }
@@ -346,6 +347,9 @@ private fun AristaApp() {
                                                         .put("customer", "Umum").put("diskon", 0)
                                                     api.saveSale(active.accessToken, sale)
                                                     cart = emptyMap()
+                                                    editingPendingId?.let { localDao.deletePendingOrder(it) }
+                                                    editingPendingId = null
+                                                    pendingOrders = localDao.getPendingOrders()
                                                     cashReceived = ""
                                                     products = api.products(active.accessToken)
                                                     error = ""
@@ -378,7 +382,7 @@ private fun AristaApp() {
                                                 val restored = mutableMapOf<String, Int>()
                                                 for (i in 0 until ids.length()) { val row = ids.getJSONObject(i); restored[row.optString("id")] = row.optInt("qty") }
                                                 cart = restored
-                                                scope.launch { localDao.deletePendingOrder(order.id); pendingOrders = localDao.getPendingOrders() }
+                                                editingPendingId = order.id
                                             }) { Text("Buka", color = Terracotta) }
                                             TextButton(onClick = { scope.launch { localDao.deletePendingOrder(order.id); pendingOrders = localDao.getPendingOrders() } }) { Text("Hapus", color = Color(0xFFB3261E)) }
                                         }
