@@ -124,6 +124,7 @@ private fun AristaApp() {
     var reportsLoading by remember { mutableStateOf(false) }
     var reportRange by remember { mutableStateOf("Harian") }
     var reportTab by remember { mutableStateOf("Penjualan") }
+    var showCancelledSales by remember { mutableStateOf(false) }
     var receivableSales by remember { mutableStateOf(org.json.JSONArray()) }
     var receivablePayments by remember { mutableStateOf(org.json.JSONArray()) }
     var receivablesLoading by remember { mutableStateOf(false) }
@@ -871,6 +872,7 @@ private fun AristaApp() {
                         }
                         val expenseTotal = periodExpenses.sumOf { it.optDouble("total") }
                         val jumlah = periodSales.count { !it.optBoolean("batal") }
+                        val cancelledSales = periodSales.filter { it.optBoolean("batal") }
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                             Text("Laporan penjualan", color = Ink, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                             TextButton(onClick = {
@@ -1093,10 +1095,34 @@ Text("Transaksi terbaru", color = Ink, fontWeight = FontWeight.SemiBold)
                                         Column(Modifier.padding(12.dp)) {
                                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                                 Text(sale.optString("customer", "Umum"), color = Ink, fontWeight = FontWeight.SemiBold)
-                                                Text("Rp ${sale.optDouble("total").toLong()}", color = Terracotta, fontWeight = FontWeight.Bold)
+                                                Text("Rp \${sale.optDouble("total").toLong()}", color = Terracotta, fontWeight = FontWeight.Bold)
                                             }
-                                            Text("${sale.optString("sale_date")} · ${sale.optString("sale_time")} · ${sale.optString("method")}", color = Muted, fontSize = 12.sp)
-                                            if (sale.optBoolean("batal")) Text("DIBATALKAN", color = Color(0xFFB3261E), fontSize = 11.sp)
+                                            Text("\${sale.optString("sale_date")} · \${sale.optString("sale_time")} · \${sale.optString("method")}", color = Muted, fontSize = 12.sp)
+                                            val saleItems = sale.optJSONArray("items") ?: org.json.JSONArray()
+                                            if (saleItems.length() > 0) {
+                                                Text((0 until saleItems.length()).mapNotNull { saleItems.optJSONObject(it) }.joinToString(", ") { "\${it.optString("name")} x\${it.optInt("qty", 1)}" }, color = Muted, fontSize = 11.sp)
+                                            }
+                                        }
+                                    }
+                                }
+                                if (cancelledSales.isNotEmpty()) {
+                                    item {
+                                        TextButton(onClick = { showCancelledSales = !showCancelledSales }) {
+                                            Text(if (showCancelledSales) "Sembunyikan transaksi dibatalkan (\${cancelledSales.size})" else "Lihat transaksi dibatalkan (\${cancelledSales.size})", color = Terracotta)
+                                        }
+                                    }
+                                    if (showCancelledSales) {
+                                        items(cancelledSales.take(50)) { sale ->
+                                            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF0ED))) {
+                                                Column(Modifier.padding(12.dp)) {
+                                                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                                        Text(sale.optString("customer", "Umum"), color = Ink, fontWeight = FontWeight.SemiBold)
+                                                        Text("DIBATALKAN", color = Color(0xFFB3261E), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                                    }
+                                                    Text("\${sale.optString("sale_date")} · \${sale.optString("sale_time")} · \${sale.optString("method")}", color = Muted, fontSize = 11.sp)
+                                                    Text("Rp \${sale.optDouble("total").toLong()}", color = Muted, fontSize = 12.sp)
+                                                }
+                                            }
                                         }
                                     }
                                 }
