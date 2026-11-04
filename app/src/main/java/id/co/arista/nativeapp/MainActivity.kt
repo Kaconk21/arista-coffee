@@ -113,6 +113,7 @@ private fun AristaApp() {
     var queuedSalesCount by remember { mutableIntStateOf(0) }
     var syncingSales by remember { mutableStateOf(false) }
     var activeShift by remember { mutableStateOf<ShiftEntity?>(null) }
+    var shiftHistory by remember { mutableStateOf<List<ShiftEntity>>(emptyList()) }
     var openingCashInput by remember { mutableStateOf("") }
     var closingCashInput by remember { mutableStateOf("") }
     var paymentBusy by remember { mutableStateOf(false) }
@@ -192,7 +193,8 @@ private fun AristaApp() {
                                             try {
                                                 products = api.products(loggedIn.accessToken)
                                                 pendingOrders = localDao.getPendingOrders()
-                                                activeShift = localDao.getShifts().firstOrNull { it.endedAt == null }
+                                                shiftHistory = localDao.getShifts()
+                                                activeShift = shiftHistory.firstOrNull { it.endedAt == null }
                                                 syncPendingSales(api, localDao, loggedIn.accessToken)
                                                 queuedSalesCount = localDao.getOutbox().size
                                                 reportSales = api.sales(loggedIn.accessToken)
@@ -306,7 +308,7 @@ private fun AristaApp() {
                                     Button(enabled = openingCashInput.isNotBlank(), onClick = {
                                         val amount = openingCashInput.toDoubleOrNull() ?: 0.0
                                         val shift = ShiftEntity(java.util.UUID.randomUUID().toString(), System.currentTimeMillis(), amount)
-                                        scope.launch { localDao.saveShift(shift); activeShift = shift; openingCashInput = ""; closingCashInput = "" }
+                                        scope.launch { localDao.saveShift(shift); activeShift = shift; shiftHistory = localDao.getShifts(); openingCashInput = ""; closingCashInput = "" }
                                     }, colors = ButtonDefaults.buttonColors(containerColor = Terracotta)) { Text("Buka shift") }
                                 } else {
                                     Text("Shift aktif", color = Terracotta, fontWeight = FontWeight.SemiBold)
@@ -316,8 +318,27 @@ private fun AristaApp() {
                                         val current = activeShift ?: return@Button
                                         val endAmount = closingCashInput.toDoubleOrNull() ?: 0.0
                                         val closed = current.copy(endedAt = System.currentTimeMillis(), closingCash = endAmount, difference = endAmount - current.openingCash)
-                                        scope.launch { localDao.saveShift(closed); activeShift = null; closingCashInput = "" }
+                                        scope.launch { localDao.saveShift(closed); activeShift = null; shiftHistory = localDao.getShifts(); closingCashInput = "" }
                                     }, colors = ButtonDefaults.buttonColors(containerColor = Terracotta)) { Text("Tutup shift") }
+                                }
+                            }
+                        }
+                        if (shiftHistory.isNotEmpty()) {
+                            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                                Column(Modifier.padding(12.dp)) {
+                                    Text("Riwayat shift kasir", color = Ink, fontWeight = FontWeight.SemiBold)
+                                    Spacer(Modifier.height(6.dp))
+                                    LazyColumn(Modifier.heightIn(max = 190.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                        items(shiftHistory, key = { it.id }) { shift ->
+                                            val startText = java.text.SimpleDateFormat("dd/MM/yy HH:mm", java.util.Locale("id", "ID")).format(java.util.Date(shift.startedAt))
+                                            val endText = shift.endedAt?.let { java.text.SimpleDateFormat("dd/MM/yy HH:mm", java.util.Locale("id", "ID")).format(java.util.Date(it)) } ?: "Masih aktif"
+                                            Column(Modifier.fillMaxWidth().background(Cream, RoundedCornerShape(8.dp)).padding(9.dp)) {
+                                                Text("Mulai: $startText · $endText", color = Ink, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                                                Text("Modal awal Rp ${shift.openingCash.toLong()}" + (shift.closingCash?.let { " · Kas akhir Rp ${it.toLong()}" } ?: ""), color = Muted, fontSize = 11.sp)
+                                                shift.difference?.let { Text("Selisih kas: Rp ${it.toLong()}", color = if (it < 0) Color(0xFFB3261E) else Terracotta, fontSize = 11.sp) }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
