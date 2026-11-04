@@ -80,6 +80,8 @@ private fun AristaApp() {
     val scope = rememberCoroutineScope()
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var recoveryBusy by remember { mutableStateOf(false) }
+    var recoveryMessage by remember { mutableStateOf("") }
     var session by remember { mutableStateOf<AristaSession?>(null) }
     var profile by remember { mutableStateOf<AristaProfile?>(null) }
     var products by remember { mutableStateOf<List<AristaProduct>>(emptyList()) }
@@ -139,7 +141,7 @@ private fun AristaApp() {
                         Text("Masuk ke ARISTA", color = Ink, fontSize = 21.sp, fontWeight = FontWeight.SemiBold)
                         Spacer(Modifier.height(16.dp))
                         OutlinedTextField(
-                            value = email, onValueChange = { email = it; error = "" },
+                            value = email, onValueChange = { email = it; error = ""; recoveryMessage = "" },
                             modifier = Modifier.fillMaxWidth(), label = { Text("Email") },
                             singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
                         )
@@ -152,6 +154,10 @@ private fun AristaApp() {
                         if (error.isNotBlank()) {
                             Spacer(Modifier.height(10.dp))
                             Text(error, color = Color(0xFFB3261E), fontSize = 13.sp)
+                        }
+                        if (recoveryMessage.isNotBlank()) {
+                            Spacer(Modifier.height(8.dp))
+                            Text(recoveryMessage, color = Muted, fontSize = 12.sp)
                         }
                         Spacer(Modifier.height(18.dp))
                         Button(
@@ -190,6 +196,29 @@ private fun AristaApp() {
                         ) {
                             if (busy) CircularProgressIndicator(color = Color.White, modifier = Modifier.height(20.dp))
                             else Text("MASUK", fontWeight = FontWeight.Bold)
+                        }
+                        TextButton(
+                            onClick = {
+                                if (email.isBlank()) {
+                                    recoveryMessage = "Masukkan email akun terlebih dahulu."
+                                } else {
+                                    recoveryBusy = true
+                                    recoveryMessage = ""
+                                    scope.launch {
+                                        try {
+                                            api.requestPasswordRecovery(email)
+                                            recoveryMessage = "Jika email terdaftar, tautan pemulihan telah dikirim. Periksa kotak masuk dan spam."
+                                        } catch (e: Exception) {
+                                            recoveryMessage = e.message ?: "Tautan pemulihan gagal dikirim."
+                                        } finally { recoveryBusy = false }
+                                    }
+                                }
+                            },
+                            enabled = !recoveryBusy && !busy,
+                            modifier = Modifier.align(Alignment.End)
+                        ) {
+                            if (recoveryBusy) CircularProgressIndicator(modifier = Modifier.height(16.dp), strokeWidth = 2.dp)
+                            else Text("Lupa kata sandi?")
                         }
                     }
                 }
