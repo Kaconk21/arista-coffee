@@ -93,6 +93,9 @@ private fun AristaApp() {
     var pendingOrders by remember { mutableStateOf<List<PendingOrderEntity>>(emptyList()) }
     var editingPendingId by remember { mutableStateOf<String?>(null) }
     var savingPending by remember { mutableStateOf(false) }
+    var activeShift by remember { mutableStateOf<ShiftEntity?>(null) }
+    var openingCashInput by remember { mutableStateOf("") }
+    var closingCashInput by remember { mutableStateOf("") }
     var paymentBusy by remember { mutableStateOf(false) }
     var paymentMethod by remember { mutableStateOf("Tunai") }
     var cashReceived by remember { mutableStateOf("") }
@@ -164,6 +167,7 @@ private fun AristaApp() {
                                                 products = api.products(loggedIn.accessToken)
                                                 reportSales = api.sales(loggedIn.accessToken)
                                                 pendingOrders = localDao.getPendingOrders()
+                                                activeShift = localDao.getShifts().firstOrNull { it.endedAt == null }
                                                 syncPendingSales(api, localDao, loggedIn.accessToken)
                                                 if (userProfile.peran.equals("Pemilik", true)) reportExpenses = api.expenses(loggedIn.accessToken)
                                             } finally { productsLoading = false }
@@ -241,6 +245,29 @@ private fun AristaApp() {
                     Text("Peran: ${profile!!.peran}", color = Muted, fontSize = 13.sp)
                     Spacer(Modifier.height(18.dp))
                     if (selectedTab == 1) {
+                        Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                            Column(Modifier.padding(12.dp)) {
+                                if (activeShift == null) {
+                                    Text("Shift belum dibuka", color = Ink, fontWeight = FontWeight.SemiBold)
+                                    OutlinedTextField(openingCashInput, { openingCashInput = it.filter(Char::isDigit) }, Modifier.fillMaxWidth(), label = { Text("Modal awal kas (Rp)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true)
+                                    Button(enabled = openingCashInput.isNotBlank(), onClick = {
+                                        val amount = openingCashInput.toDoubleOrNull() ?: 0.0
+                                        val shift = ShiftEntity(java.util.UUID.randomUUID().toString(), System.currentTimeMillis(), amount)
+                                        scope.launch { localDao.saveShift(shift); activeShift = shift; openingCashInput = ""; closingCashInput = "" }
+                                    }, colors = ButtonDefaults.buttonColors(containerColor = Terracotta)) { Text("Buka shift") }
+                                } else {
+                                    Text("Shift aktif", color = Terracotta, fontWeight = FontWeight.SemiBold)
+                                    Text("Modal awal: Rp ${activeShift!!.openingCash.toLong()}", color = Ink, fontSize = 12.sp)
+                                    OutlinedTextField(closingCashInput, { closingCashInput = it.filter(Char::isDigit) }, Modifier.fillMaxWidth(), label = { Text("Uang kas akhir (Rp)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true)
+                                    Button(enabled = closingCashInput.isNotBlank(), onClick = {
+                                        val current = activeShift ?: return@Button
+                                        val endAmount = closingCashInput.toDoubleOrNull() ?: 0.0
+                                        val closed = current.copy(endedAt = System.currentTimeMillis(), closingCash = endAmount, difference = endAmount - current.openingCash)
+                                        scope.launch { localDao.saveShift(closed); activeShift = null; closingCashInput = "" }
+                                    }, colors = ButtonDefaults.buttonColors(containerColor = Terracotta)) { Text("Tutup shift") }
+                                }
+                            }
+                        }
                         Text("Pilih menu", color = Ink, fontSize = 19.sp, fontWeight = FontWeight.SemiBold)
                         Spacer(Modifier.height(8.dp))
                         when {
