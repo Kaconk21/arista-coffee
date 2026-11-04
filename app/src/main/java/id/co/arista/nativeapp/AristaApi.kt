@@ -114,6 +114,23 @@ class AristaApi {
         JSONArray(call("/rest/v1/expenses?select=id,tanggal,nama,kategori,qty,harga,total,catatan&order=tanggal.desc&limit=200", "GET", null, token))
     }
 
+    suspend fun receivableSales(token: String): JSONArray = withContext(Dispatchers.IO) {
+        JSONArray(call("/rest/v1/sales?select=id,sale_date,sale_time,customer,items,total,batal&method=eq.Piutang&order=sale_date.asc,created_at.asc&limit=2000", "GET", null, token))
+    }
+
+    suspend fun receivablePayments(token: String): JSONArray = withContext(Dispatchers.IO) {
+        JSONArray(call("/rest/v1/pembayaran?select=sale_id,nominal,tanggal,metode&order=tanggal.asc&limit=5000", "GET", null, token))
+    }
+
+    suspend fun payReceivableNote(token: String, saleId: String, amount: Double, method: String): String = withContext(Dispatchers.IO) {
+        call("/rest/v1/rpc/bayar_nota", "POST", JSONObject().put("p_sale", saleId).put("p_nominal", amount).put("p_metode", method), token)
+    }
+
+    suspend fun payReceivableCustomer(token: String, customer: String, amount: Double, method: String): String = withContext(Dispatchers.IO) {
+        call("/rest/v1/rpc/bayar_sekaligus", "POST", JSONObject().put("p_customer", customer).put("p_nominal", amount).put("p_metode", method), token)
+    }
+
+
     suspend fun createExpense(token: String, expense: JSONObject): String = withContext(Dispatchers.IO) {
         call("/rest/v1/expenses", "POST", expense, token)
     }
