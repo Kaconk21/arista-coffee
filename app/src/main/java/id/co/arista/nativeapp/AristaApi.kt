@@ -44,6 +44,12 @@ class AristaApi {
         )
     }
 
+    suspend fun requestPasswordRecovery(email: String): Unit = withContext(Dispatchers.IO) {
+        if (email.isBlank()) throw IOException("Masukkan email akun.")
+        call("/auth/v1/recover", "POST", JSONObject().put("email", email.trim()), null)
+        Unit
+    }
+
     suspend fun profile(token: String, userId: String): AristaProfile = withContext(Dispatchers.IO) {
         val rows = JSONArray(call(
             "/rest/v1/profiles?id=eq.$userId&select=id,nama,peran",
