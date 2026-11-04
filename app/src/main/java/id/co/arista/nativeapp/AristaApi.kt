@@ -11,7 +11,7 @@ import org.json.JSONObject
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
-class AristaHttpException(message: String) : IOException(message)
+class AristaHttpException(message: String, val statusCode: Int) : IOException(message)
 
 data class AristaSession(
     val accessToken: String,
@@ -157,7 +157,7 @@ class AristaApi {
                         }
                     }
                 } catch (_: Exception) { "Permintaan gagal (${response.code})" }
-                throw AristaHttpException(message)
+                throw AristaHttpException(message, response.code)
             }
             return text
         }
