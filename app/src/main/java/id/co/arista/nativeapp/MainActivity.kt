@@ -84,6 +84,13 @@ private fun AristaApp() {
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf("") }
     var selectedTab by remember { mutableIntStateOf(0) }
+    var productName by remember { mutableStateOf("") }
+    var productCategory by remember { mutableStateOf("") }
+    var productPrice by remember { mutableStateOf("") }
+    var productCost by remember { mutableStateOf("") }
+    var productStock by remember { mutableStateOf("0") }
+    var editingProductId by remember { mutableStateOf<String?>(null) }
+    var managementBusy by remember { mutableStateOf(false) }
 
     Surface(modifier = Modifier.fillMaxSize(), color = Cream) {
         if (session == null || profile == null) {
@@ -165,11 +172,11 @@ private fun AristaApp() {
                                 selected = selectedTab == index,
                                 onClick = {
                                     selectedTab = index
-                                    if (index == 2 && session != null) {
+                                    if ((index == 0 || index == 2) && session != null) {
                                         reportsLoading = true
                                         scope.launch {
                                             try { reportSales = api.sales(session!!.accessToken); error = "" }
-                                            catch (e: Exception) { error = e.message ?: "Laporan gagal dimuat." }
+                                            catch (e: Exception) { error = e.message ?: "Data gagal dimuat." }
                                             finally { reportsLoading = false }
                                         }
                                     }
@@ -359,25 +366,119 @@ private fun AristaApp() {
                             }
                         }
                         if (error.isNotBlank()) Text(error, color = Color(0xFFB3261E), fontSize = 12.sp)
-                    } else {
-                        val descriptions = listOf(
-                            "Ringkasan usaha ARISTA akan ditampilkan di sini.",
-                            "",
-                            "Modul laporan penjualan, laba, dan pengeluaran sedang dibangun.",
-                            "Pengelolaan menu, akun kasir, dan pengaturan sedang dibangun."
-                        )
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(18.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color.White),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-                        ) {
-                            Column(Modifier.padding(18.dp)) {
-                                Text(labels[selectedTab], color = Terracotta, fontSize = 19.sp, fontWeight = FontWeight.SemiBold)
-                                Spacer(Modifier.height(8.dp))
-                                Text(descriptions[selectedTab], color = Muted, fontSize = 14.sp)
+                    } else if (selectedTab == 0) {
+                        val activeSales = (0 until reportSales.length()).mapNotNull { reportSales.optJSONObject(it) }.filterNot { it.optBoolean("batal") }
+                        val today = java.time.LocalDate.now().toString()
+                        val todaySales = activeSales.filter { it.optString("sale_date") == today }
+                        val todayTotal = todaySales.sumOf { it.optDouble("total") }
+                        Text("Ringkasan usaha", color = Ink, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.height(10.dp))
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Card(Modifier.weight(1f), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                                Column(Modifier.padding(14.dp)) {
+                                    Text("Omzet hari ini", color = Muted, fontSize = 11.sp)
+                                    Text("Rp ${todayTotal.toLong()}", color = Terracotta, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                            Card(Modifier.weight(1f), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                                Column(Modifier.padding(14.dp)) {
+                                    Text("Transaksi", color = Muted, fontSize = 11.sp)
+                                    Text("${todaySales.size}", color = Ink, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                                }
                             }
                         }
+                        Spacer(Modifier.height(10.dp))
+                        Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                            Column(Modifier.padding(14.dp)) {
+                                Text("Menu aktif", color = Muted, fontSize = 12.sp)
+                                Text("${products.size} menu", color = Ink, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                                Text("Data transaksi dimuat dari Supabase", color = Muted, fontSize = 11.sp)
+                                TextButton(onClick = {
+                                    reportsLoading = true
+                                    scope.launch {
+                                        try { reportSales = api.sales(session!!.accessToken); products = api.products(session!!.accessToken); error = "" }
+                                        catch (e: Exception) { error = e.message ?: "Gagal memuat ringkasan." }
+                                        finally { reportsLoading = false }
+                                    }
+                                }) { Text("Perbarui ringkasan", color = Terracotta) }
+                            }
+                        }
+                        Text("Transaksi terbaru", color = Ink, fontWeight = FontWeight.SemiBold)
+                        if (reportsLoading) CircularProgressIndicator(color = Terracotta)
+                        else LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                            items(todaySales.take(10)) { sale ->
+                                Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                                    Row(Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                                        Column(Modifier.weight(1f)) {
+                                            Text(sale.optString("customer", "Umum"), color = Ink, fontWeight = FontWeight.SemiBold)
+                                            Text("${sale.optString("sale_time")} · ${sale.optString("method")}", color = Muted, fontSize = 11.sp)
+                                        }
+                                        Text("Rp ${sale.optDouble("total").toLong()}", color = Terracotta, fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                            }
+                        }
+                        if (error.isNotBlank()) Text(error, color = Color(0xFFB3261E), fontSize = 12.sp)
+                    } else {
+                        val owner = profile?.peran.equals("Pemilik", ignoreCase = true)
+                        Text("Daftar menu", color = Ink, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                        if (owner) {
+                            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                                Column(Modifier.padding(12.dp)) {
+                                    Text(if (editingProductId == null) "Tambah menu" else "Ubah menu", color = Terracotta, fontWeight = FontWeight.SemiBold)
+                                    OutlinedTextField(productName, { productName = it }, Modifier.fillMaxWidth(), label = { Text("Nama menu") }, singleLine = true)
+                                    OutlinedTextField(productCategory, { productCategory = it }, Modifier.fillMaxWidth(), label = { Text("Kategori") }, singleLine = true)
+                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        OutlinedTextField(productPrice, { productPrice = it.filter(Char::isDigit) }, Modifier.weight(1f), label = { Text("Harga jual") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true)
+                                        OutlinedTextField(productCost, { productCost = it.filter(Char::isDigit) }, Modifier.weight(1f), label = { Text("Modal") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true)
+                                    }
+                                    OutlinedTextField(productStock, { productStock = it.filter(Char::isDigit) }, Modifier.fillMaxWidth(), label = { Text("Stok") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true)
+                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Button(enabled = !managementBusy && productName.isNotBlank() && (productPrice.toDoubleOrNull() ?: 0.0) > 0, onClick = {
+                                            val token = session?.accessToken ?: return@Button
+                                            managementBusy = true
+                                            scope.launch {
+                                                try {
+                                                    val item = org.json.JSONObject().put("name", productName.trim()).put("cat", productCategory.trim()).put("price", productPrice.toDouble()).put("cost", productCost.toDoubleOrNull() ?: 0.0).put("stock", productStock.toIntOrNull() ?: 0)
+                                                    val id = editingProductId
+                                                    if (id == null) api.addProduct(token, item.put("id", java.util.UUID.randomUUID().toString()).put("deleted", false))
+                                                    else api.updateProduct(token, id, item)
+                                                    products = api.products(token)
+                                                    productName = ""; productCategory = ""; productPrice = ""; productCost = ""; productStock = "0"; editingProductId = null; error = ""
+                                                } catch (e: Exception) { error = e.message ?: "Menu gagal disimpan." }
+                                                finally { managementBusy = false }
+                                            }
+                                        }, colors = ButtonDefaults.buttonColors(containerColor = Terracotta)) { Text(if (managementBusy) "Menyimpan…" else "Simpan menu") }
+                                        if (editingProductId != null) OutlinedButton(onClick = { editingProductId = null; productName = ""; productCategory = ""; productPrice = ""; productCost = ""; productStock = "0" }) { Text("Batal") }
+                                    }
+                                }
+                            }
+                        } else Text("Akun Kasir hanya dapat melihat daftar menu.", color = Muted, fontSize = 12.sp)
+                        LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                            items(products, key = { it.id }) { p ->
+                                Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                                    Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                        Column(Modifier.weight(1f)) {
+                                            Text(p.name, color = Ink, fontWeight = FontWeight.SemiBold)
+                                            Text("${p.category} · Rp ${p.price.toLong()} · Stok ${p.stock}", color = Muted, fontSize = 11.sp)
+                                        }
+                                        if (owner) {
+                                            TextButton(onClick = { editingProductId = p.id; productName = p.name; productCategory = p.category; productPrice = p.price.toLong().toString(); productCost = p.cost.toLong().toString(); productStock = p.stock.toString() }) { Text("Ubah", color = Terracotta) }
+                                            TextButton(enabled = !managementBusy, onClick = {
+                                                val token = session?.accessToken ?: return@TextButton
+                                                managementBusy = true
+                                                scope.launch {
+                                                    try { api.deleteProduct(token, p.id); products = api.products(token); error = "" }
+                                                    catch (e: Exception) { error = e.message ?: "Menu gagal dihapus." }
+                                                    finally { managementBusy = false }
+                                                }
+                                            }) { Text("Hapus", color = Color(0xFFB3261E)) }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        if (error.isNotBlank()) Text(error, color = Color(0xFFB3261E), fontSize = 12.sp)
                     }
                 }
             }
