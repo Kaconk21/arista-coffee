@@ -54,6 +54,7 @@ import androidx.room.Room
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
+import java.io.IOException
 
 private val Cream = Color(0xFFF7F1E8)
 private val Terracotta = Color(0xFFB5583A)
@@ -163,6 +164,7 @@ private fun AristaApp() {
                                                 products = api.products(loggedIn.accessToken)
                                                 reportSales = api.sales(loggedIn.accessToken)
                                                 pendingOrders = localDao.getPendingOrders()
+                                                syncPendingSales(api, localDao, loggedIn.accessToken)
                                                 if (userProfile.peran.equals("Pemilik", true)) reportExpenses = api.expenses(loggedIn.accessToken)
                                             } finally { productsLoading = false }
                                         } catch (e: Exception) {
@@ -345,7 +347,13 @@ private fun AristaApp() {
                                                         .put("method", paymentMethod).put("paid", if (paymentMethod == "Tunai") (cashReceived.toLongOrNull() ?: 0L) else total).put("change_amount", if (paymentMethod == "Tunai") ((cashReceived.toLongOrNull() ?: 0L) - total.toLong()).coerceAtLeast(0L) else 0L)
                                                         .put("cashier_name", profile?.nama ?: "")
                                                         .put("customer", "Umum").put("diskon", 0)
-                                                    api.saveSale(active.accessToken, sale)
+                                                    try {
+                                                        api.saveSale(active.accessToken, sale)
+                                                    } catch (e: IOException) {
+                                                        if (e.message?.startsWith("Permintaan gagal") == true) throw e
+                                                        localDao.enqueue(SyncOutboxEntity(sale.getString("id"), sale.toString(), System.currentTimeMillis()))
+                                                        error = "Koneksi terputus. Transaksi disimpan di perangkat dan akan dikirim saat online."
+                                                    }
                                                     cart = emptyMap()
                                                     editingPendingId?.let { localDao.deletePendingOrder(it) }
                                                     editingPendingId = null
@@ -663,6 +671,19 @@ private fun AristaApp() {
                     }
                 }
             }
+        }
+    }
+}
+
+private suspend fun syncPendingSales(api: AristaApi, dao: AristaLocalDao, token: String) {
+    val queued = dao.getOutbox()
+    for (item in queued) {
+        try {
+            api.saveSale(token, org.json.JSONObject(item.payloadJson))
+            dao.removeFromOutbox(item.id)
+        } catch (e: Exception) {
+            dao.markRetry(item.id, e.message ?: "Sinkronisasi gagal")
+            break
         }
     }
 }
