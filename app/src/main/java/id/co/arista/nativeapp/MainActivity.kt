@@ -16,6 +16,10 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items as gridItems
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -113,6 +117,7 @@ private fun AristaApp() {
     var receivableMethod by remember { mutableStateOf("Tunai") }
     var cart by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
     var cashierSection by remember { mutableStateOf("Menu") }
+    var selectedCategory by remember { mutableStateOf("Semua") }
     var pendingOrders by remember { mutableStateOf<List<PendingOrderEntity>>(emptyList()) }
     var editingPendingId by remember { mutableStateOf<String?>(null) }
     var savingPending by remember { mutableStateOf(false) }
@@ -381,47 +386,68 @@ private fun AristaApp() {
                             }
                         }
                         if (cashierSection == "Menu") {
-                        Text("Pilih menu", color = Ink, fontSize = 19.sp, fontWeight = FontWeight.SemiBold)
-                        Spacer(Modifier.height(8.dp))
-                        when {
-                            productsLoading -> CircularProgressIndicator(color = Terracotta)
-                            products.isEmpty() -> Text("Belum ada menu aktif atau gagal memuat menu.", color = Muted, fontSize = 14.sp)
-                            else -> LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(9.dp)) {
-                                items(products, key = { it.id }) { product ->
-                                    Card(
-                                        modifier = Modifier.fillMaxWidth().clickable {
-                                            if (activeShift == null) error = "Buka kasir dulu untuk mulai menjual."
-                                            else { cart = cart + (product.id to ((cart[product.id] ?: 0) + 1)); error = "" }
-                                        },
-                                        shape = RoundedCornerShape(14.dp),
-                                        colors = CardDefaults.cardColors(containerColor = Color.White)
-                                    ) {
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth().padding(14.dp),
-                                            horizontalArrangement = Arrangement.SpaceBetween,
-                                            verticalAlignment = Alignment.CenterVertically
+                            val categories = listOf("Semua") + products.map { it.category }.filter { it.isNotBlank() }.distinct().sorted()
+                            val visibleProducts = if (selectedCategory == "Semua") products else products.filter { it.category == selectedCategory }
+                            Text("Menu", color = Ink, fontSize = 19.sp, fontWeight = FontWeight.SemiBold)
+                            Row(
+                                Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                categories.forEach { category ->
+                                    val active = selectedCategory == category
+                                    if (active) {
+                                        Button(
+                                            onClick = { selectedCategory = category },
+                                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                                            colors = ButtonDefaults.buttonColors(containerColor = Terracotta)
+                                        ) { Text(category, fontSize = 12.sp, maxLines = 1) }
+                                    } else {
+                                        OutlinedButton(
+                                            onClick = { selectedCategory = category },
+                                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                                        ) { Text(category, fontSize = 12.sp, maxLines = 1) }
+                                    }
+                                }
+                            }
+                            when {
+                                productsLoading -> CircularProgressIndicator(color = Terracotta)
+                                products.isEmpty() -> Text("Belum ada menu aktif atau gagal memuat menu.", color = Muted, fontSize = 14.sp)
+                                else -> LazyVerticalGrid(
+                                    columns = GridCells.Fixed(2),
+                                    modifier = Modifier.weight(1f),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    gridItems(visibleProducts, key = { it.id }) { product ->
+                                        Card(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            shape = RoundedCornerShape(12.dp),
+                                            colors = CardDefaults.cardColors(containerColor = Color.White)
                                         ) {
-                                            Column(Modifier.weight(1f)) {
-                                                Text(product.name, color = Ink, fontWeight = FontWeight.SemiBold)
-                                                Text(product.category, color = Muted, fontSize = 12.sp)
-                                                Text("Ketuk untuk tambah", color = Muted, fontSize = 11.sp)
-                                            }
-                                            Column(horizontalAlignment = Alignment.End) {
-                                                Text("Rp ${product.price.toLong()}", color = Terracotta, fontWeight = FontWeight.Bold)
+                                            Column(
+                                                Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
+                                                horizontalAlignment = Alignment.Start
+                                            ) {
+                                                Text(product.name, color = Ink, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 2)
+                                                Text("Rp ${product.price.toLong()}", color = Muted, fontSize = 12.sp)
+                                                Button(
+                                                    onClick = {
+                                                        if (activeShift == null) error = "Buka kasir dulu untuk mulai menjual."
+                                                        else { cart = cart + (product.id to ((cart[product.id] ?: 0) + 1)); error = "" }
+                                                    },
+                                                    modifier = Modifier.fillMaxWidth().padding(top = 5.dp),
+                                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
+                                                    colors = ButtonDefaults.buttonColors(containerColor = Terracotta)
+                                                ) { Text("+ Tambah", fontSize = 12.sp) }
                                                 val quantity = cart[product.id] ?: 0
                                                 if (quantity > 0) {
-                                                    Text("Di keranjang: $quantity", color = Terracotta, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
-                                                    TextButton(onClick = {
-                                                        val next = quantity - 1
-                                                        cart = if (next <= 0) cart - product.id else cart + (product.id to next)
-                                                    }) { Text("Kurangi", color = Muted) }
+                                                    Text("Di keranjang: $quantity", color = Terracotta, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                                                 }
                                             }
                                         }
                                     }
                                 }
                             }
-                        }
                         }
                         if (cashierSection == "Keranjang") {
                         val chosen = products.filter { (cart[it.id] ?: 0) > 0 }
