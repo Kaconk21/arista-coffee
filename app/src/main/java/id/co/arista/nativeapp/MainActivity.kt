@@ -475,7 +475,7 @@ private fun AristaApp() {
                                             HorizontalDivider(color = Cream)
                                         }
                                         Spacer(Modifier.height(8.dp))
-                                        OutlinedTextField(customerName, { customerName = it }, Modifier.fillMaxWidth(), label = { Text("Nama customer (kosong = Umum)") }, singleLine = true)
+                                        OutlinedTextField(customerName, { customerName = it; error = "" }, Modifier.fillMaxWidth(), label = { Text("Nama customer") }, singleLine = true)
                                         Spacer(Modifier.height(8.dp))
                                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                             Text("Subtotal", color = Muted)
@@ -486,8 +486,15 @@ private fun AristaApp() {
                                             savingPending = true
                                             scope.launch {
                                                 try {
+                                                    if (customerName.isBlank()) {
+                                                        error = "Isi nama customer dulu untuk pesanan tertunda."
+                                                        savingPending = false
+                                                        return@launch
+                                                    }
                                                     val rows = org.json.JSONArray()
-                                                    chosen.forEach { p -> rows.put(org.json.JSONObject().put("id", p.id).put("qty", cart[p.id] ?: 0)) }
+                                                    chosen.forEach { p ->
+                                                        rows.put(org.json.JSONObject().put("id", p.id).put("name", p.name).put("price", p.price).put("cost", p.cost).put("qty", cart[p.id] ?: 0))
+                                                    }
                                                     localDao.savePendingOrder(PendingOrderEntity(editingPendingId ?: java.util.UUID.randomUUID().toString(), customerName.trim(), rows.toString(), subtotal, System.currentTimeMillis()))
                                                     pendingOrders = localDao.getPendingOrders(); editingPendingId = null; cart = emptyMap(); cashReceived = ""; customerName = ""; discountInput = ""; cashierSection = "ORDERAN"; error = ""
                                                 } catch (e: Exception) { error = e.message ?: "Pesanan gagal disimpan." }
