@@ -195,7 +195,7 @@ private fun AristaApp() {
                                                 syncPendingSales(api, localDao, loggedIn.accessToken)
                                                 queuedSalesCount = localDao.getOutbox().size
                                                 reportSales = api.sales(loggedIn.accessToken)
-                                                if (userProfile.peran.equals("Pemilik", true)) reportExpenses = api.expenses(loggedIn.accessToken)
+                                                if (userProfile.peran.equals("Pemilik", true)) { val d = java.time.LocalDate.now(); reportExpenses = api.expensesForRange(loggedIn.accessToken, d.toString(), d.toString()) }
                                             } finally { productsLoading = false }
                                         } catch (e: Exception) {
                                             error = e.message ?: "Tidak dapat masuk. Periksa koneksi."
@@ -257,7 +257,7 @@ private fun AristaApp() {
                                     if ((index == 0 || index == 2) && session != null) {
                                         reportsLoading = true
                                         scope.launch {
-                                            try { reportSales = api.sales(session!!.accessToken); if (profile?.peran.equals("Pemilik", true)) reportExpenses = api.expenses(session!!.accessToken); error = "" }
+                                            try { reportSales = api.sales(session!!.accessToken); if (profile?.peran.equals("Pemilik", true)) { val d = java.time.LocalDate.now(); reportExpenses = api.expensesForRange(session!!.accessToken, d.toString(), d.toString()) }; error = "" }
                                             catch (e: Exception) { error = e.message ?: "Data gagal dimuat." }
                                             finally { reportsLoading = false }
                                         }
@@ -585,7 +585,7 @@ private fun AristaApp() {
                             TextButton(onClick = {
                                 reportsLoading = true
                                 scope.launch {
-                                    try { reportSales = api.salesForRange(session!!.accessToken, periodStart.toString(), todayDate.toString()); error = "" }
+                                    try { reportSales = api.salesForRange(session!!.accessToken, periodStart.toString(), todayDate.toString()); if (owner) reportExpenses = api.expensesForRange(session!!.accessToken, periodStart.toString(), todayDate.toString()); error = "" }
                                     catch (e: Exception) { error = e.message ?: "Gagal memuat laporan." }
                                     finally { reportsLoading = false }
                                 }
@@ -598,14 +598,14 @@ private fun AristaApp() {
                                     val endDate = java.time.LocalDate.now()
                                     val startDate = when (range) { "Mingguan" -> endDate.with(java.time.DayOfWeek.MONDAY); "Bulanan" -> endDate.withDayOfMonth(1); else -> endDate }
                                     val token = session?.accessToken
-                                    if (token != null) { reportsLoading = true; scope.launch { try { reportSales = api.salesForRange(token, startDate.toString(), endDate.toString()); error = "" } catch (e: Exception) { error = e.message ?: "Gagal memuat laporan." } finally { reportsLoading = false } } }
+                                    if (token != null) { reportsLoading = true; scope.launch { try { reportSales = api.salesForRange(token, startDate.toString(), endDate.toString()); if (owner) reportExpenses = api.expensesForRange(token, startDate.toString(), endDate.toString()); error = "" } catch (e: Exception) { error = e.message ?: "Gagal memuat laporan." } finally { reportsLoading = false } } }
                                 }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(containerColor = Terracotta)) { Text(range, fontSize = 11.sp) }
                                 else OutlinedButton(onClick = {
                                     reportRange = range
                                     val endDate = java.time.LocalDate.now()
                                     val startDate = when (range) { "Mingguan" -> endDate.with(java.time.DayOfWeek.MONDAY); "Bulanan" -> endDate.withDayOfMonth(1); else -> endDate }
                                     val token = session?.accessToken
-                                    if (token != null) { reportsLoading = true; scope.launch { try { reportSales = api.salesForRange(token, startDate.toString(), endDate.toString()); error = "" } catch (e: Exception) { error = e.message ?: "Gagal memuat laporan." } finally { reportsLoading = false } } }
+                                    if (token != null) { reportsLoading = true; scope.launch { try { reportSales = api.salesForRange(token, startDate.toString(), endDate.toString()); if (owner) reportExpenses = api.expensesForRange(token, startDate.toString(), endDate.toString()); error = "" } catch (e: Exception) { error = e.message ?: "Gagal memuat laporan." } finally { reportsLoading = false } } }
                                 }, modifier = Modifier.weight(1f)) { Text(range, fontSize = 11.sp) }
                             }
                         }
@@ -743,7 +743,9 @@ private fun AristaApp() {
                                             try {
                                                 val payload = org.json.JSONObject().put("tanggal", expenseDate).put("nama", expenseName.trim()).put("kategori", expenseCategory.trim().ifBlank { org.json.JSONObject.NULL }).put("qty", qVal).put("harga", pVal).put("total", qVal * pVal).put("catatan", expenseNote.trim().ifBlank { org.json.JSONObject.NULL })
                                                 api.createExpense(token, payload)
-                                                reportExpenses = api.expenses(token)
+                                                val endDate = java.time.LocalDate.now()
+                                                val startDate = when (reportRange) { "Mingguan" -> endDate.with(java.time.DayOfWeek.MONDAY); "Bulanan" -> endDate.withDayOfMonth(1); else -> endDate }
+                                                reportExpenses = api.expensesForRange(token, startDate.toString(), endDate.toString())
                                                 expenseName = ""; expenseCategory = ""; expenseQty = "1"; expensePrice = ""; expenseNote = ""; expenseDate = java.time.LocalDate.now().toString(); error = ""
                                             } catch (e: Exception) { error = e.message ?: "Pengeluaran gagal disimpan." }
                                             finally { managementBusy = false }
@@ -766,7 +768,7 @@ private fun AristaApp() {
                                                     val token = session?.accessToken ?: return@TextButton
                                                     managementBusy = true
                                                     scope.launch {
-                                                        try { api.deleteExpense(token, expense.optString("id")); reportExpenses = api.expenses(token); error = "" }
+                                                        try { api.deleteExpense(token, expense.optString("id")); val endDate = java.time.LocalDate.now(); val startDate = when (reportRange) { "Mingguan" -> endDate.with(java.time.DayOfWeek.MONDAY); "Bulanan" -> endDate.withDayOfMonth(1); else -> endDate }; reportExpenses = api.expensesForRange(token, startDate.toString(), endDate.toString()); error = "" }
                                                         catch (e: Exception) { error = e.message ?: "Pengeluaran gagal dihapus." }
                                                         finally { managementBusy = false }
                                                     }
