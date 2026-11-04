@@ -742,7 +742,9 @@ private suspend fun syncPendingSales(api: AristaApi, dao: AristaLocalDao, token:
     val queued = dao.getOutbox()
     for (item in queued) {
         try {
-            api.saveSale(token, org.json.JSONObject(item.payloadJson))
+            if (!api.saleExists(token, item.id)) {
+                api.saveSale(token, org.json.JSONObject(item.payloadJson))
+            }
             dao.removeFromOutbox(item.id)
         } catch (e: Exception) {
             dao.markRetry(item.id, e.message ?: "Sinkronisasi gagal")
