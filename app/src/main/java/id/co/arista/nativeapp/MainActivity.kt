@@ -478,6 +478,37 @@ private fun AristaApp() {
                                      }
                                  }
                              }
+                             if (owner) {
+                                 Text("Catat pengeluaran", color = Ink, fontWeight = FontWeight.SemiBold)
+                                 Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                                     Column(Modifier.padding(12.dp)) {
+                                         OutlinedTextField(expenseName, { expenseName = it }, Modifier.fillMaxWidth(), label = { Text("Nama pengeluaran") }, singleLine = true)
+                                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                             OutlinedTextField(expenseQty, { expenseQty = it.filter(Char::isDigit) }, Modifier.weight(1f), label = { Text("Jumlah") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true)
+                                             OutlinedTextField(expensePrice, { expensePrice = it.filter(Char::isDigit) }, Modifier.weight(1f), label = { Text("Harga satuan") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true)
+                                         }
+                                         OutlinedTextField(expenseCategory, { expenseCategory = it }, Modifier.fillMaxWidth(), label = { Text("Kategori (opsional)") }, singleLine = true)
+                                         OutlinedTextField(expenseNote, { expenseNote = it }, Modifier.fillMaxWidth(), label = { Text("Catatan (opsional)") }, singleLine = true)
+                                         val qValue = expenseQty.toDoubleOrNull() ?: 0.0
+                                         val pValue = expensePrice.toDoubleOrNull() ?: 0.0
+                                         Text("Total: Rp ${(qValue * pValue).toLong()}", color = Terracotta, fontWeight = FontWeight.SemiBold)
+                                         Button(enabled = !managementBusy && expenseName.isNotBlank() && qValue > 0 && pValue > 0, onClick = {
+                                             val token = session?.accessToken ?: return@Button
+                                             managementBusy = true
+                                             scope.launch {
+                                                 try {
+                                                     val q = expenseQty.toDouble(); val p = expensePrice.toDouble()
+                                                     val payload = org.json.JSONObject().put("tanggal", java.time.LocalDate.now().toString()).put("nama", expenseName.trim()).put("kategori", expenseCategory.trim().ifBlank { org.json.JSONObject.NULL }).put("qty", q).put("harga", p).put("total", q * p).put("catatan", expenseNote.trim().ifBlank { org.json.JSONObject.NULL })
+                                                     api.createExpense(token, payload)
+                                                     reportExpenses = api.expenses(token)
+                                                     expenseName = ""; expenseCategory = ""; expenseQty = "1"; expensePrice = ""; expenseNote = ""; error = ""
+                                                 } catch (e: Exception) { error = e.message ?: "Pengeluaran gagal disimpan." }
+                                                 finally { managementBusy = false }
+                                             }
+                                         }, colors = ButtonDefaults.buttonColors(containerColor = Terracotta)) { Text("Simpan pengeluaran") }
+                                     }
+                                 }
+                             }
                             Text("Transaksi terbaru", color = Ink, fontWeight = FontWeight.SemiBold)
                             LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 items((0 until minOf(reportSales.length(), 50)).map { reportSales.getJSONObject(it) }) { sale ->
