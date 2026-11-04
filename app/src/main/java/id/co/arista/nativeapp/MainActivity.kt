@@ -169,11 +169,11 @@ private fun AristaApp() {
                                             productsLoading = true
                                             try {
                                                 products = api.products(loggedIn.accessToken)
-                                                reportSales = api.sales(loggedIn.accessToken)
                                                 pendingOrders = localDao.getPendingOrders()
                                                 activeShift = localDao.getShifts().firstOrNull { it.endedAt == null }
                                                 syncPendingSales(api, localDao, loggedIn.accessToken)
                                                 queuedSalesCount = localDao.getOutbox().size
+                                                reportSales = api.sales(loggedIn.accessToken)
                                                 if (userProfile.peran.equals("Pemilik", true)) reportExpenses = api.expenses(loggedIn.accessToken)
                                             } finally { productsLoading = false }
                                         } catch (e: Exception) {
