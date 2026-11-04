@@ -1060,6 +1060,27 @@ Text("Transaksi terbaru", color = Ink, fontWeight = FontWeight.SemiBold)
                             }
                         }
                         Spacer(Modifier.height(10.dp))
+                        Card(
+                            Modifier.fillMaxWidth().clickable { selectedTab = 1 },
+                            colors = CardDefaults.cardColors(containerColor = Color.White)
+                        ) {
+                            Row(Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                Column(Modifier.weight(1f)) {
+                                    Text(if (activeShift == null) "Kasir belum dibuka" else "Kasir sedang buka", color = Ink, fontWeight = FontWeight.SemiBold)
+                                    Text(
+                                        if (activeShift == null) "Ketuk untuk membuka kasir dan isi uang awal" else "Sejak " + java.text.SimpleDateFormat("HH:mm", java.util.Locale("id", "ID")).format(java.util.Date(activeShift!!.startedAt)) + " · ketuk untuk mengelola shift",
+                                        color = Muted, fontSize = 11.sp
+                                    )
+                                }
+                                Text(if (activeShift == null) "›" else "BUKA", color = Terracotta, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        OutlinedButton(
+                            onClick = { selectedTab = 1; cashierSection = "ORDERAN" },
+                            modifier = Modifier.fillMaxWidth()
+                        ) { Text("ORDERAN · " + pendingOrders.size, color = Terracotta, fontSize = 12.sp) }
+                        Spacer(Modifier.height(10.dp))
                         Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
                             Column(Modifier.padding(12.dp)) {
                                 Text("Menu aktif", color = Muted, fontSize = 12.sp)
