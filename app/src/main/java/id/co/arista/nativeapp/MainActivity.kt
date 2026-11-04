@@ -376,19 +376,24 @@ private fun AristaApp() {
                                                         .put("method", paymentMethod).put("paid", if (paymentMethod == "Tunai") (cashReceived.toLongOrNull() ?: 0L) else total).put("change_amount", if (paymentMethod == "Tunai") ((cashReceived.toLongOrNull() ?: 0L) - total.toLong()).coerceAtLeast(0L) else 0L)
                                                         .put("cashier_name", profile?.nama ?: "")
                                                         .put("customer", "Umum").put("diskon", 0)
-                                                    if (hasValidatedInternet(context)) {
+                                                    val online = hasValidatedInternet(context)
+                                                    if (online) {
                                                         api.saveSale(active.accessToken, sale)
                                                     } else {
                                                         localDao.enqueue(SyncOutboxEntity(sale.getString("id"), sale.toString(), System.currentTimeMillis()))
-                                                        error = "Tidak ada internet. Transaksi disimpan di perangkat dan akan dikirim saat online."
                                                     }
                                                     cart = emptyMap()
                                                     editingPendingId?.let { localDao.deletePendingOrder(it) }
                                                     editingPendingId = null
                                                     pendingOrders = localDao.getPendingOrders()
                                                     cashReceived = ""
-                                                    products = api.products(active.accessToken)
-                                                    error = ""
+                                                    if (online) {
+                                                        products = api.products(active.accessToken)
+                                                        reportSales = api.sales(active.accessToken)
+                                                        error = ""
+                                                    } else {
+                                                        error = "Transaksi disimpan di perangkat. Akan disinkronkan saat internet tersedia."
+                                                    }
                                                 } catch (e: Exception) {
                                                     error = e.message ?: "Transaksi gagal disimpan."
                                                 } finally { paymentBusy = false }
@@ -506,38 +511,7 @@ private fun AristaApp() {
                                      }
                                  }
                              }
-                             if (owner) {
-                                 Text("Catat pengeluaran", color = Ink, fontWeight = FontWeight.SemiBold)
-                                 Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
-                                     Column(Modifier.padding(12.dp)) {
-                                         OutlinedTextField(expenseName, { expenseName = it }, Modifier.fillMaxWidth(), label = { Text("Nama pengeluaran") }, singleLine = true)
-                                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                             OutlinedTextField(expenseQty, { expenseQty = it.filter(Char::isDigit) }, Modifier.weight(1f), label = { Text("Jumlah") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true)
-                                             OutlinedTextField(expensePrice, { expensePrice = it.filter(Char::isDigit) }, Modifier.weight(1f), label = { Text("Harga satuan") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true)
-                                         }
-                                         OutlinedTextField(expenseCategory, { expenseCategory = it }, Modifier.fillMaxWidth(), label = { Text("Kategori (opsional)") }, singleLine = true)
-                                         OutlinedTextField(expenseNote, { expenseNote = it }, Modifier.fillMaxWidth(), label = { Text("Catatan (opsional)") }, singleLine = true)
-                                         val qValue = expenseQty.toDoubleOrNull() ?: 0.0
-                                         val pValue = expensePrice.toDoubleOrNull() ?: 0.0
-                                         Text("Total: Rp ${(qValue * pValue).toLong()}", color = Terracotta, fontWeight = FontWeight.SemiBold)
-                                         Button(enabled = !managementBusy && expenseName.isNotBlank() && qValue > 0 && pValue > 0, onClick = {
-                                             val token = session?.accessToken ?: return@Button
-                                             managementBusy = true
-                                             scope.launch {
-                                                 try {
-                                                     val q = expenseQty.toDouble(); val p = expensePrice.toDouble()
-                                                     val payload = org.json.JSONObject().put("tanggal", java.time.LocalDate.now().toString()).put("nama", expenseName.trim()).put("kategori", expenseCategory.trim().ifBlank { org.json.JSONObject.NULL }).put("qty", q).put("harga", p).put("total", q * p).put("catatan", expenseNote.trim().ifBlank { org.json.JSONObject.NULL })
-                                                     api.createExpense(token, payload)
-                                                     reportExpenses = api.expenses(token)
-                                                     expenseName = ""; expenseCategory = ""; expenseQty = "1"; expensePrice = ""; expenseNote = ""; error = ""
-                                                 } catch (e: Exception) { error = e.message ?: "Pengeluaran gagal disimpan." }
-                                                 finally { managementBusy = false }
-                                             }
-                                         }, colors = ButtonDefaults.buttonColors(containerColor = Terracotta)) { Text("Simpan pengeluaran") }
-                                     }
-                                 }
-                             }
-                            Text("Transaksi terbaru", color = Ink, fontWeight = FontWeight.SemiBold)
+Text("Transaksi terbaru", color = Ink, fontWeight = FontWeight.SemiBold)
                             LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 items((0 until minOf(reportSales.length(), 50)).map { reportSales.getJSONObject(it) }) { sale ->
                                     Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
