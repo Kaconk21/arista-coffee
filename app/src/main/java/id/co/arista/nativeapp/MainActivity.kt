@@ -95,6 +95,7 @@ private fun AristaApp() {
     var expensePrice by remember { mutableStateOf("") }
     var expenseNote by remember { mutableStateOf("") }
     var reportsLoading by remember { mutableStateOf(false) }
+    var reportRange by remember { mutableStateOf("Harian") }
     var cart by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
     var pendingOrders by remember { mutableStateOf<List<PendingOrderEntity>>(emptyList()) }
     var editingPendingId by remember { mutableStateOf<String?>(null) }
@@ -542,11 +543,25 @@ private fun AristaApp() {
                         }
                     } else if (selectedTab == 2) {
                         val owner = profile?.peran.equals("Pemilik", true)
-                        val omzet = (0 until reportSales.length()).sumOf { i ->
+                        val todayDate = java.time.LocalDate.now()
+                        val periodStart = when (reportRange) {
+                            "Mingguan" -> todayDate.with(java.time.DayOfWeek.MONDAY)
+                            "Bulanan" -> todayDate.withDayOfMonth(1)
+                            else -> todayDate
+                        }
+                        val periodSales = (0 until reportSales.length()).mapNotNull { reportSales.optJSONObject(it) }.filter { sale ->
+                            val date = try { java.time.LocalDate.parse(sale.optString("sale_date")) } catch (_: Exception) { null }
+                            date != null && !date.isBefore(periodStart) && !date.isAfter(todayDate)
+                        }
+                        val periodExpenses = (0 until reportExpenses.length()).mapNotNull { reportExpenses.optJSONObject(it) }.filter { expense ->
+                            val date = try { java.time.LocalDate.parse(expense.optString("tanggal")) } catch (_: Exception) { null }
+                            date != null && !date.isBefore(periodStart) && !date.isAfter(todayDate)
+                        }
+                        val omzet = periodSales.sumOf { row ->
                             val row = reportSales.optJSONObject(i) ?: org.json.JSONObject()
                             if (row.optBoolean("batal")) 0.0 else row.optDouble("total")
                         }
-                        val modal = (0 until reportSales.length()).sumOf { i ->
+                        val modal = periodSales.sumOf { sale ->
                             val sale = reportSales.optJSONObject(i) ?: org.json.JSONObject()
                             if (sale.optBoolean("batal")) 0.0 else {
                                 val rows = sale.optJSONArray("items") ?: org.json.JSONArray()
@@ -556,7 +571,7 @@ private fun AristaApp() {
                                 }
                             }
                         }
-                        val expenseTotal = (0 until reportExpenses.length()).sumOf { i -> reportExpenses.optJSONObject(i)?.optDouble("total") ?: 0.0 }
+                        val expenseTotal = periodExpenses.sumOf { it.optDouble("total") }
                         val jumlah = (0 until reportSales.length()).count { i ->
                             !(reportSales.optJSONObject(i)?.optBoolean("batal") ?: false)
                         }
@@ -570,6 +585,12 @@ private fun AristaApp() {
                                     finally { reportsLoading = false }
                                 }
                             }) { Text("Muat ulang", color = Terracotta) }
+                        }
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            listOf("Harian", "Mingguan", "Bulanan").forEach { range ->
+                                if (reportRange == range) Button(onClick = { reportRange = range }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(containerColor = Terracotta)) { Text(range, fontSize = 11.sp) }
+                                else OutlinedButton(onClick = { reportRange = range }, modifier = Modifier.weight(1f)) { Text(range, fontSize = 11.sp) }
+                            }
                         }
                         if (reportsLoading) CircularProgressIndicator(color = Terracotta)
                         else {
@@ -622,7 +643,7 @@ private fun AristaApp() {
                              }
 Text("Transaksi terbaru", color = Ink, fontWeight = FontWeight.SemiBold)
                             LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                items((0 until minOf(reportSales.length(), 50)).map { reportSales.getJSONObject(it) }) { sale ->
+                                items(periodSales.filterNot { it.optBoolean("batal") }.take(50)) { sale ->
                                     Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
                                         Column(Modifier.padding(12.dp)) {
                                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
