@@ -106,6 +106,7 @@ private fun AristaApp() {
     var receivableAmount by remember { mutableStateOf("") }
     var receivableMethod by remember { mutableStateOf("Tunai") }
     var cart by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
+    var cashierSection by remember { mutableStateOf("Menu") }
     var pendingOrders by remember { mutableStateOf<List<PendingOrderEntity>>(emptyList()) }
     var editingPendingId by remember { mutableStateOf<String?>(null) }
     var savingPending by remember { mutableStateOf(false) }
@@ -320,6 +321,14 @@ private fun AristaApp() {
                                 }
                             }
                         }
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                            listOf("Menu", "Keranjang", "ORDERAN").forEach { section ->
+                                val label = when (section) { "Keranjang" -> "Keranjang (${cart.values.sum()})"; "ORDERAN" -> "ORDERAN (${pendingOrders.size})"; else -> section }
+                                if (cashierSection == section) Button(onClick = { cashierSection = section }, modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 2.dp, vertical = 8.dp), colors = ButtonDefaults.buttonColors(containerColor = Terracotta)) { Text(label, fontSize = 10.sp) }
+                                else OutlinedButton(onClick = { cashierSection = section }, modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 2.dp, vertical = 8.dp)) { Text(label, fontSize = 10.sp) }
+                            }
+                        }
+                        if (cashierSection == "Menu") {
                         Text("Pilih menu", color = Ink, fontSize = 19.sp, fontWeight = FontWeight.SemiBold)
                         Spacer(Modifier.height(8.dp))
                         when {
@@ -361,6 +370,8 @@ private fun AristaApp() {
                                 }
                             }
                         }
+                        }
+                        if (cashierSection == "Keranjang") {
                         val chosen = products.filter { (cart[it.id] ?: 0) > 0 }
                         if (chosen.isNotEmpty()) {
                             val subtotal = chosen.sumOf { it.price * (cart[it.id] ?: 0) }
@@ -417,7 +428,7 @@ private fun AristaApp() {
                                                 chosen.forEach { p -> rows.put(org.json.JSONObject().put("id", p.id).put("qty", cart[p.id] ?: 0)) }
                                                 if (customerName.isBlank()) { error = "Isi nama customer dulu untuk menyimpan ORDERAN."; return@launch }
                                                 localDao.savePendingOrder(PendingOrderEntity(editingPendingId ?: java.util.UUID.randomUUID().toString(), customerName.trim(), rows.toString(), subtotal, System.currentTimeMillis()))
-                                                pendingOrders = localDao.getPendingOrders(); editingPendingId = null; cart = emptyMap(); cashReceived = ""; customerName = ""; discountInput = ""; error = ""
+                                                pendingOrders = localDao.getPendingOrders(); editingPendingId = null; cart = emptyMap(); cashReceived = ""; customerName = ""; discountInput = ""; cashierSection = "ORDERAN"; error = ""
                                             } catch (e: Exception) { error = e.message ?: "Pesanan gagal disimpan." }
                                             finally { savingPending = false }
                                         }
@@ -475,6 +486,7 @@ private fun AristaApp() {
                                                     editingPendingId?.let { localDao.deletePendingOrder(it) }
                                                     editingPendingId = null
                                                     pendingOrders = localDao.getPendingOrders()
+                                                    cashierSection = "Menu"
                                                     cashReceived = ""; customerName = ""; discountInput = ""; discountType = "Rp"
                                                     if (online && !queuedAfterNetworkError) {
                                                         try {
@@ -522,6 +534,8 @@ private fun AristaApp() {
                                 }
                             }
                         }
+                        }
+                        if (cashierSection == "ORDERAN") {
                         Spacer(Modifier.height(12.dp))
                         Text("ORDERAN", color = Ink, fontWeight = FontWeight.SemiBold)
                         Text("Pesanan yang belum dibayar. Stok belum berkurang sampai pembayaran selesai.", color = Muted, fontSize = 11.sp)
@@ -543,12 +557,14 @@ private fun AristaApp() {
                                                 cart = restored
                                                 customerName = order.customer
                                                 editingPendingId = order.id
+                                                cashierSection = "Keranjang"
                                             }) { Text("Buka & bayar", color = Terracotta) }
                                             TextButton(onClick = { scope.launch { localDao.deletePendingOrder(order.id); pendingOrders = localDao.getPendingOrders() } }) { Text("Hapus", color = Color(0xFFB3261E)) }
                                         }
                                     }
                                 }
                             }
+                        }
                         }
                     } else if (selectedTab == 2) {
                         val owner = profile?.peran.equals("Pemilik", true)
