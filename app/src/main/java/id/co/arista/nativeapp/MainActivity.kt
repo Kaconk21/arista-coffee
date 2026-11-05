@@ -1174,14 +1174,14 @@ Text("Transaksi terbaru", color = Ink, fontWeight = FontWeight.SemiBold)
                         Text("Ringkasan usaha", color = Ink, fontSize = 17.sp, fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(10.dp))
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            Card(Modifier.weight(1f), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
-                                Column(Modifier.padding(12.dp)) {
+                            Card(Modifier.weight(1f), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
+                                Column(Modifier.padding(14.dp)) {
                                     Text("Omzet hari ini", color = Muted, fontSize = 11.sp)
                                     Text("Rp ${todayTotal.toLong()}", color = Terracotta, fontSize = 17.sp, fontWeight = FontWeight.Bold)
                                 }
                             }
-                            Card(Modifier.weight(1f), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
-                                Column(Modifier.padding(12.dp)) {
+                            Card(Modifier.weight(1f), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
+                                Column(Modifier.padding(14.dp)) {
                                     Text("Transaksi", color = Muted, fontSize = 11.sp)
                                     Text("${todaySales.size}", color = Ink, fontSize = 17.sp, fontWeight = FontWeight.Bold)
                                 }
@@ -1192,7 +1192,7 @@ Text("Transaksi terbaru", color = Ink, fontWeight = FontWeight.SemiBold)
                             Modifier.fillMaxWidth().clickable { selectedTab = 1; cashierSection = "SHIFT" },
                             colors = CardDefaults.cardColors(containerColor = Color.White)
                         ) {
-                            Row(Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                            Row(Modifier.fillMaxWidth().padding(14.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                                 Column(Modifier.weight(1f)) {
                                     Text(if (activeShift == null) "Kasir belum dibuka" else "Kasir sedang buka", color = Ink, fontWeight = FontWeight.SemiBold)
                                     Text(
@@ -1209,8 +1209,8 @@ Text("Transaksi terbaru", color = Ink, fontWeight = FontWeight.SemiBold)
                             modifier = Modifier.fillMaxWidth()
                         ) { Text("ORDERAN · " + pendingOrders.size, color = Terracotta, fontSize = 12.sp) }
                         Spacer(Modifier.height(10.dp))
-                        Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
-                            Column(Modifier.padding(12.dp)) {
+                        Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
+                            Column(Modifier.padding(14.dp)) {
                                 Text("Menu aktif", color = Muted, fontSize = 12.sp)
                                 Text("${products.size} menu", color = Ink, fontSize = 17.sp, fontWeight = FontWeight.Bold)
                                 Text("Data transaksi dimuat dari Supabase", color = Muted, fontSize = 11.sp)
@@ -1228,8 +1228,8 @@ Text("Transaksi terbaru", color = Ink, fontWeight = FontWeight.SemiBold)
                         if (reportsLoading) CircularProgressIndicator(color = Terracotta)
                         else LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
                             items(todaySales.take(10)) { sale ->
-                                Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
-                                    Row(Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
+                                    Row(Modifier.fillMaxWidth().padding(14.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                                         Column(Modifier.weight(1f)) {
                                             Text(sale.optString("customer", "Umum"), color = Ink, fontWeight = FontWeight.SemiBold)
                                             Text("${sale.optString("sale_time")} · ${sale.optString("method")}", color = Muted, fontSize = 11.sp)
