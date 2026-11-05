@@ -1458,24 +1458,22 @@ Text("Transaksi terbaru", color = Ink, fontWeight = FontWeight.SemiBold)
                     pendingRestore = null
                     scope.launch {
                         try {
-                            localDao.clearPendingOrders()
-                            localDao.clearOutbox()
-                            localDao.clearShifts()
-                            val pending = data.getJSONArray("pendingOrders")
-                            for (i in 0 until pending.length()) {
-                                val o = pending.getJSONObject(i)
-                                localDao.savePendingOrder(PendingOrderEntity(o.getString("id"), o.optString("customer"), o.getString("itemsJson"), o.optDouble("total"), o.optLong("updatedAt")))
+                            val pendingArray = data.getJSONArray("pendingOrders")
+                            val pending = (0 until pendingArray.length()).map { i ->
+                                val o = pendingArray.getJSONObject(i)
+                                PendingOrderEntity(o.getString("id"), o.optString("customer"), o.getString("itemsJson"), o.optDouble("total"), o.optLong("updatedAt"))
                             }
-                            val queue = data.getJSONArray("syncOutbox")
-                            for (i in 0 until queue.length()) {
-                                val o = queue.getJSONObject(i)
-                                localDao.enqueue(SyncOutboxEntity(o.getString("id"), o.getString("payloadJson"), o.optLong("createdAt"), o.optInt("retryCount"), if (o.isNull("lastError")) null else o.optString("lastError")))
+                            val queueArray = data.getJSONArray("syncOutbox")
+                            val queue = (0 until queueArray.length()).map { i ->
+                                val o = queueArray.getJSONObject(i)
+                                SyncOutboxEntity(o.getString("id"), o.getString("payloadJson"), o.optLong("createdAt"), o.optInt("retryCount"), if (o.isNull("lastError")) null else o.optString("lastError"))
                             }
-                            val shifts = data.getJSONArray("shifts")
-                            for (i in 0 until shifts.length()) {
-                                val o = shifts.getJSONObject(i)
-                                localDao.saveShift(ShiftEntity(o.getString("id"), o.optLong("startedAt"), o.optDouble("openingCash"), if (o.isNull("endedAt")) null else o.optLong("endedAt"), if (o.isNull("closingCash")) null else o.optDouble("closingCash"), if (o.isNull("difference")) null else o.optDouble("difference")))
+                            val shiftArray = data.getJSONArray("shifts")
+                            val shifts = (0 until shiftArray.length()).map { i ->
+                                val o = shiftArray.getJSONObject(i)
+                                ShiftEntity(o.getString("id"), o.optLong("startedAt"), o.optDouble("openingCash"), if (o.isNull("endedAt")) null else o.optLong("endedAt"), if (o.isNull("closingCash")) null else o.optDouble("closingCash"), if (o.isNull("difference")) null else o.optDouble("difference"))
                             }
+                            localDao.replaceBackupData(pending, queue, shifts)
                             pendingOrders = localDao.getPendingOrders()
                             shiftHistory = localDao.getShifts()
                             activeShift = shiftHistory.firstOrNull { it.endedAt == null }
