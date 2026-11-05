@@ -207,6 +207,23 @@ private fun AristaApp() {
                     !parsed.has("pendingOrders") || !parsed.has("syncOutbox") || !parsed.has("shifts")) {
                     throw IllegalArgumentException("Format backup ARISTA tidak sesuai.")
                 }
+                val pendingRows = parsed.getJSONArray("pendingOrders")
+                for (i in 0 until pendingRows.length()) {
+                    val row = pendingRows.getJSONObject(i)
+                    if (row.optString("id").isBlank() || !row.has("itemsJson")) throw IllegalArgumentException("Data pesanan pada backup tidak lengkap.")
+                    org.json.JSONArray(row.getString("itemsJson"))
+                }
+                val outboxRows = parsed.getJSONArray("syncOutbox")
+                for (i in 0 until outboxRows.length()) {
+                    val row = outboxRows.getJSONObject(i)
+                    if (row.optString("id").isBlank() || !row.has("payloadJson")) throw IllegalArgumentException("Data antrean sinkronisasi pada backup tidak lengkap.")
+                    org.json.JSONObject(row.getString("payloadJson"))
+                }
+                val shiftRows = parsed.getJSONArray("shifts")
+                for (i in 0 until shiftRows.length()) {
+                    val row = shiftRows.getJSONObject(i)
+                    if (row.optString("id").isBlank() || !row.has("startedAt") || !row.has("openingCash")) throw IllegalArgumentException("Data shift pada backup tidak lengkap.")
+                }
                 pendingRestore = parsed
                 error = ""
             } catch (e: Exception) { error = e.message ?: "File backup tidak valid." }
