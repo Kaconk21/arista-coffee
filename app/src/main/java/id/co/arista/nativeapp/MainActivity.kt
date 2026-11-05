@@ -455,7 +455,7 @@ private fun AristaApp() {
                             listOf("Menu", "Keranjang", "ORDERAN", "SHIFT").forEach { section ->
                                 val label = when (section) { "Keranjang" -> "Keranjang (${cart.values.sum()})"; "ORDERAN" -> "ORDERAN (${pendingOrders.size})"; else -> section }
                                 if (cashierSection == section) Button(onClick = { cashierSection = section }, modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 2.dp, vertical = 6.dp), colors = ButtonDefaults.buttonColors(containerColor = Terracotta)) { Text(label, fontSize = 11.sp) }
-                                else OutlinedButton(onClick = { cashierSection = section }, modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 2.dp, vertical = 6.dp)) { Text(label, fontSize = 10.sp) }
+                                else OutlinedButton(onClick = { cashierSection = section }, modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 2.dp, vertical = 6.dp)) { Text(label, fontSize = 11.sp) }
                             }
                         }
                         if (cashierSection == "SHIFT") {
@@ -513,8 +513,9 @@ private fun AristaApp() {
                                     gridItems(visibleProducts, key = { it.id }) { product ->
                                         Card(
                                             modifier = Modifier.fillMaxWidth(),
-                                            shape = RoundedCornerShape(12.dp),
-                                            colors = CardDefaults.cardColors(containerColor = Color.White)
+                                            shape = RoundedCornerShape(18.dp),
+                                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                                         ) {
                                             Column(
                                                 Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
@@ -634,7 +635,7 @@ private fun AristaApp() {
                                         listOf(listOf("Tunai", "QRIS", "Debit/Kredit"), listOf("Transfer", "Piutang")).forEach { methodRow ->
                                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                                 methodRow.forEach { method ->
-                                                    if (paymentMethod == method) Button(onClick = { paymentMethod = method }, modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 2.dp, vertical = 7.dp), colors = ButtonDefaults.buttonColors(containerColor = Terracotta)) { Text(method, fontSize = 10.sp) }
+                                                    if (paymentMethod == method) Button(onClick = { paymentMethod = method }, modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 2.dp, vertical = 7.dp), colors = ButtonDefaults.buttonColors(containerColor = Terracotta)) { Text(method, fontSize = 11.sp) }
                                                     else OutlinedButton(onClick = { paymentMethod = method }, modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 2.dp, vertical = 7.dp)) { Text(method, fontSize = 10.sp) }
                                                 }
                                             }
@@ -1265,7 +1266,7 @@ Text("Transaksi terbaru", color = Ink, fontWeight = FontWeight.SemiBold)
                         if (owner) {
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                                 listOf("Menu", "Kategori", "Harga", "Akun kasir").forEach { tab ->
-                                    if (manageTab == tab) Button(onClick = { manageTab = tab }, modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 3.dp, vertical = 8.dp), colors = ButtonDefaults.buttonColors(containerColor = Terracotta)) { Text(tab, fontSize = 10.sp) }
+                                    if (manageTab == tab) Button(onClick = { manageTab = tab }, modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 3.dp, vertical = 8.dp), colors = ButtonDefaults.buttonColors(containerColor = Terracotta)) { Text(tab, fontSize = 11.sp) }
                                     else OutlinedButton(onClick = { manageTab = tab }, modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 3.dp, vertical = 8.dp)) { Text(tab, fontSize = 10.sp) }
                                 }
                             }
