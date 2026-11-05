@@ -229,7 +229,7 @@ private fun AristaApp() {
                     colors = CardDefaults.cardColors(containerColor = Color.White)
                 ) {
                     Column(Modifier.padding(14.dp)) {
-                        Text("Masuk ke ARISTA", color = Ink, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+                        Text("Masuk ke ARISTA", color = Ink, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
                         Spacer(Modifier.height(12.dp))
                         OutlinedTextField(
                             value = email, onValueChange = { email = it; error = ""; recoveryMessage = "" },
@@ -577,16 +577,11 @@ private fun AristaApp() {
                                             savingPending = true
                                             scope.launch {
                                                 try {
-                                                    if (customerName.isBlank()) {
-                                                        error = "Isi nama customer dulu untuk pesanan tertunda."
-                                                        savingPending = false
-                                                        return@launch
-                                                    }
                                                     val rows = org.json.JSONArray()
                                                     chosen.forEach { p ->
                                                         rows.put(org.json.JSONObject().put("id", p.id).put("name", p.name).put("price", p.price).put("cost", p.cost).put("qty", cart[p.id] ?: 0))
                                                     }
-                                                    localDao.savePendingOrder(PendingOrderEntity(editingPendingId ?: java.util.UUID.randomUUID().toString(), customerName.trim(), rows.toString(), subtotal, System.currentTimeMillis()))
+                                                    localDao.savePendingOrder(PendingOrderEntity(editingPendingId ?: java.util.UUID.randomUUID().toString(), customerName.trim().ifBlank { "Umum" }, rows.toString(), subtotal, System.currentTimeMillis()))
                                                     pendingOrders = localDao.getPendingOrders(); editingPendingId = null; cart = emptyMap(); cashReceived = ""; customerName = ""; discountInput = ""; cashierSection = "ORDERAN"; error = ""
                                                 } catch (e: Exception) { error = e.message ?: "Pesanan gagal disimpan." }
                                                 finally { savingPending = false }
@@ -630,7 +625,7 @@ private fun AristaApp() {
                                             Text("Potongan", color = Muted, fontSize = 12.sp)
                                             Text("-Rp ${discountAmount.toLong()}", color = Muted, fontSize = 12.sp)
                                         }
-                                        Text("TOTAL Rp ${total.toLong()}", color = Terracotta, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                                        Text("TOTAL Rp ${total.toLong()}", color = Terracotta, fontWeight = FontWeight.Bold, fontSize = 17.sp)
                                         Spacer(Modifier.height(10.dp))
                                         listOf(listOf("Tunai", "QRIS", "Debit/Kredit"), listOf("Transfer", "Piutang")).forEach { methodRow ->
                                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -899,7 +894,7 @@ private fun AristaApp() {
                         val jumlah = periodSales.count { !it.optBoolean("batal") }
                         val cancelledSales = periodSales.filter { it.optBoolean("batal") }
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                            Text("Laporan penjualan", color = Ink, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                            Text("Laporan penjualan", color = Ink, fontSize = 17.sp, fontWeight = FontWeight.Bold)
                             TextButton(onClick = {
                                 reportsLoading = true
                                 scope.launch {
@@ -986,7 +981,7 @@ private fun AristaApp() {
                                     TextButton(onClick = { receivableCustomer = null; receivableAmount = "" }) { Text("← Semua customer", color = Terracotta) }
                                     val customerNotes = unpaid.filter { it.optString("customer").ifBlank { "Umum" } == receivableCustomer }
                                     val customerDue = customerNotes.sumOf { it.optDouble("sisa") }
-                                    Text(receivableCustomer ?: "", color = Ink, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                                    Text(receivableCustomer ?: "", color = Ink, fontSize = 17.sp, fontWeight = FontWeight.Bold)
                                     Text("Sisa tagihan Rp ${customerDue.toLong()}", color = Terracotta, fontWeight = FontWeight.SemiBold)
                                     OutlinedTextField(receivableAmount, { receivableAmount = it.filter(Char::isDigit) }, Modifier.fillMaxWidth().height(56.dp), label = { Text("Nominal pembayaran (Rp)") }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
                                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -1039,7 +1034,7 @@ private fun AristaApp() {
                             }
                         } else if (reportTab == "Pengeluaran" && owner) {
                             val expenseSum = periodExpenses.sumOf { it.optDouble("total") }
-                            Text("Laporan pengeluaran", color = Ink, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                            Text("Laporan pengeluaran", color = Ink, fontSize = 17.sp, fontWeight = FontWeight.Bold)
                             Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                                 Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                     Text("Total pengeluaran: Rp ${expenseSum.toLong()}", color = Terracotta, fontWeight = FontWeight.Bold)
@@ -1099,7 +1094,7 @@ private fun AristaApp() {
                         } else if (reportsLoading) CircularProgressIndicator(color = Terracotta)
                         else {
                             Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
-                                Column(Modifier.padding(16.dp)) {
+                                Column(Modifier.padding(14.dp)) {
                                     Text("Omzet transaksi aktif", color = Muted, fontSize = 12.sp)
                                     Text("Rp ${omzet.toLong()}", color = Terracotta, fontSize = 23.sp, fontWeight = FontWeight.Bold)
                                     Text("Jumlah transaksi: ${jumlah}", color = Ink)
@@ -1159,19 +1154,19 @@ Text("Transaksi terbaru", color = Ink, fontWeight = FontWeight.SemiBold)
                         val today = java.time.LocalDate.now().toString()
                         val todaySales = activeSales.filter { it.optString("sale_date") == today }
                         val todayTotal = todaySales.sumOf { it.optDouble("total") }
-                        Text("Ringkasan usaha", color = Ink, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                        Text("Ringkasan usaha", color = Ink, fontSize = 17.sp, fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(10.dp))
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             Card(Modifier.weight(1f), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                                 Column(Modifier.padding(12.dp)) {
                                     Text("Omzet hari ini", color = Muted, fontSize = 11.sp)
-                                    Text("Rp ${todayTotal.toLong()}", color = Terracotta, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                                    Text("Rp ${todayTotal.toLong()}", color = Terracotta, fontSize = 17.sp, fontWeight = FontWeight.Bold)
                                 }
                             }
                             Card(Modifier.weight(1f), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                                 Column(Modifier.padding(12.dp)) {
                                     Text("Transaksi", color = Muted, fontSize = 11.sp)
-                                    Text("${todaySales.size}", color = Ink, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                                    Text("${todaySales.size}", color = Ink, fontSize = 17.sp, fontWeight = FontWeight.Bold)
                                 }
                             }
                         }
@@ -1200,7 +1195,7 @@ Text("Transaksi terbaru", color = Ink, fontWeight = FontWeight.SemiBold)
                         Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                             Column(Modifier.padding(12.dp)) {
                                 Text("Menu aktif", color = Muted, fontSize = 12.sp)
-                                Text("${products.size} menu", color = Ink, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                                Text("${products.size} menu", color = Ink, fontSize = 17.sp, fontWeight = FontWeight.Bold)
                                 Text("Data transaksi dimuat dari Supabase", color = Muted, fontSize = 11.sp)
                                 TextButton(onClick = {
                                     reportsLoading = true
@@ -1272,7 +1267,7 @@ Text("Transaksi terbaru", color = Ink, fontWeight = FontWeight.SemiBold)
                             }
                         }
                         if (manageTab == "Menu" || !owner) {
-                        Text("Daftar menu", color = Ink, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                        Text("Daftar menu", color = Ink, fontSize = 17.sp, fontWeight = FontWeight.Bold)
                         if (owner) {
                             Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                                 Column(Modifier.padding(12.dp)) {
@@ -1331,7 +1326,7 @@ Text("Transaksi terbaru", color = Ink, fontWeight = FontWeight.SemiBold)
                         }
                         }
                         if (manageTab == "Kategori" && owner) {
-                            Text("Kategori menu", color = Ink, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                            Text("Kategori menu", color = Ink, fontSize = 17.sp, fontWeight = FontWeight.Bold)
                             val categoryCounts = products.groupingBy { it.category.ifBlank { "Tanpa kategori" } }.eachCount().toList().sortedBy { it.first.lowercase() }
                             if (categoryCounts.isEmpty()) Text("Belum ada kategori.", color = Muted, fontSize = 12.sp)
                             else LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
@@ -1346,7 +1341,7 @@ Text("Transaksi terbaru", color = Ink, fontWeight = FontWeight.SemiBold)
                             }
                             Text("Kategori diatur melalui kolom Kategori saat menambah atau mengubah menu.", color = Muted, fontSize = 11.sp)
                         } else if (manageTab == "Harga" && owner) {
-                            Text("Harga & margin", color = Ink, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                            Text("Harga & margin", color = Ink, fontSize = 17.sp, fontWeight = FontWeight.Bold)
                             LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
                                 items(products, key = { it.id }) { product ->
                                     val marginPercent = if (product.price > 0) ((product.price - product.cost) / product.price * 100).toInt() else 0
@@ -1365,7 +1360,7 @@ Text("Transaksi terbaru", color = Ink, fontWeight = FontWeight.SemiBold)
                         }
                         if (manageTab == "Akun kasir" && owner) {
                             Spacer(Modifier.height(12.dp))
-                            Text("Kelola akun kasir", color = Ink, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                            Text("Kelola akun kasir", color = Ink, fontSize = 17.sp, fontWeight = FontWeight.Bold)
                             Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                                 Column(Modifier.padding(12.dp)) {
                                     Text("Tambah akun kasir", color = Terracotta, fontWeight = FontWeight.SemiBold)
@@ -1417,10 +1412,10 @@ Text("Transaksi terbaru", color = Ink, fontWeight = FontWeight.SemiBold)
                         }
                         if (error.isNotBlank()) Text(error, color = Color(0xFFB3261E), fontSize = 12.sp)
                     } else {
-                        Text("Profil", color = Ink, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                        Text("Profil", color = Ink, fontSize = 17.sp, fontWeight = FontWeight.Bold)
                         Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
-                            Column(Modifier.padding(16.dp)) {
-                                Text(profile!!.nama, color = Ink, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+                            Column(Modifier.padding(14.dp)) {
+                                Text(profile!!.nama, color = Ink, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
                                 Text(profile!!.peran, color = Muted, fontSize = 13.sp)
                                 Spacer(Modifier.height(12.dp))
                                 Text("Status koneksi: " + if (hasValidatedInternet(context)) "Online" else "Offline", color = Muted, fontSize = 12.sp)
