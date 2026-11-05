@@ -373,7 +373,7 @@ private fun AristaApp() {
                     }
                 }
             ) { padding ->
-                Column(Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp, vertical = 10.dp)) {
+                Column(Modifier.fillMaxSize().padding(padding).padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 10.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
