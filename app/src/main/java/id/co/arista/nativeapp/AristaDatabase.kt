@@ -7,6 +7,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.PrimaryKey
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.RoomDatabase
 
 @Entity(tableName = "pending_orders")
@@ -51,6 +52,9 @@ interface AristaLocalDao {
     @Query("DELETE FROM pending_orders")
     suspend fun clearPendingOrders()
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun savePendingOrders(orders: List<PendingOrderEntity>)
+
     @Query("SELECT * FROM sync_outbox ORDER BY createdAt ASC")
     suspend fun getOutbox(): List<SyncOutboxEntity>
 
@@ -63,6 +67,9 @@ interface AristaLocalDao {
     @Query("DELETE FROM sync_outbox")
     suspend fun clearOutbox()
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun enqueueAll(items: List<SyncOutboxEntity>)
+
     @Query("UPDATE sync_outbox SET retryCount = retryCount + 1, lastError = :message WHERE id = :id")
     suspend fun markRetry(id: String, message: String)
 
@@ -74,6 +81,23 @@ interface AristaLocalDao {
 
     @Query("DELETE FROM cashier_shifts")
     suspend fun clearShifts()
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun saveShifts(shifts: List<ShiftEntity>)
+
+    @Transaction
+    suspend fun replaceBackupData(
+        pendingOrders: List<PendingOrderEntity>,
+        outbox: List<SyncOutboxEntity>,
+        shifts: List<ShiftEntity>
+    ) {
+        clearPendingOrders()
+        clearOutbox()
+        clearShifts()
+        savePendingOrders(pendingOrders)
+        enqueueAll(outbox)
+        saveShifts(shifts)
+    }
 }
 
 @Database(
