@@ -461,6 +461,7 @@ function laporan(){
   const totalKeluar=(EXP||[]).reduce((n,x)=>n+x.total,0);
   return `<h2>Laporan</h2>${tabUtama}${tabRange}${note}
 <div class="grid"><div class="card"><div class="muted">Total omzet</div><h3>${rp(omzet)}</h3></div><div class="card"><div class="muted">Transaksi</div><h3>${list.length}</h3></div></div>
+<div class="card" style="margin-top:10px;cursor:pointer" onclick="setLapTab('Piutang')"><div class="muted">Penjualan piutang</div><h3>${frp(list.filter(s=>s.method==="Piutang").reduce((n,s)=>n+s.total,0))}</h3><div class="muted">Ketuk untuk lihat per pelanggan</div></div>
 ${pemilik?piutangCard():""}${pemilik?`<div class="card" style="margin-top:10px"><div class="muted">Margin kotor</div><h3>${margin==null?"–":rp(margin)}</h3><div class="muted">${unknown?"Isi harga modal di Kelola agar margin terhitung.":""}</div></div>`:""}
 ${pemilik&&margin!=null?`<div class="card" style="margin-top:10px"><div class="muted">Laba bersih (margin dikurangi pengeluaran)</div><h3>${rp(margin-totalKeluar)}</h3></div>`:""}
 <div class="row" style="margin:14px 0 6px"><h3>Transaksi</h3>${pemilik?`<div style="display:flex;gap:16px"><button class="link" onclick="eksporCsv('penjualan')">Ekspor CSV</button><button class="link" onclick="eksporHtml()">Ekspor HTML</button></div>`:""}</div>
